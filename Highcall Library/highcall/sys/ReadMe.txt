@@ -1,2 +1,0 @@
-While all files located in the .\asm\ folder are generated and ready for use, it does not mean that they are compiled with the library nor that they have a defined structure behind them.
-If you wish to use any of the syscalls below, please define a structure for the file, set its properties to Microsoft Macro Assembler and define the syscall index following the structure of other available syscalls.
