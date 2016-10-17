@@ -14,7 +14,6 @@
 *.ilk
 *.iobj
 *.ipdb
-*.vcxproj
-*.vcxproj.filters
+*.filters
 *.enc
 *.user
