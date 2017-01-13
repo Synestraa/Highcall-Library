@@ -98,10 +98,10 @@ static const PRIVILEGE_DATA WellKnownPrivileges[] =
 	{ { SE_CREATE_GLOBAL_PRIVILEGE, 0 }, SE_CREATE_GLOBAL_NAME }
 };
 
+HC_EXTERN_API
 PLUID
 HCAPI
-HcLookupPrivilegeValueW(
-	IN LPCWSTR Name)
+HcLookupPrivilegeValueW(LPCWSTR Name)
 {
 	ULONG Priv;
 
@@ -117,12 +117,12 @@ HcLookupPrivilegeValueW(
 	return NULL;
 }
 
+HC_EXTERN_API
 PLUID
 HCAPI
-HcLookupPrivilegeValueA(
-	IN LPCSTR Name)
+HcLookupPrivilegeValueA(LPCSTR Name)
 {
-	ULONG Priv; 
+	ULONG Priv;
 	LPWSTR Converted;
 
 	if (HcStringIsBad(Name))
@@ -143,14 +143,15 @@ HcLookupPrivilegeValueA(
 	return NULL;
 }
 
+HC_EXTERN_API
 NTSTATUS
 HCAPI
-HcTokenIsElevated(_In_ HANDLE TokenHandle,
-	_Out_ PBOOLEAN Elevated
+HcTokenIsElevated(HANDLE TokenHandle,
+	PBOOLEAN Elevated
 ) {
 	NTSTATUS Status;
-	TOKEN_ELEVATION Elevation;
-	ULONG returnLength;
+	TOKEN_ELEVATION Elevation = { 0 };
+	ULONG returnLength = 0;
 
 	Status = HcQueryInformationToken(TokenHandle,
 		TokenElevation,

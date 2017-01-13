@@ -4,7 +4,6 @@
 *.ik
 *.pdb
 *.log
-*.sln
 .vs
 *.suo
 *.vs
@@ -17,3 +16,4 @@
 *.filters
 *.enc
 *.user
+*.rar

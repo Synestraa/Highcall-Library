@@ -29,7 +29,7 @@
 //
 // For HcGlobal
 //
-#include "../headers/global.h"
+#include "../headers/hcglobal.h"
 
 //
 // For HcVirtualAllocEx
@@ -86,18 +86,18 @@ static
 SIZE_T
 HCAPI MmInternalResolve(PVOID lParam)
 {
-	PMANUAL_MAP ManualInject;
-	HMODULE hModule;
-	SIZE_T Index, Function, Count, Delta;
-	PSIZE_T FunctionPointer;
-	PWORD ImportList;
+	PMANUAL_MAP ManualInject = NULL;
+	HMODULE hModule = NULL;
+	SIZE_T Index = 0, Function = 0, Count = 0, Delta = 0;
+	PSIZE_T FunctionPointer = NULL;
+	PWORD ImportList = NULL;
 
-	PIMAGE_BASE_RELOCATION pIBR;
-	PIMAGE_IMPORT_DESCRIPTOR pIID;
-	PIMAGE_IMPORT_BY_NAME pIBN;
-	PIMAGE_THUNK_DATA FirstThunk, OrigFirstThunk;
+	PIMAGE_BASE_RELOCATION pIBR = NULL;
+	PIMAGE_IMPORT_DESCRIPTOR pIID = NULL;
+	PIMAGE_IMPORT_BY_NAME pIBN = NULL;
+	PIMAGE_THUNK_DATA FirstThunk = NULL, OrigFirstThunk = NULL;
 
-	PDLL_MAIN EntryPoint;
+	PDLL_MAIN EntryPoint = NULL;
 
 	ManualInject = (PMANUAL_MAP)lParam;
 
@@ -196,8 +196,7 @@ BOOLEAN
 HCAPI
 HcParameterVerifyInjectModuleManual(PVOID Buffer)
 {
-	PIMAGE_NT_HEADERS pHeaderNt;
-	pHeaderNt = HcPEGetNtHeader(Buffer);
+	PIMAGE_NT_HEADERS pHeaderNt =HcPEGetNtHeader(Buffer);
 
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
@@ -218,22 +217,23 @@ HcParameterVerifyInjectModuleManual(PVOID Buffer)
 //
 // HcErrorGetDosError() for a diagnosis.
 //
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcInjectManualMapW(HANDLE hProcess,
 	LPCWSTR szcPath)
 {
-	HC_FILE_INFORMATIONW fileInformation;
-	MANUAL_MAP ManualInject;
+	HC_FILE_INFORMATIONW fileInformation = { 0 };
+	MANUAL_MAP ManualInject = { 0 };
 
-	PIMAGE_DOS_HEADER pHeaderDos;
-	PIMAGE_NT_HEADERS pHeaderNt;
-	PIMAGE_SECTION_HEADER pHeaderSection;
+	PIMAGE_DOS_HEADER pHeaderDos = NULL;
+	PIMAGE_NT_HEADERS pHeaderNt = NULL;
+	PIMAGE_SECTION_HEADER pHeaderSection = NULL;
 
-	HANDLE hThread, hFile;
-	PVOID ImageBuffer, LoaderBuffer, FileBuffer;
-	DWORD ExitCode, SectionIndex, BytesRead;
-	SIZE_T BytesWritten;
+	HANDLE hThread = NULL, hFile = NULL;
+	PVOID ImageBuffer = NULL, LoaderBuffer = NULL, FileBuffer = NULL;
+	DWORD ExitCode = 0, SectionIndex = 0, BytesRead = 0;
+	SIZE_T BytesWritten = 0;
 
 	/* Check if we attempted to inject too early. */
 	if (!HcProcessReadyEx(hProcess))
@@ -447,6 +447,7 @@ HcInjectManualMapW(HANDLE hProcess,
 	if (!ExitCode)
 	{
 		/* We're out, something went wrong. */
+		HcErrorSetDosError(ExitCode);
 
 		HcVirtualFreeEx(hProcess, LoaderBuffer, 0, MEM_RELEASE);
 		HcVirtualFreeEx(hProcess, ImageBuffer, 0, MEM_RELEASE);
@@ -466,25 +467,22 @@ HcInjectManualMapW(HANDLE hProcess,
 }
 
 //
-// Currently supports only same architecture injection.
-// 
-// -- FILL ME --
+// Currently supports only same architecture injection due to the location of LoadLibraryW.
 //
+HC_EXTERN_API
 BOOLEAN 
 HCAPI 
 HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 {
-	LPVOID PathToDll;
-	SIZE_T PathSize;
-	LPVOID lpToLoadLibrary;
-	LPWSTR szFullPath;
-	HANDLE hThread;
+	LPVOID PathToDll = NULL;
+	SIZE_T PathSize = 0;
+	LPVOID lpToLoadLibrary = NULL;
+	LPWSTR szFullPath = NULL;
+	HANDLE hThread = NULL;
 
 	if (HcStringIsBad(szcPath))
 	{
-		//
-		// Return invalid parameter
-		//
+		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
 		return FALSE;
 	}
 
@@ -503,10 +501,11 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		//
 		// return NO_MEMORY;
 		//
+		HcErrorSetNtStatus(STATUS_NO_MEMORY);
 		return FALSE;
 	}
 
-	if (!GetFullPathNameW(szcPath, MAX_PATH * sizeof(WCHAR), szFullPath, NULL))
+	if (!GetFullPathNameW(szcPath, MAX_PATH, szFullPath, NULL))
 	{
 		//
 		// return INVALID_FILE;
@@ -518,9 +517,6 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	PathSize = HcStringSecureLengthW(szFullPath);
 	if (!PathSize)
 	{
-		//
-		// Maybe we got hooked? Something drastically went wrong.
-		//
 		HcFree(szFullPath);
 		return FALSE;
 	}

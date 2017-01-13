@@ -59,13 +59,13 @@ static
 SIZE_T FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T MaxLength)
 {
 	SIZE_T FreeSpace = 0;
-	MEMORY_BASIC_INFORMATION mbi;
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
 	for (SIZE_T Addr = (SIZE_T)lpAddress + Size; Addr < (SIZE_T)lpAddress + MaxLength + Size; Addr = Addr++)
 	{
 		__try
 		{
-			DWORD Length;
-			for (Length = 0; Length < MinimumSize; Length++)
+			DWORD Length = 0;
+			for (; Length < MinimumSize; Length++)
 			{
 				if ((*(BYTE*)(Length + Addr)) != 0)
 				{
@@ -107,7 +107,7 @@ SIZE_T FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T M
 static
 BOOLEAN SetJump(SIZE_T Source, SIZE_T Destination)
 {
-	DWORD Protection;
+	DWORD Protection = 0;
 	//
 	// Set the protection to something we can use. 
 	//
@@ -143,7 +143,7 @@ BOOLEAN SetJump(SIZE_T Source, SIZE_T Destination)
 static
 BOOLEAN SetRelativeJump64(SIZE_T Source, SIZE_T Destination)
 {
-	DWORD Protection;
+	DWORD Protection = 0;
 
 	/* Set the protection to something we can use. */
 	if (HcVirtualProtect((LPVOID)Source, 6, PAGE_EXECUTE_READWRITE, &Protection))
@@ -194,9 +194,8 @@ VOID RelocateConditional(SIZE_T lpAddress,
 	SIZE_T						Offset)
 {
 	SIZE_T AbsoluteDestination = lpAddress + (Offset - (Destination - Source)) + InstSize;
-	SIZE_T FreeSpace;
+	SIZE_T FreeSpace = FindFreeSpace((LPVOID)Destination, CodeSize, JMPSIZE, 0x1000);
 
-	FreeSpace = FindFreeSpace((LPVOID)Destination, CodeSize, JMPSIZE, 0x1000);
 	if (!FreeSpace)
 	{
 		return;
@@ -243,36 +242,35 @@ VOID RelocateConditional(SIZE_T lpAddress,
 	}
 }
 
-/*
-	CODER: Synestra
+//
+//	CODER: Synestra
+//
+//	PURPOSE: Determine whether parameter MinimumLength is large enough to cover an instruction
+//
+//	PARAMETERS: lpBaseAddress start address
+//	MinimumLength: the length to test
+//
+//	RETURN: Determined size for given minimum length
+//
+//	HISTORY: 8/29/2016 Created
+//
 
-	PURPOSE: Determine whether parameter MinimumLength is large enough to cover an instruction
-
-	PARAMETERS: lpBaseAddress start address
-	MinimumLength: the length to test
-
-	RETURN: Determined size for given minimum length
-
-	HISTORY: 8/29/2016 Created
-*/
-
+HC_EXTERN_API
 DWORD
 HCAPI 
 HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
 {
-	_CodeInfo Info;
-	_DInst* Instructions;
-	DWORD Size;
-	DWORD InstructionIndex;
-	DWORD InstructionCount;
+	_CodeInfo Info = { 0 };
+	_DInst* Instructions = NULL;
+	DWORD Size = 0;
+	DWORD InstructionIndex = 0;
+	unsigned InstructionCount = 0;
 
 	Info.code = (unsigned char*)lpBaseAddress;
 	Info.codeLen = MAX_INSTRUCTIONS * 10;
 	Info.codeOffset = 0;
 	Info.features = DF_NONE;
 	Info.dt = DISASM_TYPE;
-
-	Size = 0;
 
 	/* Assume that each instruction is 10 bytes at least */
 	Instructions = HcAlloc(sizeof(_DecodedInst) * MAX_INSTRUCTIONS);
@@ -297,6 +295,7 @@ HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
 
 	if (Size < MinimumLength)
 	{
+		HcFree(Instructions);
 		return 0;
 	}
 
@@ -304,42 +303,37 @@ HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
 	return Size;
 }
 
-/*
-	CODER: Synestra
-
-	PURPOSE: Relocates destinations of calls and jumps to their respective module addresses
-
-	PARAMETERS: Buffer, start of the instructions
-				Size, length of the relocation
-				Source, the original module that contained the code
-
-	RETURN: 
-
-	HISTORY: 8/29/2016 Created
-*/
-
+//
+//	CODER: Synestra
+//
+//	PURPOSE: Relocates destinations of calls and jumps to their respective module addresses
+//
+//	PARAMETERS: Buffer, start of the instructions
+//				Size, length of the relocation
+//				Source, the original module that contained the code
+//
+//	RETURN: 
+//
+//	HISTORY: 8/29/2016 Created
+//
+HC_EXTERN_API
 HStatus 
 HCAPI 
 HcHookRelocateCode(PBYTE Code,
 	DWORD Size, 
 	SIZE_T Source)
 {
-	_CodeInfo Info;
-	_DInst Instruction;
-	_DecodedInst InstructionEx;
+	_CodeInfo Info = { 0 };
+	_DInst Instruction = { 0 };
+	_DecodedInst InstructionEx = { 0 };
+	_DInst* Instructions = NULL;
 
-	_DInst* Instructions;
-
-	DWORD InstructionIndex;
-	DWORD InstructionCount;
-	SIZE_T InstructionAddress;
-	BYTE InstructionDispIndex;
-	BYTE InstructionOffsetIndex;
-	LPSTR InstructionMnemonic;
-
-	HcInternalSet(&Info, 0, sizeof(Info));
-	HcInternalSet(&Instruction, 0, sizeof(Instruction));
-	HcInternalSet(&InstructionEx, 0, sizeof(InstructionEx));
+	DWORD InstructionIndex = 0;
+	unsigned InstructionCount = 0;
+	SIZE_T InstructionAddress = 0;
+	BYTE InstructionDispIndex = 0;
+	BYTE InstructionOffsetIndex = 0;
+	LPSTR InstructionMnemonic = NULL;
 
 	Info.code = (unsigned char*) Code;
 	Info.codeLen = (Size * 10);
@@ -459,6 +453,7 @@ HcHookRelocateCode(PBYTE Code,
 	return HOOK_NO_ERR;
 }
 
+HC_EXTERN_API
 PVOID
 HCAPI
 HcHookCreateCave32(LPVOID lpBaseAddress, SIZE_T Size)
@@ -468,12 +463,13 @@ HcHookCreateCave32(LPVOID lpBaseAddress, SIZE_T Size)
 		PAGE_EXECUTE_READWRITE);
 }
 
+HC_EXTERN_API
 PVOID
 HCAPI
 HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 {
 	LPVOID lpAddress = 0;
-	MEMORY_BASIC_INFORMATION mbi;
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
 
 	for (SIZE_T Addr = (SIZE_T)lpBaseAddress; Addr > (SIZE_T)lpBaseAddress - INT_MAX; Addr = (SIZE_T)mbi.BaseAddress - 1)
 	{
@@ -509,27 +505,28 @@ HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 #define HcHookCreateCave(x, y) HcHookCreateCave64(x, y);
 #endif
 
-/*
-	CODER: Synestra
-
-	PURPOSE: Restore a function in a new codecave, regardless of previous type of hook.
-
-	PARAMETERS: lpBaseAddress, start point of our restoration
-				dwMinimumSize, minimum amount of bytes that should be taken over from the function.
-
-	RETURN: address to the restored function, any restored functions should proceed to call this restored address instead of the original.
-
-	HISTORY: unknown date created
-			 documented
-*/
+//
+//	CODER: Synestra
+//
+//	PURPOSE: Restore a function in a new codecave, regardless of previous type of hook.
+//
+//	PARAMETERS: lpBaseAddress, start point of our restoration
+//				dwMinimumSize, minimum amount of bytes that should be taken over from the function.
+//
+//	RETURN: address to the restored function, any restored functions should proceed to call this restored address instead of the original.
+//
+//	HISTORY: unknown date created
+//			 documented
+//
+HC_EXTERN_API
 PVOID
 HCAPI
 HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 {
-	PVOID Recreated;
-	PBYTE Original;
-	DWORD SizeOfFunction;
-	DWORD dwRequiredSize;
+	PVOID Recreated = NULL;
+	PBYTE Original = NULL;
+	DWORD SizeOfFunction = 0;
+	DWORD dwRequiredSize = 0;
 
 	if (!lpBaseAddress)
 	{
@@ -595,13 +592,14 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	return Recreated;
 }
 
+HC_EXTERN_API
 HStatus
 HCAPI
 HcHookDetour(PDetourContext Context)
 {
-	DWORD ContinuedJumpSize;
-	DWORD DetourMethodSize;
-	HStatus Status;
+	DWORD ContinuedJumpSize = 0;
+	DWORD DetourMethodSize = 0;
+	HStatus Status = HOOK_NO_ERR;
 
 	if (!Context->lpSource)
 	{
@@ -613,7 +611,30 @@ HcHookDetour(PDetourContext Context)
 		return HOOK_INVALID_SOURCE;
 	}
 
-	Status = HOOK_NO_ERR;
+	if (Context->Flags == 0)
+	{
+		Context->Flags = Default;
+	}
+
+	if (Context->Flags & Reconstruct)
+	{
+		PBYTE originalData = (PBYTE)HcHookRecreateCode(Context->lpSource, 16);
+#ifndef _WIN64
+		SIZE_T instructionSize = HcHookAssertLength(originalData, 5);
+#else
+		SIZE_T instructionSize = HcHookAssertLength(originalData, 16);
+#endif
+		if (instructionSize)
+		{
+			HcProcessWriteMemory(NtCurrentProcess,
+				Context->lpSource,
+				originalData,
+				instructionSize,
+				NULL);
+
+			HcHookRelocateCode(Context->lpSource, instructionSize, Context->lpSource);
+		}
+	}
 	
 #ifndef _WIN64
 
@@ -655,36 +676,44 @@ HcHookDetour(PDetourContext Context)
 	}
 
 	/* Recreate the original, and a jump back to the continued code. */
-	Context->pbReconstructed = (PBYTE)HcHookCreateCave(Context->lpSource, Context->dwLength + ContinuedJumpSize);
-	if (!Context->pbReconstructed)
+	if (Context->Flags & Recreate)
 	{
-		/* We failed creating the cave. */
-		return HOOK_CAVE_FAILURE;
+		Context->pbReconstructed = (PBYTE)HcHookCreateCave(Context->lpSource, Context->dwLength + ContinuedJumpSize);
+		if (!Context->pbReconstructed)
+		{
+			/* We failed creating the cave. */
+			return HOOK_CAVE_FAILURE;
+		}
+
+		/* This is the chunk we took off from the source, 
+			we have to relocate it somewhere in case the caller wants to call this function. */
+
+		/* Move the raw chunk. */
+		HcInternalCopy(Context->pbReconstructed, Context->lpSource, Context->dwLength);
 	}
 
-	/* This is the chunk we took off from the source, 
-		we have to relocate it somewhere in case the caller wants to call this function. */
-
-	/* Move the raw chunk. */
-	HcInternalCopy(Context->pbReconstructed, Context->lpSource, Context->dwLength);
-
 	/* Check if user wanted a copy. */
-	if (HcInternalValidate(Context->pbOriginal))
+	if (Context->Flags & SaveOriginal)
 	{
-		/* Save a copy of the original. */
 		HcInternalCopy(Context->pbOriginal, Context->lpSource, Context->dwLength);
 	}
 
-	/* Fix relocs in the chunk. */
-	if ((Status = HcHookRelocateCode(Context->pbReconstructed, Context->dwLength, (SIZE_T)Context->lpSource)) != HOOK_NO_ERR)
+	if (Context->Flags & Recreate)
 	{
-		return Status;
-	}
-	
-	/* Set the jump back to the continued code. */
-	if (!SetJump((SIZE_T)(Context->pbReconstructed + Context->dwLength), (SIZE_T)Context->lpSource + Context->dwLength))
-	{
-		return HOOK_PROTECTION_FAILURE;
+		/* Fix relocs in the chunk. */
+		if ((Status = HcHookRelocateCode(Context->pbReconstructed, Context->dwLength, (SIZE_T)Context->lpSource)) != HOOK_NO_ERR)
+		{
+			return Status;
+		}
+
+		if (Context->Flags & JumpOriginal)
+		{
+			/* Set the jump back to the continued code. */
+			if (!SetJump((SIZE_T)(Context->pbReconstructed + Context->dwLength), (SIZE_T)Context->lpSource + Context->dwLength))
+			{
+				return HOOK_PROTECTION_FAILURE;
+			}
+		}
 	}
 
 #ifdef _WIN64
@@ -699,10 +728,19 @@ HcHookDetour(PDetourContext Context)
 	else
 #endif
 	{
-		/* Absolute 32/64 jump. */
 		if (!SetJump((SIZE_T)Context->lpSource, (SIZE_T)Context->lpDestination))
 		{
 			return HOOK_PROTECTION_FAILURE;
+		}
+
+		
+		DWORD Protection;
+		if (HcVirtualProtect(Context->lpSource, Context->dwLength, PAGE_EXECUTE_READWRITE, &Protection))
+		{
+			for (int i = 5; i < Context->dwLength; i++)
+				((PBYTE)(Context->lpSource))[i] = 0x90;
+
+			HcVirtualProtect(Context->lpSource, Context->dwLength, Protection, &Protection);
 		}
 	}
 
@@ -712,13 +750,14 @@ HcHookDetour(PDetourContext Context)
 	return HOOK_NO_ERR;
 }
 
+HC_EXTERN_API
 HStatus
 HCAPI
 HcHookDetourContextRestore(PDetourContext Context)
 {
-	DWORD dwProtection;
-	SIZE_T NumberofBytesToProtect;
-	PVOID Base;
+	DWORD dwProtection = 0;
+	SIZE_T NumberofBytesToProtect = 0;
+	PVOID Base = NULL;
 
 	if (!Context->lpSource)
 	{

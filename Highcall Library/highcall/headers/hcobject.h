@@ -1,3 +1,5 @@
+// Requires documentation
+
 #ifndef HC_OBJECT_H
 #define HC_OBJECT_H
 
@@ -7,9 +9,9 @@
 extern "C" {
 #endif
 
-	DWORD WINAPI HcObjectWaitMultiple(IN DWORD nCount,IN CONST HANDLE *lpHandles,IN BOOL bWaitAll,IN DWORD dwMilliseconds);
-	DWORD HCAPI HcObjectWait(HANDLE hObject,IN DWORD dwMiliseconds);
-	VOID HCAPI HcObjectClose(HANDLE hObject);
+	HC_EXTERN_API DWORD HCAPI HcObjectWaitMultiple(IN DWORD nCount,IN CONST HANDLE *lpHandles,IN BOOL bWaitAll,IN DWORD dwMilliseconds);
+	HC_EXTERN_API DWORD HCAPI HcObjectWait(HANDLE hObject,IN DWORD dwMiliseconds);
+	HC_EXTERN_API VOID HCAPI HcObjectClose(HANDLE hObject);
 
 #if defined (__cplusplus)
 }

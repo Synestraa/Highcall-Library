@@ -6,19 +6,17 @@
 	@version: 9/11/2016
 */
 
+#define _CRT_SECURE_NO_WARNINGS
 #include "highcall.h"
+#include "../private/imports.h"
 
-HcGlobalEnv HcGlobal;
-t_RtlGetVersion RtlGetVersion;
+HcGlobalEnv HcGlobal = { 0 };
 
 static HIGHCALL_STATUS InitializeModules(VOID)
 {
 	PPEB pPeb = NtCurrentPeb();
-	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
-	PLIST_ENTRY pListHead, pListEntry;
-
-	/* Get the module list in load order */
-	pListHead = &(pPeb->LoaderData->InMemoryOrderModuleList);
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
+	PLIST_ENTRY pListHead = &(pPeb->LoaderData->InMemoryOrderModuleList), pListEntry = NULL;
 
 	/* Loop through entry list till we find a match for the module's name
 	the comparison is strict to the entire name, case sensitive. */
@@ -30,40 +28,6 @@ static HIGHCALL_STATUS InitializeModules(VOID)
 		if (!wcscmp(L"ntdll.dll", pLdrDataTableEntry->FullModuleName.Buffer))
 		{
 			HcGlobal.HandleNtdll = (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
-
-			SIZE_T szModule;
-			PIMAGE_EXPORT_DIRECTORY pExports;
-			PDWORD pExportNames;
-			PDWORD pExportFunctions;
-			PWORD pExportOrdinals;
-			LPCSTR lpCurrentFunction;
-
-			szModule = (SIZE_T)HcGlobal.HandleNtdll;
-			pExports = HcPEGetExportDirectory(HcGlobal.HandleNtdll);
-
-			/* Get the address containg null terminated export names, in ASCII */
-			pExportNames = (PDWORD)(pExports->AddressOfNames + szModule);
-
-			/* List through functions */
-			for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
-			{
-				lpCurrentFunction = (LPCSTR)(pExportNames[i] + szModule);
-				if (!lpCurrentFunction)
-				{
-					continue;
-				}
-
-				/* Check for version function.
-				If by the end of the iteration this function is not found, highcall initialization will always fail. */
-				if (!strcmp(lpCurrentFunction, "RtlGetVersion"))
-				{
-					pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + szModule);
-					pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + szModule);
-
-					RtlGetVersion = (t_RtlGetVersion)(pExportFunctions[pExportOrdinals[i]] + szModule);
-					break;
-				}
-			}
 		}
 		else if (!wcscmp(L"user32.dll", pLdrDataTableEntry->FullModuleName.Buffer))
 		{
@@ -80,20 +44,15 @@ static HIGHCALL_STATUS InitializeModules(VOID)
 		return HIGHCALL_FAILED;
 	}
 
-	if (!RtlGetVersion)
-	{
-		return HIGHCALL_IMPORT_UNDEFINED;
-	}
-
 	return HIGHCALL_SUCCESS;
 }
 
 static HIGHCALL_STATUS InitializeVersion(VOID)
 {
-	HIGHCALL_STATUS Status;
-	RTL_OSVERSIONINFOEXW versionInfo;
-	ULONG majorVersion;
-	ULONG minorVersion;
+	HIGHCALL_STATUS Status = HIGHCALL_SUCCESS;
+	RTL_OSVERSIONINFOEXW versionInfo = { 0 };
+	ULONG majorVersion = 0;
+	ULONG minorVersion = 0;
 
 	versionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 	if (!NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&versionInfo)))
@@ -275,59 +234,35 @@ static HIGHCALL_STATUS InitializeMandatorySyscall(VOID)
 	return HIGHCALL_SUCCESS;
 }
 
-t_LdrLoadDll LdrLoadDll;
-t_RtlEqualUnicodeString RtlEqualUnicodeString;
-t_RtlInitUnicodeString RtlInitUnicodeString;
-
-static HIGHCALL_STATUS HCAPI InitializeImports(VOID)
-{
-	if (!(LdrLoadDll = (t_LdrLoadDll)HcModuleProcedureAddressA(HcGlobal.HandleNtdll,
-		"LdrLoadDll")))
-	{
-		return HIGHCALL_IMPORT_UNDEFINED;
-	}
-
-	if (!(RtlEqualUnicodeString = (t_RtlEqualUnicodeString)HcModuleProcedureAddressA(HcGlobal.HandleNtdll,
-		"RtlEqualUnicodeString")))
-	{
-		return HIGHCALL_IMPORT_UNDEFINED;
-	}
-
-	if (!(RtlInitUnicodeString = (t_RtlInitUnicodeString)HcModuleProcedureAddressA(HcGlobal.HandleNtdll,
-		"RtlInitUnicodeString")))
-	{
-		return HIGHCALL_IMPORT_UNDEFINED;
-	}
-
-	return HIGHCALL_SUCCESS;
-}
-
-SYS_INDEX sciQueryInformationToken,
-	sciOpenProcessToken,
-	sciResumeProcess,
-	sciSuspendProcess,
-	sciAllocateVirtualMemory,
-	sciFreeVirtualMemory,
-	sciResumeThread,
-	sciQueryInformationThread,
-	sciCreateThread,
-	sciFlushInstructionCache,
-	sciOpenProcess,
-	sciProtectVirtualMemory,
-	sciReadVirtualMemory,
-	sciWriteVirtualMemory,
-	sciQueryInformationProcess,
-	sciQuerySystemInformation,
-	sciClose,
-	sciQueryVirtualMemory,
-	sciAdjustPrivilegesToken,
-	sciSetInformationThread,
-	sciOpenDirectoryObject,
-	sciCreateThreadEx,
-	sciWaitForSingleObject,
-	sciWaitForMultipleObjects,
-	sciLockVirtualMemory,
-	sciUnlockVirtualMemory;
+SYS_INDEX sciQueryInformationToken = 0,
+	sciOpenProcessToken = 0,
+	sciResumeProcess = 0,
+	sciSuspendProcess = 0,
+	sciAllocateVirtualMemory = 0,
+	sciFreeVirtualMemory = 0,
+	sciResumeThread = 0,
+	sciQueryInformationThread = 0,
+	sciCreateThread = 0,
+	sciFlushInstructionCache = 0,
+	sciOpenProcess = 0,
+	sciProtectVirtualMemory= 0,
+	sciReadVirtualMemory= 0,
+	sciWriteVirtualMemory= 0,
+	sciQueryInformationProcess= 0,
+	sciQuerySystemInformation= 0,
+	sciClose= 0,
+	sciQueryVirtualMemory= 0,
+	sciAdjustPrivilegesToken= 0,
+	sciSetInformationThread= 0,
+	sciOpenDirectoryObject= 0,
+	sciCreateThreadEx= 0,
+	sciWaitForSingleObject= 0,
+	sciWaitForMultipleObjects= 0,
+	sciLockVirtualMemory= 0,
+	sciUnlockVirtualMemory= 0,
+	sciCreateFile= 0,
+	sciQueryInformationFile= 0,
+	sciQueryVolumeInformationFile = 0;
 
 static HIGHCALL_STATUS InitializeSyscall(VOID)
 {
@@ -463,12 +398,30 @@ static HIGHCALL_STATUS InitializeSyscall(VOID)
 		return HIGHCALL_SYSCALL_UNDEFINED;
 	}
 
+	if ((sciCreateFile = HcSyscallIndexA("NtCreateFile")) == -1)
+	{
+		HcErrorSetNoteA("[HcSyscallIndexA returned -1] NtCreateFile syscall identifier could not be found.");
+		return HIGHCALL_SYSCALL_UNDEFINED;
+	}
+
+	if ((sciQueryInformationFile = HcSyscallIndexA("NtQueryInformationFile")) == -1)
+	{
+		HcErrorSetNoteA("[HcSyscallIndexA returned -1] NtQueryInformationFile syscall identifier could not be found.");
+		return HIGHCALL_SYSCALL_UNDEFINED;
+	}
+
+	if ((sciQueryVolumeInformationFile = HcSyscallIndexA("NtQueryVolumeInformationFile")) == -1)
+	{
+		HcErrorSetNoteA("[HcSyscallIndexA returned -1] NtQueryVolumeInformationFile syscall identifier could not be found.");
+		return HIGHCALL_SYSCALL_UNDEFINED;
+	}
+
 	return HIGHCALL_SUCCESS;
 }
 
 static VOID InitializeSecurity(VOID)
 {
-	HANDLE hToken;
+	HANDLE hToken = NULL;
 
 	HcGlobal.IsElevated = FALSE;
 
@@ -478,6 +431,8 @@ static VOID InitializeSecurity(VOID)
 	{
 		HcTokenIsElevated(hToken, &(HcGlobal.IsElevated));
 	}
+
+	HcObjectClose(hToken);
 }
 
 static HIGHCALL_STATUS InitializeSystem()
@@ -505,14 +460,10 @@ HIGHCALL_STATUS HCAPI HcInitialize()
 		return Status;
 	}
 
+	//
+	// Mandatory for some functions used later on in the call order.
+	//
 	Status = InitializeMandatorySyscall();
-	if (!HIGHCALL_ADVANCE(Status))
-	{
-		return Status;
-	}
-
-	/* Mandatory imports */
-	Status = InitializeImports();
 	if (!HIGHCALL_ADVANCE(Status))
 	{
 		return Status;
@@ -543,3 +494,42 @@ HIGHCALL_STATUS HCAPI HcInitialize()
 
 	return HIGHCALL_SUCCESS;
 }
+
+#ifdef _WINDLL
+
+#include <windows.h>
+#include <stdio.h>
+
+BOOL WINAPI DllMain(
+	_In_ HINSTANCE hinstDLL,
+	_In_ DWORD     fdwReason,
+	_In_ LPVOID    lpvReserved
+) {
+
+	switch (fdwReason)
+	{
+		case DLL_PROCESS_ATTACH:
+		{
+			HIGHCALL_STATUS Status = HcInitialize();
+
+			/* Check if we failed. */
+			if (!HIGHCALL_ADVANCE(Status))
+			{
+				char errornote[1024];
+				HcErrorGetNoteA(errornote);
+
+				char message[1248];
+				sprintf(message, "Could not start Highcall, Status: %x, Note: %s\n", Status, errornote);
+				OutputDebugStringA(message);
+				return FALSE;
+			}
+
+			return TRUE;
+		}
+
+		case DLL_PROCESS_DETACH:
+			break;
+	}
+	return TRUE;
+}
+#endif

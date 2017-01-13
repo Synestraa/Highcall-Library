@@ -1,14 +1,21 @@
 #ifndef HC_DEFINE_H
 #define HC_DEFINE_H
 
-#include "../../native/native.h"
+#include "../private/native.h"
 
-#if defined (__cplusplus)
-extern "C" {
+//
+// Define HIGHCALL_DYNAMIC for .dll usage.
+//
+#ifdef _WINDLL
+#define HIGHCALL_DYNAMIC
 #endif
 
+//
+// Standard calling convention for highcall api functions.
+//
 #define HCAPI __stdcall
-#define HIGHCALL_STATUS signed long
+
+typedef signed long HIGHCALL_STATUS;
 typedef long SYS_INDEX;
 
 #define HIGHCALL_ADVANCE(Status)				((HIGHCALL_STATUS)(Status) >= 0)
@@ -23,6 +30,20 @@ typedef long SYS_INDEX;
 #define INVALID_HANDLE ((HANDLE)-1)
 #endif
 
+#ifdef HIGHCALL_DYNAMIC
+
+#ifdef __cplusplus
+#define HC_EXTERN_API extern "C" __declspec(dllexport)
+#else
+#define HC_EXTERN_API extern __declspec(dllexport)
+#endif // CPP
+
+#else
+
+#define HC_EXTERN_API
+
+#endif // DYNAMIC LIBRARY
+
 #ifdef __cplusplus
 #define HC_GLOBAL extern "C"
 #else
@@ -35,10 +56,6 @@ typedef long SYS_INDEX;
 
 #ifndef Out
 #define Out
-#endif
-
-#if defined (__cplusplus)
-}
 #endif
 
 #endif

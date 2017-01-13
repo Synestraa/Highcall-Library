@@ -12,7 +12,6 @@
 
 #include "../headers/hcobject.h"
 #include "../headers/hcdef.h"
-#include "../headers/hcimport.h"
 #include "../headers/hcvirtual.h"
 #include "../headers/hcerror.h"
 
@@ -40,20 +39,20 @@ static HANDLE HCAPI TranslateHandle(IN HANDLE Handle)
 	return Handle;
 }
 
-
+HC_EXTERN_API
 DWORD
-WINAPI
+HCAPI
 HcObjectWaitMultiple(IN DWORD nCount,
 	IN CONST HANDLE *lpHandles,
 	IN BOOL bWaitAll,
 	IN DWORD dwMilliseconds)
 {
-	PLARGE_INTEGER TimePtr;
-	LARGE_INTEGER Time;
-	PHANDLE HandleBuffer;
-	HANDLE Handle[8];
-	DWORD i;
-	NTSTATUS Status;
+	PLARGE_INTEGER TimePtr = NULL;
+	LARGE_INTEGER Time = { 0 };
+	PHANDLE HandleBuffer = NULL;
+	HANDLE Handle[8] = { 0 };
+	DWORD i = 0;
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	/* Check if we have more handles then we locally optimize */
 	if (nCount > 8)
@@ -110,14 +109,14 @@ HcObjectWaitMultiple(IN DWORD nCount,
 	return Status;
 }
 
-
+HC_EXTERN_API
 DWORD 
 HCAPI 
 HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
 {
-	PLARGE_INTEGER TimePtr;
-	LARGE_INTEGER Time;
-	NTSTATUS Status;
+	PLARGE_INTEGER TimePtr = NULL;
+	LARGE_INTEGER Time = { 0 };
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	/* Get the real handle */
 	hObject = TranslateHandle(hObject);
@@ -135,7 +134,7 @@ HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
 	return Status;
 }
 
-
+HC_EXTERN_API
 VOID
 HCAPI
 HcObjectClose(HANDLE hObject)

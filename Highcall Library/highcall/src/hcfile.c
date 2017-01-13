@@ -31,6 +31,8 @@ Revision History:
 #include "../headers/hcerror.h"
 #include "../headers/hcvirtual.h"
 
+#include "../private/imports.h"
+
 //
 // Unimplemented.
 //
@@ -40,6 +42,7 @@ DWORD HCAPI HcGetFileAttributesA(LPCSTR lpFile)
 	return 0;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileExistsA(LPCSTR lpFilePath)
@@ -57,7 +60,7 @@ HcFileExistsA(LPCSTR lpFilePath)
 	return (GetFileAttributesA(lpFilePath) != 0xFFFFFFFF);
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileExistsW(LPCWSTR lpFilePath)
@@ -75,6 +78,7 @@ HcFileExistsW(LPCWSTR lpFilePath)
 	return (GetFileAttributesW(lpFilePath) != 0xFFFFFFFF);
 }
 
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcFileSize(LPCSTR lpPath)
@@ -90,16 +94,16 @@ HcFileSize(LPCSTR lpPath)
 //	The size of the file in a size_t type.
 //
 {
-	SIZE_T FileSize;
-	HANDLE hFile;
-
-	if (!(hFile = CreateFileA(lpPath,
+	SIZE_T FileSize = 0;
+	HANDLE hFile = CreateFileA(lpPath,
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-		NULL)))
+		NULL);
+
+	if (!hFile)
 	{
 		return 0;
 	}
@@ -111,6 +115,7 @@ HcFileSize(LPCSTR lpPath)
 	return FileSize;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileQueryInformationW(LPCWSTR lpPath, PHC_FILE_INFORMATIONW fileInformation)
@@ -126,9 +131,7 @@ HcFileQueryInformationW(LPCWSTR lpPath, PHC_FILE_INFORMATIONW fileInformation)
 //	Success.
 //
 {
-	HANDLE hFile;
-
-	hFile = CreateFileW(lpPath,
+	HANDLE hFile = CreateFileW(lpPath,
 		GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL,
@@ -148,7 +151,7 @@ HcFileQueryInformationW(LPCWSTR lpPath, PHC_FILE_INFORMATIONW fileInformation)
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileQueryInformationA(LPCSTR lpPath, PHC_FILE_INFORMATIONA fileInformation)
@@ -164,9 +167,7 @@ HcFileQueryInformationA(LPCSTR lpPath, PHC_FILE_INFORMATIONA fileInformation)
 //	Success.
 //
 {
-	HANDLE hFile;
-
-	hFile = CreateFileA(lpPath,
+	HANDLE hFile = CreateFileA(lpPath,
 		GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL,
@@ -182,10 +183,10 @@ HcFileQueryInformationA(LPCSTR lpPath, PHC_FILE_INFORMATIONA fileInformation)
 	fileInformation->Size = GetFileSize(hFile, NULL);
 
 	HcClose(hFile);
-
 	return TRUE;
 }
 
+HC_EXTERN_API
 DWORD
 HCAPI
 HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
@@ -201,10 +202,10 @@ HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
 //	An offset inside of a file, in bytes, to the start of a function export located.
 //
 {
-	PIMAGE_NT_HEADERS pHeaderNT;
-	SIZE_T szExportRVA;
-	SIZE_T szExportVA;
-	SIZE_T szModule;
+	PIMAGE_NT_HEADERS pHeaderNT = NULL;
+	SIZE_T szExportRVA = 0;
+	SIZE_T szExportVA = 0;
+	SIZE_T szModule = 0;
 
 	if (!hModule)
 	{
@@ -212,12 +213,10 @@ HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
 	}
 
 	szModule = (SIZE_T)hModule;
-
 	pHeaderNT = HcPEGetNtHeader(hModule);
+
 	if (!pHeaderNT)
-	{
 		return 0;
-	}
 
 	//
 	// Get the absolute address of requested export, subtract the module's base,
@@ -236,6 +235,7 @@ HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
 	return 0;
 }
 
+HC_EXTERN_API
 DWORD
 HCAPI
 HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
@@ -251,15 +251,13 @@ HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
 //	An offset inside of a file, in bytes, to the start of a function export located.
 //
 {
-	PIMAGE_NT_HEADERS pHeaderNT;
-	SIZE_T dwExportRVA;
-	SIZE_T dwExportVA;
-	SIZE_T dwModule;
+	PIMAGE_NT_HEADERS pHeaderNT = NULL;
+	SIZE_T dwExportRVA = 0;
+	SIZE_T dwExportVA = 0;
+	SIZE_T dwModule = 0;
 
 	if (!hModule)
-	{
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
-	}
 
 	dwModule = (SIZE_T)hModule;
 
@@ -286,6 +284,7 @@ HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
 	return 0;
 }
 
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
@@ -303,20 +302,13 @@ HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dw
 //	The amount of bytes successfully read from the file.
 //
 {
-	DWORD dwFileOffset;
-	LPSTR lpModulePath;
-	HANDLE hFile;
-	DWORD BytesRead;
+	DWORD dwFileOffse = 0;
+	HANDLE hFile = NULL;
+	DWORD BytesRead = 0;
+	LPSTR lpModulePath = (LPSTR)HcAlloc(MAX_PATH * sizeof(CHAR) + sizeof(CHAR));
+	DWORD dwFileOffset = HcFileOffsetByExportNameA(hModule, lpExportName);
 
-	dwFileOffset = HcFileOffsetByExportNameA(hModule, lpExportName);
-	if (!dwFileOffset)
-	{
-		return 0;
-	}
-
-	lpModulePath = (LPSTR)HcAlloc(MAX_PATH * sizeof(CHAR) + sizeof(CHAR));
-
-	if (!lpModulePath)
+	if (!dwFileOffset || !lpModulePath)
 	{
 		return 0;
 	}
@@ -359,6 +351,7 @@ HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dw
 	return BytesRead;
 }
 
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
@@ -376,17 +369,12 @@ HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD d
 //	The amount of bytes successfully read from the file.
 //
 {
-	DWORD dwFileOffset;
-	LPWSTR lpModulePath;
-	HANDLE hFile;
-	DWORD BytesRead;
+	HANDLE hFile = NULL;
+	DWORD BytesRead = 0;
+	LPWSTR lpModulePath = lpModulePath = (LPWSTR)HcAlloc(MAX_PATH * sizeof(WCHAR) + sizeof(WCHAR));
+	DWORD dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
 
-	if (!(dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName)))
-	{
-		return 0;
-	}
-
-	if (!(lpModulePath = (LPWSTR)HcAlloc(MAX_PATH * sizeof(WCHAR) + sizeof(WCHAR))))
+	if (!dwFileOffset || !lpModulePath)
 	{
 		return 0;
 	}
@@ -429,6 +417,7 @@ HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD d
 	return BytesRead;
 }
 
+HC_EXTERN_API
 DWORD
 HCAPI
 HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
@@ -444,11 +433,11 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 //	The offset to the file in bytes.
 //
 {
-	PIMAGE_NT_HEADERS pHeaderNT;
-	SIZE_T szRva;
-	SIZE_T szModule;
-	MEMORY_BASIC_INFORMATION memInfo;
-	HMODULE hModule;
+	PIMAGE_NT_HEADERS pHeaderNT = NULL;
+	SIZE_T szRva = 0;
+	SIZE_T szModule = 0;
+	MEMORY_BASIC_INFORMATION memInfo = { 0 };
+	HMODULE hModule = NULL;
 
 	/* Find the module that allocated the address */
 	if (!HcVirtualQuery(lpAddress,
@@ -479,6 +468,7 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 	return HcPEGetRawFromRva(pHeaderNT, szRva);
 }
 
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
@@ -496,12 +486,12 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 //	The amount of bytes successfully read.
 //
 {
-	DWORD dwFileOffset;
-	LPWSTR lpModulePath;
-	HANDLE hFile;
-	DWORD BytesRead;
-	HMODULE hModule;
-	MEMORY_BASIC_INFORMATION memInfo;
+	DWORD dwFileOffset = 0;
+	LPWSTR lpModulePath = NULL;
+	HANDLE hFile = NULL;
+	DWORD BytesRead = 0;
+	HMODULE hModule = NULL;
+	MEMORY_BASIC_INFORMATION memInfo = { 0 };
 
 	/* Find the module that allocated the address */
 	if (!HcVirtualQuery(lpBaseAddress,
@@ -573,4 +563,34 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	HcFree(lpModulePath);
 	HcClose(hFile);
 	return BytesRead;
+}
+
+NTSTATUS WINAPI HcFileGetCurrentDirectoryW(ULONG buflen, LPWSTR buf)
+{
+	UNICODE_STRING* us = NULL;
+	ULONG len = 0;
+
+	RtlAcquirePebLock();
+
+	us = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+	len = us->Length / sizeof(WCHAR);
+
+	if (us->Buffer[len - 1] == '\\' && us->Buffer[len - 2] != ':')
+	{
+		len--;
+	}
+	
+	if (buflen / sizeof(WCHAR) > len)
+	{
+		memcpy(buf, us->Buffer, len * sizeof(WCHAR));
+		buf[len] = '\0';
+	}
+	else
+	{
+		len++;
+	}
+
+	RtlReleasePebLock();
+
+	return len * sizeof(WCHAR);
 }

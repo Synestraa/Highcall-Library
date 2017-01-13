@@ -12,7 +12,6 @@
 #include <Windows.h>
 
 #include "../headers/hcerror.h"
-#include "../headers/hcimport.h"
 #include "../headers/hcstring.h"
 #include "../headers/hcvirtual.h"
 
@@ -39,12 +38,12 @@ struct error_table
 
 static const struct error_table error_table[29];
 
-
+HC_EXTERN_API
 DWORD
 HCAPI
 HcErrorStatusTranslate(IN NTSTATUS Status)
 {
-	DWORD ErrorCode;
+	DWORD ErrorCode = 0;
 	const struct error_table *table = error_table;
 
 	if (!Status || (Status & 0x20000000)) return Status;
@@ -79,7 +78,7 @@ HcErrorStatusTranslate(IN NTSTATUS Status)
 	return ERROR_MR_MID_NOT_FOUND;
 }
 
-
+HC_EXTERN_API
 DWORD
 HCAPI
 HcErrorStatusToDos(IN NTSTATUS Status)
@@ -87,7 +86,7 @@ HcErrorStatusToDos(IN NTSTATUS Status)
 	return HcErrorStatusTranslate(Status);
 }
 
-
+HC_EXTERN_API
 VOID
 WINAPI
 HcErrorSetDosError(IN DWORD dwErrCode)
@@ -96,7 +95,7 @@ HcErrorSetDosError(IN DWORD dwErrCode)
 	if (NtCurrentTeb()->LastErrorValue != dwErrCode) NtCurrentTeb()->LastErrorValue = dwErrCode;
 }
 
-
+HC_EXTERN_API
 DWORD
 WINAPI
 HcErrorGetDosError(VOID)
@@ -105,14 +104,14 @@ HcErrorGetDosError(VOID)
 	return NtCurrentTeb()->LastErrorValue;
 }
 
-
+HC_EXTERN_API
 DWORD
 WINAPI
 HcErrorSetNtStatus(IN NTSTATUS Status)
 {
-	DWORD dwErrCode;
-
+	DWORD dwErrCode = 0;
 	PTEB Teb = NtCurrentTeb();
+
 	if (Teb != NULL)
 	{
 		Teb->LastStatusValue = Status;
@@ -124,14 +123,17 @@ HcErrorSetNtStatus(IN NTSTATUS Status)
 	return dwErrCode;
 }
 
-NTSTATUS HCAPI HcErrorGetLastStatus() 
+HC_EXTERN_API
+NTSTATUS
+HCAPI 
+HcErrorGetLastStatus() 
 {
 	return NtCurrentTeb()->LastStatusValue;
 }
 
 static VOID SetNoteA(IN LPCSTR lpNote)
 {
-	SIZE_T sizeOfNewNote;
+	SIZE_T sizeOfNewNote = 0;
 	if (!last_note_A.note)
 	{
 		/* Max size of a note is 1kb. */
@@ -156,15 +158,21 @@ static VOID SetNoteA(IN LPCSTR lpNote)
 	}
 
 	/* Set the size of our new string. */
-	last_note_A.size = HcStringLengthA(last_note_A.note);
+	last_note_A.size = HcStringSizeA(last_note_A.note);
 }
 
-VOID HCAPI HcErrorSetNoteA(IN LPCSTR lpNote)
+HC_EXTERN_API
+VOID 
+HCAPI
+HcErrorSetNoteA(IN LPCSTR lpNote)
 {
 	SetNoteA(lpNote);
 }
 
-VOID HCAPI HcErrorGetNoteA(OUT LPSTR lpOutNote)
+HC_EXTERN_API
+VOID 
+HCAPI
+HcErrorGetNoteA(OUT LPSTR lpOutNote)
 {
 	if (!last_note_A.note)
 	{
@@ -177,7 +185,7 @@ VOID HCAPI HcErrorGetNoteA(OUT LPSTR lpOutNote)
 
 static VOID SetNoteW(IN LPCWSTR lpNote)
 {
-	SIZE_T sizeOfNewNote;
+	SIZE_T sizeOfNewNote = 0;
 	if (!last_note_W.note)
 	{
 		/* Max size of a note is 1kb. */
@@ -202,16 +210,21 @@ static VOID SetNoteW(IN LPCWSTR lpNote)
 	}
 
 	/* Set the size of our new string. */
-	last_note_W.size = HcStringLengthW(last_note_W.note);
+	last_note_W.size = HcStringSizeW(last_note_W.note);
 }
 
-
-VOID HCAPI HcErrorSetNoteW(IN LPCWSTR lpNote)
+HC_EXTERN_API
+VOID
+HCAPI 
+HcErrorSetNoteW(IN LPCWSTR lpNote)
 {
 	SetNoteW(lpNote);
 }
 
-VOID HCAPI HcErrorGetNoteW(OUT LPWSTR lpOutNote)
+HC_EXTERN_API
+VOID
+HCAPI
+HcErrorGetNoteW(OUT LPWSTR lpOutNote)
 {
 	if (!last_note_W.note)
 	{

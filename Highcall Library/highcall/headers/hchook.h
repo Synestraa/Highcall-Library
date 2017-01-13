@@ -21,6 +21,16 @@ typedef enum _DetourType
 	Absolute = 2
 } DetourType;
 
+typedef enum _DetourFlags
+{
+	Recreate		= (1 << 0),
+	Single			= (1 << 1),
+	SaveOriginal	= (1 << 2),
+	JumpOriginal	= (1 << 3),
+	Reconstruct		= (1 << 4),
+	Default			= ((int)Recreate | JumpOriginal | SaveOriginal),
+} DetourFlags;
+
 typedef struct _DetourContext
 {
 	/* 
@@ -60,17 +70,22 @@ typedef struct _DetourContext
 	*/
 	DetourType Type;
 
+	//
+	// IN
+	//
+	DetourFlags Flags;
+
 } DetourContext, *PDetourContext;
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-	HStatus HCAPI HcHookDetour(PDetourContext Context); 
-	HStatus	HCAPI HcHookDetourContextRestore(PDetourContext Context);
-	HStatus HCAPI HcHookRelocateCode(PBYTE Code, DWORD Size, SIZE_T Source);
-	DWORD HCAPI HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength);
-	PVOID HCAPI HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize);
+	HC_EXTERN_API HStatus HCAPI HcHookDetour(PDetourContext Context);
+	HC_EXTERN_API HStatus HCAPI HcHookDetourContextRestore(PDetourContext Context);
+	HC_EXTERN_API HStatus HCAPI HcHookRelocateCode(PBYTE Code, DWORD Size, SIZE_T Source);
+	HC_EXTERN_API DWORD HCAPI HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength);
+	HC_EXTERN_API PVOID HCAPI HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize);
 
 #endif
 #if defined (__cplusplus)

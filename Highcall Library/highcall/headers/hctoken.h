@@ -34,10 +34,9 @@ extern "C" {
 	// Defined in hctoken.c
 	//
 
-	PLUID HCAPI HcLookupPrivilegeValueW(IN LPCWSTR Name);
-	PLUID HCAPI HcLookupPrivilegeValueA(IN LPCSTR Name);
-
-	NTSTATUS HCAPI HcTokenIsElevated(_In_ HANDLE TokenHandle, _Out_ PBOOLEAN Elevated);
+	HC_EXTERN_API PLUID HCAPI HcLookupPrivilegeValueW(LPCWSTR Name);
+	HC_EXTERN_API PLUID HCAPI HcLookupPrivilegeValueA(LPCSTR Name);
+	HC_EXTERN_API NTSTATUS HCAPI HcTokenIsElevated(_In_ HANDLE TokenHandle, _Out_ PBOOLEAN Elevated);
 
 #if defined (__cplusplus)
 }

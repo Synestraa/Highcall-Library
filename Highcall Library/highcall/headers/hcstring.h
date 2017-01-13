@@ -44,40 +44,46 @@ extern "C" {
 	// Implemented in hcstring.c
 	//
 
-	BOOLEAN HCAPI HcStringSplitA(LPSTR lpStr, const char cDelimiter, LPSTR lpStrArrayOut[], PSIZE_T pdwCount);
-	BOOLEAN HCAPI HcStringSplitW(LPWSTR lpStr, const wchar_t cDelimiter, LPWSTR lpStrArrayOut[], PSIZE_T pdwCount);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringSplitA(LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PSIZE_T pdwCount);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringSplitW(LPWSTR lpStr, const WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PSIZE_T pdwCount);
 
-	BOOLEAN HCAPI HcStringSubtractA(LPCSTR lpStr, LPSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex);
-	BOOLEAN HCAPI HcStringSubtractW(LPCWSTR lpStr, LPWSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringSubtractA(LPCSTR lpStr, LPSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringSubtractW(LPCWSTR lpStr, LPWSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex);
 
-	SIZE_T HCAPI HcStringIndexOfA(LPCSTR lpStr, LPCSTR lpDelimiter);
-	SIZE_T HCAPI HcStringIndexOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter);
+	HC_EXTERN_API SIZE_T HCAPI HcStringIndexOfA(LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
+	HC_EXTERN_API SIZE_T HCAPI HcStringIndexOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
 
-	DWORD HCAPI HcStringSecureLengthA(LPCSTR lpString);
-	DWORD HCAPI HcStringSecureLengthW(LPCWSTR lpString);
+	HC_EXTERN_API SIZE_T HCAPI HcStringEndOfA(LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
+	HC_EXTERN_API SIZE_T HCAPI HcStringEndOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
 
-	DWORD HCAPI HcStringLengthA(LPCSTR lpString);
-	DWORD HCAPI HcStringLengthW(LPCWSTR lpString);
+	HC_EXTERN_API SIZE_T HCAPI HcStringSecureLengthA(LPCSTR lpString);
+	HC_EXTERN_API SIZE_T HCAPI HcStringSecureLengthW(LPCWSTR lpString);
 
-	BOOLEAN HCAPI HcStringToLowerA(LPSTR lpStr);
-	BOOLEAN HCAPI HcStringToLowerW(LPWSTR lpStr);
+	HC_EXTERN_API SIZE_T HCAPI HcStringSizeA(LPCSTR lpString);
+	HC_EXTERN_API SIZE_T HCAPI HcStringSizeW(LPCWSTR lpString);
 
-	BOOLEAN HCAPI HcStringToUpperA(LPSTR lpStr);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringToLowerA(LPSTR lpStr);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringToLowerW(LPWSTR lpStr);
 
-	BOOLEAN HCAPI HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
-	BOOLEAN HCAPI HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringToUpperA(LPSTR lpStr);
 
-	BOOLEAN HCAPI HcStringContainsA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
-	BOOLEAN HCAPI HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
 
-	BOOLEAN HCAPI HcStringCopyConvertAtoW(LPCSTR lpStringToConvert, LPWSTR lpStringOut, SIZE_T Size);
-	BOOLEAN HCAPI HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert, LPSTR lpStringOut, SIZE_T Size); 
+	HC_EXTERN_API LPSTR HCAPI HcStringWithinStringA(LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive);
+	HC_EXTERN_API LPWSTR HCAPI HcStringWithinStringW(LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcStringContainsA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertAtoW(LPCSTR lpStringToConvert, LPWSTR lpStringOut, SIZE_T Size);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert, LPSTR lpStringOut, SIZE_T Size);
 	
-	LPWSTR HCAPI HcStringConvertAtoW(IN LPCSTR lpStringConvert);
-	LPSTR HCAPI HcStringConvertWtoA(IN LPCWSTR lpStringConvert);
+	HC_EXTERN_API LPWSTR HCAPI HcStringConvertAtoW(IN LPCSTR lpStringConvert);
+	HC_EXTERN_API LPSTR HCAPI HcStringConvertWtoA(IN LPCWSTR lpStringConvert);
 
-	BOOLEAN HCAPI HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, SIZE_T tSize);
-	BOOLEAN HCAPI HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, SIZE_T tSize);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, SIZE_T tSize);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, SIZE_T tSize);
 
 #if defined (__cplusplus)
 }

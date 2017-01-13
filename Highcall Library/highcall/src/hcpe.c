@@ -1,80 +1,59 @@
-/*
-	@File: hcpe.c
-	@Purpose: Portable Executable parsing
-
-	@Author: Synestraa
-	@version ? not specified
-*/
+// Requires documentation
 
 #include "../headers/hcpe.h"
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcPEIsValid(LPVOID lpModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS;
-	PIMAGE_NT_HEADERS pHeaderNT;
+	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
+	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
 
-	pHeaderDOS = HcPEGetDosHeader(lpModule);
-	pHeaderNT = HcPEGetNtHeader(lpModule);
-
-	if (!pHeaderDOS || !pHeaderNT)
-	{
-		return FALSE;
-	}
-
-	return TRUE;
+	return (pHeaderDOS != NULL && pHeaderNT != NULL);
 }
 
+HC_EXTERN_API
 PIMAGE_DOS_HEADER
 HCAPI
 HcPEGetDosHeader(LPVOID lpModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS;
+	PIMAGE_DOS_HEADER pHeaderDOS = (PIMAGE_DOS_HEADER)lpModule;
 
-	pHeaderDOS = lpModule;
 	if (pHeaderDOS->e_magic != IMAGE_DOS_SIGNATURE)
-	{
-		return 0;
-	}
+		return NULL;
 
 	return pHeaderDOS;
 }
 
+HC_EXTERN_API
 PIMAGE_NT_HEADERS
 HCAPI
 HcPEGetNtHeader(LPVOID lpModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS;
-	PIMAGE_NT_HEADERS pHeaderNT;
+	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
+	PIMAGE_NT_HEADERS pHeaderNT = NULL;
 	
-	pHeaderDOS = HcPEGetDosHeader(lpModule);
 	if (!pHeaderDOS)
-	{
-		return 0;
-	}
+		return NULL;
 
 	pHeaderNT = (PIMAGE_NT_HEADERS)(pHeaderDOS->e_lfanew + (SIZE_T)lpModule);
 	if (pHeaderNT->Signature != IMAGE_NT_SIGNATURE)
-	{
-		return 0;
-	}
+		return NULL;
 
 	return pHeaderNT;
 }
 
+HC_EXTERN_API
 PIMAGE_EXPORT_DIRECTORY
 HCAPI
 HcPEGetExportDirectory(LPVOID lpModule)
 {
-	PIMAGE_EXPORT_DIRECTORY lpExportDirectory;
-	PIMAGE_NT_HEADERS pHeaderNT;
+	PIMAGE_EXPORT_DIRECTORY lpExportDirectory = NULL;
+	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
 
-	pHeaderNT = HcPEGetNtHeader(lpModule);
 	if (!pHeaderNT)
-	{
-		return 0;
-	}
+		return NULL;
 
 	lpExportDirectory = (PIMAGE_EXPORT_DIRECTORY)
 		(pHeaderNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (SIZE_T)lpModule);
@@ -82,7 +61,7 @@ HcPEGetExportDirectory(LPVOID lpModule)
 	return lpExportDirectory;
 }
 
-
+HC_EXTERN_API
 DWORD
 HCAPI
 HcPEGetRawFromRva(PIMAGE_NT_HEADERS pImageHeader, SIZE_T RVA)

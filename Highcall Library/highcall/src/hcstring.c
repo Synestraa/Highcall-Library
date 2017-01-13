@@ -36,22 +36,27 @@ Revision History:
 //
 #include "../headers/hcvirtual.h"
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
-HcStringSplitA(LPSTR lpStr, const char cDelimiter, LPSTR lpStrArrayOut[], PSIZE_T pdwCount)
+HcStringSplitA(LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PSIZE_T pdwCount)
 {
+	SIZE_T strSize = HcStringSecureLengthA(lpStr);
+	if (strSize == 0)
+	{
+		return FALSE;
+	}
+
+	LPSTR lpCopy = (LPSTR)HcAlloc(strSize + 1);
+	HcInternalCopy(lpCopy, lpStr, strSize);
+
 	LPSTR lpToken;
 	CHAR lpTerminatedDelim[] = { cDelimiter, ANSI_NULL };
 
 	*pdwCount = 0;
 
-	if (HcStringSecureLengthA(lpStr) == 0)
-	{
-		return FALSE;
-	}
-
 	/* Get the first token. */
-	lpToken = strtok(lpStr, lpTerminatedDelim);
+	lpToken = strtok(lpCopy, lpTerminatedDelim);
 
 	/* Loop over the splits. */
 	while (lpToken)
@@ -66,28 +71,31 @@ HcStringSplitA(LPSTR lpStr, const char cDelimiter, LPSTR lpStrArrayOut[], PSIZE_
 
 	/* Null terminate final string. */
 	lpStrArrayOut[*pdwCount] = '\0';
-
+	
+	HcFree(lpCopy);
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
-HcStringSplitW(LPWSTR lpStr, const wchar_t cDelimiter, LPWSTR lpStrArrayOut[], PSIZE_T pdwCount)
+HcStringSplitW(LPWSTR lpStr, const WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PSIZE_T pdwCount)
 {
-	LPWSTR lpToken;
-	LPWSTR Buffer;
-	const WCHAR lpTerminatedDelim[] = { cDelimiter, UNICODE_NULL };
-
-	*pdwCount = 0;
-
-	if (HcStringSecureLengthW(lpStr) == 0)
+	SIZE_T strSize = HcStringSecureLengthW(lpStr);
+	if (!strSize)
 	{
 		return FALSE;
 	}
 
+	LPWSTR lpCopy = (LPWSTR)HcAlloc(strSize + sizeof(WCHAR));
+	LPWSTR lpToken;
+	LPWSTR Buffer = NULL;
+	const WCHAR lpTerminatedDelim[] = { cDelimiter, UNICODE_NULL };
+
+	*pdwCount = 0;
+
 	/* Get the first token. */
-	lpToken = wcstok(lpStr, lpTerminatedDelim, &Buffer);
+	lpToken = wcstok(lpCopy, lpTerminatedDelim, &Buffer);
 
 	/* Loop over the splits. */
 	while (lpToken)
@@ -103,17 +111,21 @@ HcStringSplitW(LPWSTR lpStr, const wchar_t cDelimiter, LPWSTR lpStrArrayOut[], P
 	/* Null terminate final string. */
 	lpStrArrayOut[*pdwCount] = UNICODE_NULL;
 
+	HcFree(lpCopy);
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringSubtractA(LPCSTR lpStr, LPSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
+
+	if (szEndIndex == -1)
+	{
+		szEndIndex = HcStringSecureLengthA(lpStr) - 1;
 	}
 
 	/* Create the null terminated sub string. */
@@ -126,14 +138,17 @@ HcStringSubtractA(LPCSTR lpStr, LPSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEn
 	return FALSE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringSubtractW(LPCWSTR lpStr, LPWSTR lpOutStr, SIZE_T szStartIndex, SIZE_T szEndIndex)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
+
+	if (szEndIndex == -1)
+	{
+		szEndIndex = HcStringSecureLengthW(lpStr) - 1;
 	}
 
 	/* Create the null terminated sub string. */
@@ -146,133 +161,147 @@ HcStringSubtractW(LPCWSTR lpStr, LPWSTR lpOutStr, SIZE_T szStartIndex, SIZE_T sz
 	return FALSE;
 }
 
-
+HC_EXTERN_API
 SIZE_T
 HCAPI
-HcStringIndexOfA(LPCSTR lpStr, LPCSTR lpDelimiter)
+HcStringIndexOfA(LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
 {
 	if (!HcStringSecureLengthA(lpStr))
 	{
 		return -1;
 	}
 
-	LPCSTR Buffer = strstr(lpStr, lpDelimiter);
+	LPCSTR Buffer = HcStringWithinStringA(lpStr, lpDelimiter, CaseInsensitive);
 	return Buffer ? Buffer - lpStr : -1;
 }
 
-
+HC_EXTERN_API
 SIZE_T
 HCAPI
-HcStringIndexOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter)
+HcStringIndexOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
 {
 	if (!HcStringSecureLengthW(lpStr))
 	{
 		return -1;
 	}
 
-	LPCWSTR Buffer = wcsstr(lpStr, lpDelimiter);
+	LPCWSTR Buffer = HcStringWithinStringW(lpStr, lpDelimiter, CaseInsensitive);
 	return Buffer ? Buffer - lpStr : -1;
 }
 
-DWORD
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcStringEndOfA(LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
+{
+	SIZE_T tDelimSize = HcStringSecureLengthA(lpDelimiter);
+	if (!HcStringSecureLengthA(lpStr) || !tDelimSize)
+		return -1;
+
+	LPCSTR Buffer = HcStringWithinStringA(lpStr, lpDelimiter, CaseInsensitive);
+	return Buffer ? (Buffer - lpStr) + tDelimSize : -1;
+}
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcStringEndOfW(LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
+{
+	SIZE_T tDelimSize = HcStringSecureLengthW(lpDelimiter);
+	if (!HcStringSecureLengthW(lpStr) || !tDelimSize)
+	{
+		return -1;
+	}
+
+	LPCWSTR Buffer = HcStringWithinStringW(lpStr, lpDelimiter, CaseInsensitive);
+	return Buffer ? (Buffer - lpStr) + tDelimSize : -1;
+}
+
+HC_EXTERN_API
+SIZE_T
 HCAPI
 HcStringSecureLengthA(LPCSTR lpString)
 {
-	DWORD Length = 0;
-
 	if (HcStringIsBad(lpString))
-	{
 		return 0;
-	}
 
-	for (; *lpString; *lpString++)
-		Length++;
-
-	return Length * sizeof(CHAR);
+	return HcStringSizeA(lpString) / sizeof(CHAR);
 }
 
-DWORD
+HC_EXTERN_API
+SIZE_T
 HCAPI
 HcStringSecureLengthW(LPCWSTR lpString)
 {
-	DWORD Length = 0;
-
 	if (HcStringIsBad(lpString))
-	{
 		return 0;
-	}
 
-	for (; *lpString; *lpString++)
-		Length++;
-
-	return Length * sizeof(WCHAR);
+	return HcStringSizeW(lpString) / sizeof(WCHAR);
 }
 
-DWORD
+HC_EXTERN_API
+SIZE_T
 HCAPI
-HcStringLengthA(LPCSTR lpString)
+HcStringSizeA(LPCSTR szcString)
 {
-	DWORD Length = 0;
+	CONST CHAR *p = szcString;
 
-	for (; *lpString; *lpString++)
-		Length++;
+	while (*p)
+		p++;
 
-	return Length * sizeof(CHAR);
+	return (p - szcString) * sizeof(CHAR);
 }
 
-DWORD
+HC_EXTERN_API
+SIZE_T
 HCAPI
-HcStringLengthW(LPCWSTR lpString)
+HcStringSizeW(LPCWSTR szcString)
 {
-	DWORD Length = 0;
+	CONST WCHAR *p = szcString;
 
-	for (; *lpString; *lpString++)
-		Length++;
+	while (*p)
+		p++;
 
-	return Length * sizeof(WCHAR);
+	return (p - szcString) * sizeof(WCHAR);
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringToLowerA(LPSTR lpStr)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
-	}
 
-	for (; *lpStr; *lpStr++)
-		*lpStr = tolower(*lpStr);
+	LPSTR p = lpStr;
+	for (; *p; ++p) 
+		*p = tolower(*p);
 
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringToLowerW(LPWSTR lpStr)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
-	}
 
-	for (; *lpStr; *lpStr++)
-		*lpStr = towlower(*lpStr);
+	LPWSTR p = lpStr;
+	for (; *p; ++p)
+		*p = tolower(*p);
 
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringToUpperA(LPSTR lpStr)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
-	}
 
 	for (; *lpStr; *lpStr++)
 		*lpStr = toupper(*lpStr);
@@ -280,15 +309,13 @@ HcStringToUpperA(LPSTR lpStr)
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringToUpperW(LPWSTR lpStr)
 {
 	if (HcStringIsBad(lpStr))
-	{
 		return FALSE;
-	}
 
 	for (; *lpStr; *lpStr++)
 		*lpStr = towupper(*lpStr);
@@ -296,6 +323,7 @@ HcStringToUpperW(LPWSTR lpStr)
 	return TRUE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
@@ -316,15 +344,16 @@ HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
 	if (bString1 && !bString2)
 		return FALSE;
 
-	Size1 = HcStringLengthA(lpString1);
-	Size2 = HcStringLengthA(lpString2);
+	Size1 = HcStringSizeA(lpString1);
+	Size2 = HcStringSizeA(lpString2);
 
 	if (Size1 != Size2)
 		return FALSE;
 
 	if (CaseInSensitive)
 	{
-		LPSTR lpCopy1, lpCopy2;
+		LPSTR lpCopy1;
+		LPSTR lpCopy2;
 
 		lpCopy1 = (LPSTR)HcAlloc(Size1 + sizeof(CHAR));
 
@@ -336,7 +365,7 @@ HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
 		HcStringCopyA(lpCopy2, lpString2, Size2);
 		HcStringToLowerA(lpCopy2);
 
-		Return = strcmp(lpCopy1, lpCopy2) == 0 ? TRUE : FALSE;
+		Return = HcInternalCompare((PBYTE)lpCopy1, (PBYTE)lpCopy2, Size1);
 
 		HcFree(lpCopy1);
 		HcFree(lpCopy2);
@@ -344,10 +373,10 @@ HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
 		return Return;
 	}
 
-	return !strcmp(lpString1, lpString2);
+	return HcInternalCompare((PBYTE)lpString1, (PBYTE)lpString2, Size1);
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
@@ -368,15 +397,16 @@ HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
 	if (bString1 && !bString2)
 		return FALSE;
 
-	Size1 = HcStringLengthW(lpString1);
-	Size2 = HcStringLengthW(lpString2);
+	Size1 = HcStringSizeW(lpString1);
+	Size2 = HcStringSizeW(lpString2);
 
 	if (Size1 != Size2)
 		return FALSE;
 
 	if (CaseInSensitive)
 	{
-		LPWSTR lpCopy1, lpCopy2;
+		LPWSTR lpCopy1;
+		LPWSTR lpCopy2;
 
 		lpCopy1 = (LPWSTR)HcAlloc(Size1 + sizeof(WCHAR));
 
@@ -388,7 +418,7 @@ HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
 		HcStringCopyW(lpCopy2, lpString2, Size2);
 		HcStringToLowerW(lpCopy2);
 
-		Return = wcscmp(lpCopy1, lpCopy2) == 0 ? TRUE : FALSE;
+		Return = HcInternalCompare((PBYTE)lpCopy1, (PBYTE)lpCopy2, Size1);
 
 		HcFree(lpCopy1);
 		HcFree(lpCopy2);
@@ -396,111 +426,119 @@ HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
 		return Return;
 	}
 
-	return !wcscmp(lpString1, lpString2);
+	return HcInternalCompare((PBYTE)lpString1, (PBYTE)lpString2, Size1);
 }
 
+HC_EXTERN_API
+LPSTR
+HCAPI
+HcStringWithinStringA(LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
+{
+	SIZE_T tIndex = 0;
+	SIZE_T tLen;
+	LPSTR lpStr1 = (LPSTR)szStr, lpStr2 = (LPSTR)szToFind;
+	SIZE_T tSize1, tSize2;
 
+	if (HcStringIsBad(lpStr1) || HcStringIsBad(lpStr2))
+		return NULL;
 
+	if (CaseInsensitive)
+	{
+		tSize1 = HcStringSizeA(lpStr1);
+		tSize2 = HcStringSizeA(lpStr2);
+
+		lpStr1 = (LPSTR)HcAlloc(tSize1 + sizeof(CHAR));
+
+		HcStringCopyA(lpStr1, szStr, tSize1);
+		HcStringToLowerA(lpStr1);
+
+		lpStr2 = (LPSTR)HcAlloc(tSize2 + sizeof(CHAR));
+
+		HcStringCopyA(lpStr2, szToFind, tSize2);
+		HcStringToLowerA(lpStr2);
+	}
+
+	for (tLen = HcStringSizeA(lpStr2);
+		*(CHAR*)(lpStr1 + tIndex) != UNICODE_NULL && !HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen);
+		tIndex++);
+
+	if (*(CHAR*)(lpStr1 + tIndex) == UNICODE_NULL)
+		return NULL;
+
+	if (CaseInsensitive)
+	{
+		HcFree(lpStr1);
+		HcFree(lpStr2);
+	}
+
+	return (LPSTR)(szStr + tIndex);
+}
+
+HC_EXTERN_API
+LPWSTR
+HCAPI
+HcStringWithinStringW(LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
+{
+	SIZE_T tIndex = 0;
+	SIZE_T tLen;
+	LPWSTR lpStr1 = (LPWSTR)szStr, lpStr2 = (LPWSTR)szToFind;
+	SIZE_T tSize1, tSize2;
+
+	if (HcStringIsBad(lpStr1) || HcStringIsBad(lpStr2))
+		return NULL;
+
+	if (CaseInsensitive)
+	{
+		tSize1 = HcStringSizeW(lpStr1);
+		tSize2 = HcStringSizeW(lpStr2);
+
+		lpStr1 = (LPWSTR)HcAlloc(tSize1 + sizeof(WCHAR));
+
+		HcStringCopyW(lpStr1, szStr, tSize1);
+		HcStringToLowerW(lpStr1);
+
+		lpStr2 = (LPWSTR)HcAlloc(tSize2 + sizeof(WCHAR));
+
+		HcStringCopyW(lpStr2, szToFind, tSize2);
+		HcStringToLowerW(lpStr2);
+	}
+
+	for (tLen = HcStringSizeW(lpStr2);
+		*(WCHAR*)(lpStr1 + tIndex) != UNICODE_NULL && !HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen);
+		tIndex++);
+
+	if (*(WCHAR*)(lpStr1 + tIndex) == UNICODE_NULL)
+		return NULL;
+
+	if (CaseInsensitive)
+	{
+		HcFree(lpStr1);
+		HcFree(lpStr2);
+	}
+
+	return ((LPWSTR)(szStr + tIndex));
+}
+
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringContainsA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
 {
-	BOOLEAN Return;
-	BOOLEAN bString1, bString2;
-
-	bString1 = HcStringIsBad(lpString1);
-	bString2 = HcStringIsBad(lpString2);
-
-	if (bString1 && bString2)
-		return TRUE;
-
-	if (!bString1 && bString2)
-		return FALSE;
-
-	if (bString1 && !bString2)
-		return FALSE;
-
-	if (CaseInSensitive)
-	{
-		LPSTR lpCopy1, lpCopy2;
-		SIZE_T Size1, Size2;
-
-		Size1 = HcStringLengthA(lpString1);
-		Size2 = HcStringLengthA(lpString2);
-
-		lpCopy1 = (LPSTR)HcAlloc(Size1 + sizeof(CHAR));
-
-		HcStringCopyA(lpCopy1, lpString1, Size1);
-		HcStringToLowerA(lpCopy1);
-
-		lpCopy2 = (LPSTR)HcAlloc(Size2 + sizeof(CHAR));
-
-		HcStringCopyA(lpCopy2, lpString2, Size2);
-		HcStringToLowerA(lpCopy2);
-
-		Return = strstr(lpCopy1, lpCopy2) > 0;
-
-		HcFree(lpCopy1);
-		HcFree(lpCopy2);
-
-		return Return;
-	}
-
-	return strstr(lpString1, lpString2) > 0;
+	return HcStringWithinStringA(lpString1, lpString2, CaseInSensitive) > 0;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
-HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
+HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInsensitive)
 {
-	BOOLEAN Return;
-	BOOLEAN bString1, bString2;
-
-	bString1 = HcStringIsBad(lpString1);
-	bString2 = HcStringIsBad(lpString2);
-
-	if (bString1 && bString2)
-		return TRUE;
-
-	if (!bString1 && bString2)
-		return FALSE;
-
-	if (bString1 && !bString2)
-		return FALSE;
-
-	if (CaseInSensitive)
-	{
-		LPWSTR lpCopy1, lpCopy2;
-		SIZE_T Size1, Size2;
-
-		Size1 = HcStringLengthW(lpString1);
-		Size2 = HcStringLengthW(lpString2);
-
-		lpCopy1 = (LPWSTR)HcAlloc(Size1 + sizeof(WCHAR));
-
-		HcStringCopyW(lpCopy1, lpString1, Size1);
-		HcStringToLowerW(lpCopy1);
-
-		lpCopy2 = (LPWSTR)HcAlloc(Size2 + sizeof(WCHAR));
-
-		HcStringCopyW(lpCopy2, lpString2, Size2);
-		HcStringToLowerW(lpCopy2);
-
-		Return = wcsstr(lpCopy1, lpCopy2) > 0;
-
-		HcFree(lpCopy1);
-		HcFree(lpCopy2);
-
-		return Return;
-	}
-
-	return wcsstr(lpString1, lpString2) > 0;
+	return HcStringWithinStringW(lpString1, lpString2, CaseInsensitive) > 0;
 }
 
 //
 // When using this function, take care for UNICODE and ANSI type size difference.
 //
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
@@ -510,9 +548,9 @@ HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
 	if (!MultiByteToWideChar(CP_UTF8,
 		0,
 		lpStringToConvert,
-		(DWORD)Size,
+		-1,
 		lpStringOut, 
-		(DWORD)Size))
+		(DWORD)(Size / sizeof(WCHAR) + 1)))
 	{
 		return FALSE;
 	}
@@ -525,6 +563,7 @@ HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
 //
 // When using this function, take care for UNICODE and ANSI type size difference.
 //
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
@@ -553,14 +592,15 @@ HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 // Allocates and converts using HcStringCopyConvert function.
 // Deallocate using HcFree()
 //
+HC_EXTERN_API
 LPWSTR
 HCAPI
 HcStringConvertAtoW(IN LPCSTR lpStringConvert)
 {
 	LPWSTR convertedOut;
-	SIZE_T sizeOfString;
+	SIZE_T sizeOfString = 0;
 	
-	sizeOfString = HcStringSecureLengthA(lpStringConvert);
+	sizeOfString = HcStringSizeA(lpStringConvert);
 	if (!sizeOfString)
 	{
 		return NULL;
@@ -592,14 +632,15 @@ HcStringConvertAtoW(IN LPCSTR lpStringConvert)
 // Allocates and converts using HcStringCopyConvert function.
 // Deallocate using HcFree()
 //
+HC_EXTERN_API
 LPSTR
 HCAPI
 HcStringConvertWtoA(IN LPCWSTR lpStringConvert)
 {
 	LPSTR convertedOut;
-	SIZE_T sizeOfString;
+	SIZE_T sizeOfString = 0;
 
-	sizeOfString = HcStringSecureLengthW(lpStringConvert);
+	sizeOfString = HcStringSizeW(lpStringConvert);
 	if (!sizeOfString)
 	{
 		return NULL;
@@ -627,12 +668,15 @@ HcStringConvertWtoA(IN LPCWSTR lpStringConvert)
 	return convertedOut;
 }
 
-BOOLEAN HCAPI HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, SIZE_T tSize)
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, SIZE_T tSize)
 {
 	SIZE_T Size = tSize;
 	if (!Size)
 	{
-		Size = HcStringSecureLengthA(szOut);
+		Size = HcStringSizeA(szOut);
 		if (!Size)
 		{
 			//
@@ -650,17 +694,20 @@ BOOLEAN HCAPI HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, SIZE_T tSize)
 	//
 	// Terminate the string.
 	//
-	szOut[Size] = ANSI_NULL;
+	szOut[Size / sizeof(CHAR)] = ANSI_NULL;
 
 	return TRUE;
 }
 
-BOOLEAN HCAPI HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, SIZE_T tSize)
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, SIZE_T tSize)
 {
 	SIZE_T Size = tSize;
 	if (!Size)
 	{
-		Size = HcStringSecureLengthW(szOut);
+		Size = HcStringSizeW(szOut);
 		if (!Size)
 		{
 			//
@@ -678,7 +725,7 @@ BOOLEAN HCAPI HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, SIZE_T tSize)
 	//
 	// Terminate the string.
 	//
-	szOut[Size] = UNICODE_NULL;
+	szOut[Size / sizeof(WCHAR)] = UNICODE_NULL;
 
 	return TRUE;
 }

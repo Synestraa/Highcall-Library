@@ -1,29 +1,23 @@
-/*
-	@File: hcmodule.c
-	@Purpose: Retrieving information about modules.
-
-	@Author: Synestraa
-	@version 9/11/2016
-*/
+// Requires documentation
 
 #include "../headers/hcmodule.h"
 #include "../headers/hcstring.h"
-#include "../headers/hcimport.h"
+#include "../private/imports.h"
 #include "../headers/hcpe.h"
 #include "../headers/hcvirtual.h"
 #include "../headers/hcerror.h"
 
-
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 {
-	SIZE_T szModule;
-	PIMAGE_EXPORT_DIRECTORY pExports;
-	PDWORD pExportNames;
-	PDWORD pExportFunctions;
-	PWORD pExportOrdinals;
-	LPCSTR lpCurrentFunction;
+	SIZE_T szModule = 0;
+	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
+	PDWORD pExportNames = NULL;
+	PDWORD pExportFunctions = NULL;
+	PWORD pExportOrdinals = NULL;
+	LPSTR lpCurrentFunction = NULL;
 
 	if (!hModule)
 	{
@@ -44,7 +38,7 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 	/* List through functions */
 	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
 	{
-		lpCurrentFunction = (LPCSTR)(pExportNames[i] + szModule);
+		lpCurrentFunction = (LPSTR)(pExportNames[i] + szModule);
 		if (!lpCurrentFunction)
 		{
 			continue;
@@ -67,14 +61,17 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 	return 0;
 }
 
-
+//
+// Crashes. FIXME
+//
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcModuleProcedureAddressW(HANDLE hModule, LPCWSTR lpProcedureName)
 {
-	DWORD Size;
-	SIZE_T ReturnValue;
-	LPSTR lpConvertedName;
+	SIZE_T Size = 0;
+	SIZE_T ReturnValue = 0;
+	LPSTR lpConvertedName = NULL;
 
 	Size = HcStringSecureLengthW(lpProcedureName);
 	if (!Size)
@@ -91,14 +88,15 @@ HcModuleProcedureAddressW(HANDLE hModule, LPCWSTR lpProcedureName)
 	return ReturnValue;
 }
 
+HC_EXTERN_API
 BOOLEAN 
 HCAPI
 HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam)
 {
-	PIMAGE_EXPORT_DIRECTORY pExports;
-	PDWORD pExportNames;
-	LPCSTR lpCurrentFunction;
-	SIZE_T dwModule;
+	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
+	PDWORD pExportNames = NULL;
+	LPSTR lpCurrentFunction = NULL;
+	SIZE_T dwModule = 0;
 
 	if (!hModule)
 	{
@@ -123,7 +121,7 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 	/* List through functions */
 	for (unsigned int i = 0; i < pExports->NumberOfNames; i++)
 	{
-		lpCurrentFunction = (LPCSTR)(pExportNames[i] + dwModule);
+		lpCurrentFunction = (LPSTR)(pExportNames[i] + dwModule);
 		if (!lpCurrentFunction)
 		{
 			continue;
@@ -138,14 +136,14 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 HMODULE
 HCAPI
 HcModuleHandleW(LPCWSTR lpModuleName)
 {
 	PPEB pPeb = NtCurrentPeb();
-	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
-	PLIST_ENTRY pListHead, pListEntry;
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
+	PLIST_ENTRY pListHead = NULL, pListEntry = NULL;
 
 	/* if there is no name specified, return base address of main module */
 	if (!lpModuleName)
@@ -171,13 +169,13 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 	return 0;
 }
 
-
+HC_EXTERN_API
 HMODULE
 HCAPI
 HcModuleHandleA(LPCSTR lpModuleName)
 {
-	LPWSTR lpConvertedName;
-	HMODULE ReturnValue;
+	LPWSTR lpConvertedName = NULL;
+	HMODULE ReturnValue = NULL;
 
 	/* Check if the main module was requested */
 	if (!lpModuleName)
@@ -202,20 +200,18 @@ HcModuleHandleA(LPCSTR lpModuleName)
 	return ReturnValue;
 }
 
-
+HC_EXTERN_API
 HMODULE
 HCAPI
 HcModuleLoadA(LPCSTR lpPath)
 {
-	NTSTATUS Status;
-	UNICODE_STRING Path;
-	LPWSTR lpConverted;
+	NTSTATUS Status = STATUS_SUCCESS;
+	UNICODE_STRING Path = { 0 };
+	LPWSTR lpConverted = NULL;
 	HANDLE hModule = NULL;
 
 	if (HcStringIsBad(lpPath))
-	{
 		return NULL;
-	}
 
 	lpConverted = HcStringConvertAtoW(lpPath);
 	if (!lpConverted)
@@ -239,18 +235,17 @@ HcModuleLoadA(LPCSTR lpPath)
 	return (HMODULE)hModule;
 }
 
+HC_EXTERN_API
 HMODULE
 HCAPI
 HcModuleLoadW(LPCWSTR lpPath)
 {
-	NTSTATUS Status;
-	UNICODE_STRING Path;
-	HANDLE hModule;
+	NTSTATUS Status = STATUS_SUCCESS;
+	UNICODE_STRING Path = { 0 };
+	HANDLE hModule = NULL;
 
 	if (HcStringIsBad(lpPath))
-	{
 		return NULL;
-	}
 
 	RtlInitUnicodeString(&Path, lpPath);
 

@@ -31,8 +31,8 @@ extern "C" {
 	//
 	// Implemented in hcinject.c
 	//
-	BOOLEAN HCAPI HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath);
-	BOOLEAN HCAPI HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath);
+	HC_EXTERN_API BOOLEAN HCAPI HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath);
+	HC_EXTERN_API BOOLEAN HCAPI HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath);
 	
 #if defined (__cplusplus)
 }

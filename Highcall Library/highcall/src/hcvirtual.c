@@ -21,9 +21,10 @@ Synestra 10/10/2016 revised HcAlloc and HcFree.
 #include "../sys/hcsyscall.h"
 
 #include "../headers/hcvirtual.h"
-#include "../headers/hcimport.h"
 #include "../headers/hcerror.h"
 #include "../headers/hcinternal.h"
+
+#include "../private/imports.h"
 
 //
 // Unimplemented, in progress for a later replacement of malloc and free.
@@ -792,7 +793,7 @@ leave:;
 //
 // kernel32.dll VirtualAllocEx
 //
-
+HC_EXTERN_API
 LPVOID
 HCAPI
 HcVirtualAllocEx(IN HANDLE hProcess,
@@ -826,7 +827,7 @@ HcVirtualAllocEx(IN HANDLE hProcess,
 //
 // kernel32.dll VirtualAlloc
 //
-
+HC_EXTERN_API
 LPVOID
 HCAPI
 HcVirtualAlloc(IN LPVOID lpAddress,
@@ -845,7 +846,7 @@ HcVirtualAlloc(IN LPVOID lpAddress,
 //
 // kernel32.dll VirtualFreeEx
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualFreeEx(IN HANDLE hProcess,
@@ -883,7 +884,7 @@ HcVirtualFreeEx(IN HANDLE hProcess,
 //
 // kernel32.dll VirtualFree
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualFree(IN LPVOID lpAddress,
@@ -900,7 +901,7 @@ HcVirtualFree(IN LPVOID lpAddress,
 //
 // kernel32.dll VirtualProtect 
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualProtect(IN LPVOID lpAddress,
@@ -919,7 +920,7 @@ HcVirtualProtect(IN LPVOID lpAddress,
 //
 // kernel32.dll VirtualProtectEx
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualProtectEx(IN HANDLE hProcess,
@@ -951,7 +952,7 @@ HcVirtualProtectEx(IN HANDLE hProcess,
 //
 // kernel32.dll VirtualLock
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualLock(IN LPVOID lpAddress,
@@ -981,7 +982,7 @@ HcVirtualLock(IN LPVOID lpAddress,
 //
 // kernel32.dll VirtualQuery
 //
-
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcVirtualQuery(IN LPCVOID lpAddress,
@@ -998,7 +999,7 @@ HcVirtualQuery(IN LPCVOID lpAddress,
 //
 // kernel32.dll VirtualQueryEx
 //
-
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcVirtualQueryEx(IN HANDLE hProcess,
@@ -1006,8 +1007,8 @@ HcVirtualQueryEx(IN HANDLE hProcess,
 	OUT PMEMORY_BASIC_INFORMATION lpBuffer,
 	IN SIZE_T dwLength)
 {
-	NTSTATUS Status;
-	SIZE_T ResultLength;
+	NTSTATUS Status; 
+	SIZE_T ResultLength = 0;
 
 	/* Make the call. */
 	Status = HcQueryVirtualMemory(hProcess,
@@ -1031,7 +1032,7 @@ HcVirtualQueryEx(IN HANDLE hProcess,
 //
 // kernel32.dll VirtualUnlock
 //
-
+HC_EXTERN_API
 BOOL
 HCAPI
 HcVirtualUnlock(IN LPVOID lpAddress,
@@ -1058,11 +1059,23 @@ HcVirtualUnlock(IN LPVOID lpAddress,
 	return TRUE;
 }
 
+#include <malloc.h>
+
+HC_EXTERN_API
 PVOID
 HCAPI 
 HcAlloc(IN SIZE_T Size)
 {
-	return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	
+	PVOID lpAllocated = malloc(Size);
+	if (lpAllocated)
+	{
+		HcInternalSet(lpAllocated, 0, Size);
+	}
+	return lpAllocated;
+	
+	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 }
 
 //
@@ -1070,7 +1083,12 @@ HcAlloc(IN SIZE_T Size)
 // Currently the function will use free() i nstead, as a temporary and possibly
 // long time replacement.
 //
-VOID HCAPI HcFree(IN LPVOID lpAddress)
+HC_EXTERN_API
+VOID 
+HCAPI 
+HcFree(IN LPVOID lpAddress)
 {
-	HcVirtualFree(lpAddress, 0, MEM_RELEASE);
+	free(lpAddress);
+	//RtlFreeHeap(RtlProcessHeap(), 0, lpAddress);
+	//HcVirtualFree(lpAddress, 0, MEM_RELEASE);
 }

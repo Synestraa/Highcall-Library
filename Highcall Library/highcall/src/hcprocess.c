@@ -38,7 +38,7 @@ Synestra 10/15/2016
 //
 // Used for RtlInitUnicodeString
 //
-#include "../headers/hcimport.h"
+#include "../private/imports.h"
 
 //
 // !! NOT_FINISHED !! used in HcProcessInjectModuleManual
@@ -71,11 +71,12 @@ Synestra 10/15/2016
 //
 #include "../headers/hcstring.h"
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessIsWow64Ex(IN HANDLE hProcess)
 {
-	ULONG_PTR pbi;
+	ULONG_PTR pbi = 0;
 	NTSTATUS Status;
 
 	/* Query the kernel */
@@ -96,13 +97,13 @@ HcProcessIsWow64Ex(IN HANDLE hProcess)
 	return pbi != 0;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessIsWow64(IN DWORD dwProcessId)
 {
-	HANDLE hProcess;
-	BOOLEAN Result;
+	HANDLE hProcess = NULL;
+	BOOLEAN Result = FALSE;
 
 	if (!(hProcess = HcProcessOpen(dwProcessId,
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ)))
@@ -116,18 +117,18 @@ HcProcessIsWow64(IN DWORD dwProcessId)
 	return Result;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessExitCode(IN SIZE_T dwProcessId,
 	IN LPDWORD lpExitCode)
 {
-	HANDLE hProcess;
-	PROCESS_BASIC_INFORMATION ProcessBasic;
-	NTSTATUS Status;
+	HANDLE hProcess = NULL;
+	PROCESS_BASIC_INFORMATION ProcessBasic = { 0 };
+	NTSTATUS Status = STATUS_SUCCESS;
 
-	if (!(hProcess = HcProcessOpen(dwProcessId,
-		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ)))
+	if (!((hProcess = HcProcessOpen(dwProcessId,
+	                                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ))))
 	{
 		return FALSE;
 	}
@@ -152,14 +153,14 @@ HcProcessExitCode(IN SIZE_T dwProcessId,
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN 
 HCAPI
 HcProcessExitCodeEx(IN HANDLE hProcess,
 	IN LPDWORD lpExitCode)
 {
-	PROCESS_BASIC_INFORMATION ProcessBasic;
-	NTSTATUS Status;
+	PROCESS_BASIC_INFORMATION ProcessBasic = { 0 };
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	/* Ask the kernel */
 	Status = HcQueryInformationProcess(hProcess,
@@ -179,16 +180,80 @@ HcProcessExitCodeEx(IN HANDLE hProcess,
 	return TRUE;
 }
 
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcProcessGetCurrentDirectoryW(HANDLE hProcess, LPWSTR szDirectory, PSIZE_T ptOutSize)
+{
+	PROCESS_BASIC_INFORMATION	pbi = { 0 };
+	RTL_USER_PROCESS_PARAMETERS upp = { 0 };
+	PEB							peb = { 0 };
+	DWORD						queryLen = 0;
+	SIZE_T						len = queryLen;
+	NTSTATUS					Status;
 
+	Status = HcQueryInformationProcess(hProcess, ProcessBasicInformation, &pbi,
+		sizeof(pbi), &queryLen);
+
+	if (!NT_SUCCESS(Status))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess, pbi.PebBaseAddress, &peb, sizeof(PEB), &len))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess, peb.ProcessParameters, &upp, sizeof(RTL_USER_PROCESS_PARAMETERS), &len))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadNullifiedString(hProcess, &upp.CurrentDirectory.DosPath, szDirectory, upp.CurrentDirectory.DosPath.Length))
+	{
+		return FALSE;
+	}
+
+	*ptOutSize = upp.CurrentDirectory.DosPath.Length;
+
+	return TRUE;
+}
+
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcProcessGetCurrentDirectoryA(HANDLE hProcess, LPSTR szDirectory)
+{
+	LPWSTR lpCopy = (LPWSTR)HcAlloc(MAX_PATH * sizeof(WCHAR) + sizeof(WCHAR));
+	SIZE_T dirSize = 0;
+
+	if (!HcProcessGetCurrentDirectoryW(hProcess, lpCopy, &dirSize))
+	{
+		HcFree(lpCopy);
+		return FALSE;
+	}
+
+	if (!HcStringCopyConvertWtoA(lpCopy, szDirectory, dirSize / sizeof(WCHAR) + 1))
+	{
+		HcFree(lpCopy);
+		return FALSE;
+	}
+
+	HcFree(lpCopy);
+	return TRUE;
+}
+
+HC_EXTERN_API
 HANDLE
 HCAPI
 HcProcessOpen(SIZE_T dwProcessId,
 	ACCESS_MASK DesiredAccess)
 {
-	NTSTATUS Status;
-	OBJECT_ATTRIBUTES oa;
-	CLIENT_ID cid;
-	HANDLE hProcess;
+	NTSTATUS Status = STATUS_SUCCESS;
+	OBJECT_ATTRIBUTES oa = { 0 };
+	CLIENT_ID cid = { 0 };
+	HANDLE hProcess = NULL;
 
 	cid.UniqueProcess = (HANDLE)dwProcessId;
 	cid.UniqueThread = 0;
@@ -206,16 +271,16 @@ HcProcessOpen(SIZE_T dwProcessId,
 	return 0;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessReadyEx(HANDLE hProcess)
 {
-	NTSTATUS Status;
-	PPEB_LDR_DATA LoaderData;
-	PROCESS_BASIC_INFORMATION ProcInfo;
-	DWORD ExitCode;
-	DWORD Len;
+	NTSTATUS Status = STATUS_SUCCESS;
+	PPEB_LDR_DATA LoaderData = NULL;
+	PROCESS_BASIC_INFORMATION ProcInfo = { 0 };
+	DWORD ExitCode = 0;
+	DWORD Len = 0;
 
 	/* Will fail if there is a mismatch in compiler architecture. */
 	if (!HcProcessExitCodeEx(hProcess, &ExitCode) || ExitCode != STILL_ACTIVE)
@@ -249,16 +314,16 @@ HcProcessReadyEx(HANDLE hProcess)
 	return TRUE;
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessReady(SIZE_T dwProcessId)
 {
-	BOOLEAN Success;
-	HANDLE hProcess;
+	BOOLEAN Success = FALSE;
+	HANDLE hProcess = NULL;
 
-	if (!(hProcess = HcProcessOpen(dwProcessId,
-		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ)))
+	if (!((hProcess = HcProcessOpen(dwProcessId,
+	                                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ))))
 	{
 		return FALSE;
 	}
@@ -271,12 +336,13 @@ HcProcessReady(SIZE_T dwProcessId)
 	return Success;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessSuspend(SIZE_T dwProcessId)
 {
-	NTSTATUS Status;
-	HANDLE hProcess;
+	NTSTATUS Status = STATUS_SUCCESS;
+	HANDLE hProcess = NULL;
 
 	/* Open the process */
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_ALL_ACCESS);
@@ -289,7 +355,7 @@ HcProcessSuspend(SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessSuspendEx(HANDLE hProcess)
@@ -298,13 +364,13 @@ HcProcessSuspendEx(HANDLE hProcess)
 	return NT_SUCCESS(HcSuspendProcess(hProcess));
 }
 
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessResume(SIZE_T dwProcessId)
 {
-	NTSTATUS Status;
-	HANDLE hProcess;
+	NTSTATUS Status = STATUS_SUCCESS;
+	HANDLE hProcess = NULL;
 
 	/* Open the process */
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_ALL_ACCESS);
@@ -317,6 +383,7 @@ HcProcessResume(SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessResumeEx(HANDLE hProcess)
@@ -325,6 +392,7 @@ HcProcessResumeEx(HANDLE hProcess)
 	return NT_SUCCESS(HcResumeProcess(hProcess));
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessWriteMemory(HANDLE hProcess,
@@ -333,11 +401,11 @@ HcProcessWriteMemory(HANDLE hProcess,
 	SIZE_T nSize,
 	PSIZE_T lpNumberOfBytesWritten)
 {
-	NTSTATUS Status;
-	ULONG OldValue;
-	SIZE_T RegionSize;
-	PVOID Base;
-	BOOLEAN UnProtect;
+	NTSTATUS Status = STATUS_SUCCESS;
+	ULONG OldValue = 0;
+	SIZE_T RegionSize = 0;
+	PVOID Base = NULL;
+	BOOLEAN UnProtect = FALSE;
 
 	/* Set parameters for protect call */
 	RegionSize = nSize;
@@ -434,6 +502,7 @@ HcProcessWriteMemory(HANDLE hProcess,
 	return FALSE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessReadMemory(IN HANDLE hProcess,
@@ -442,7 +511,7 @@ HcProcessReadMemory(IN HANDLE hProcess,
 	IN SIZE_T nSize,
 	OUT SIZE_T* lpNumberOfBytesRead)
 {
-	NTSTATUS Status;
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	/* Do the read */
 	Status = HcReadVirtualMemory(hProcess,
@@ -464,6 +533,7 @@ HcProcessReadMemory(IN HANDLE hProcess,
 	return TRUE;
 }
 
+HC_EXTERN_API
 HANDLE
 HCAPI
 HcProcessCreateThread(IN HANDLE hProcess,
@@ -471,7 +541,7 @@ HcProcessCreateThread(IN HANDLE hProcess,
 	IN LPVOID lpParamater,
 	IN DWORD dwCreationFlags)
 {
-	NTSTATUS Status;
+	NTSTATUS Status = STATUS_SUCCESS;
 	HANDLE hThread = 0;
 
 	Status = HcCreateThreadEx(&hThread,
@@ -495,57 +565,7 @@ HcProcessCreateThread(IN HANDLE hProcess,
 	return hThread;
 }
 
-BOOLEAN
-HCAPI
-HcProcessQueryInformationWindow(_In_ HANDLE ProcessHandle,
-	PHC_WINDOW_INFORMATIONW HCWindowInformation)
-{
-	NTSTATUS Status;
-	PVOID Buffer;
-	ULONG ReturnLength;
-	PPROCESS_WINDOW_INFORMATION WindowInformation;
-
-	/* Query the length. */
-	Status = HcQueryInformationProcess(ProcessHandle,
-		ProcessWindowInformation,
-		NULL,
-		0,
-		&ReturnLength);
-
-	if (NT_SUCCESS(Status))
-	{
-		HcErrorSetNtStatus(Status);
-		return FALSE;
-	}
-
-	Buffer = HcAlloc(ReturnLength);
-
-	WindowInformation = (PPROCESS_WINDOW_INFORMATION)Buffer;
-
-	/* Get the window information. */
-	Status = HcQueryInformationProcess(ProcessHandle,
-		ProcessWindowInformation,
-		WindowInformation,
-		ReturnLength,
-		&ReturnLength);
-
-	if (NT_SUCCESS(Status))
-	{
-		HCWindowInformation->WindowFlags = WindowInformation->WindowFlags;
-
-		/* Copy the window's title. */
-		HcStringCopyW(HCWindowInformation->WindowTitle,
-			WindowInformation->WindowTitle,
-			WindowInformation->WindowTitleLength);
-
-		HcFree(Buffer);
-		return TRUE;
-	}
-
-	HcFree(Buffer);
-	return FALSE;
-}
-
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessReadNullifiedString(HANDLE hProcess,
@@ -553,7 +573,7 @@ HcProcessReadNullifiedString(HANDLE hProcess,
 	LPWSTR lpStringOut,
 	SIZE_T lpSize)
 {
-	SIZE_T Len;
+	SIZE_T Len = 0;
 
 	/* Get the maximum len we have/can write in given size */
 	Len = usStringIn->Length + sizeof(UNICODE_NULL);
@@ -597,49 +617,49 @@ HcProcessReadNullifiedString(HANDLE hProcess,
 	return TRUE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessLdrModuleToHighCallModule(IN HANDLE hProcess,
 	IN PLDR_DATA_TABLE_ENTRY Module,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
-	/* Copy the modules name from the process. */
-	if (!HcProcessReadNullifiedString(hProcess,
+	//
+	// Copy the modules name from the process to the out parameter, if specified.
+	//
+	HcProcessReadNullifiedString(hProcess,
 		&Module->BaseModuleName,
 		phcModuleOut->Name,
-		Module->BaseModuleName.Length))
-	{
-		return FALSE;
-	}
+		Module->BaseModuleName.Length);
 
-	/* Copy the module's path from the process. */
-	if (!HcProcessReadNullifiedString(hProcess,
+	//
+	// Copy the module's path from the process to the out parameter, if specified.
+	//
+	HcProcessReadNullifiedString(hProcess,
 		&Module->FullModuleName,
 		phcModuleOut->Path,
-		Module->FullModuleName.Length))
-	{
-		return FALSE;
-	}
+		Module->FullModuleName.Length);
 
 	phcModuleOut->Size = Module->SizeOfImage;
-	phcModuleOut->Base = (SIZE_T)Module->ModuleBase;
+	phcModuleOut->Base = Module->ModuleBase;
 
 	return TRUE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessQueryInformationModule(IN HANDLE hProcess,
 	IN HMODULE hModule OPTIONAL,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
-	SIZE_T Count;
-	NTSTATUS Status;
-	PPEB_LDR_DATA LoaderData;
-	PLIST_ENTRY ListHead, ListEntry;
-	PROCESS_BASIC_INFORMATION ProcInfo;
-	LDR_DATA_TABLE_ENTRY Module;
-	ULONG Len;
+	SIZE_T Count = 0;
+	NTSTATUS Status = STATUS_SUCCESS;
+	PPEB_LDR_DATA LoaderData = NULL;
+	PLIST_ENTRY ListHead = NULL, ListEntry = NULL;
+	PROCESS_BASIC_INFORMATION ProcInfo = { 0 };
+	LDR_DATA_TABLE_ENTRY Module = { 0 };
+	ULONG Len = 0;
 
 	/* Query the process information to get its PEB address */
 	Status = HcQueryInformationProcess(hProcess,
@@ -673,7 +693,7 @@ HcProcessQueryInformationModule(IN HANDLE hProcess,
 		sizeof(LoaderData),
 		NULL))
 	{
-	return FALSE;
+		return FALSE;
 	}
 
 	if (LoaderData == NULL)
@@ -732,20 +752,21 @@ HcProcessQueryInformationModule(IN HANDLE hProcess,
 	return FALSE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessEnumModulesW(HANDLE hProcess,
 	HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
-	NTSTATUS Status;
-	PPEB_LDR_DATA LoaderData;
-	PLIST_ENTRY ListHead, ListEntry;
-	PROCESS_BASIC_INFORMATION ProcInfo;
-	LDR_DATA_TABLE_ENTRY ldrModule;
-	PHC_MODULE_INFORMATIONW Module;
-	SIZE_T Count;
-	ULONG Len;
+	NTSTATUS Status = STATUS_SUCCESS;
+	PPEB_LDR_DATA LoaderData = NULL;
+	PLIST_ENTRY ListHead = NULL, ListEntry = NULL;
+	PROCESS_BASIC_INFORMATION ProcInfo = { 0 };
+	LDR_DATA_TABLE_ENTRY ldrModule = { 0 };
+	PHC_MODULE_INFORMATIONW Module = NULL;
+	SIZE_T Count = 0;
+	ULONG Len = 0;
 
 	/* Query the process information to get its PEB address */
 	Status = HcQueryInformationProcess(hProcess,
@@ -803,7 +824,7 @@ HcProcessEnumModulesW(HANDLE hProcess,
 			return FALSE;
 		}
 
-		Module = HcInitializeModuleInformationW(MAX_PATH * sizeof(WCHAR), MAX_PATH * sizeof(WCHAR));
+		Module = HcInitializeModuleInformationW(MAX_PATH, MAX_PATH);
 
 		/* Attempt to convert to a HC module */
 		if (HcProcessLdrModuleToHighCallModule(hProcess,
@@ -811,7 +832,7 @@ HcProcessEnumModulesW(HANDLE hProcess,
 			Module))
 		{
 			/* Give it to the caller */
-			if (hcmCallback(Module, lParam))
+			if (hcmCallback(*Module, lParam))
 			{
 				HcDestroyModuleInformationW(Module);
 				return TRUE;
@@ -835,19 +856,18 @@ HcProcessEnumModulesW(HANDLE hProcess,
 	return FALSE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI 
 HcProcessEnumMappedImagesW(HANDLE ProcessHandle,
 	HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
-	BOOLEAN Continue;
-	PVOID baseAddress;
-	MEMORY_BASIC_INFORMATION basicInfo;
-	PHC_MODULE_INFORMATIONW hcmInformation;
-	SIZE_T allocationSize;
-
-	baseAddress = NULL;
+	BOOLEAN Continue = FALSE;
+	PVOID baseAddress = NULL;
+	MEMORY_BASIC_INFORMATION basicInfo = { 0 };
+	PHC_MODULE_INFORMATIONW hcmInformation = NULL;
+	SIZE_T allocationSize = 0;
 
 	if (!NT_SUCCESS(HcQueryVirtualMemory(
 		ProcessHandle,
@@ -866,9 +886,9 @@ HcProcessEnumMappedImagesW(HANDLE ProcessHandle,
 	{
 		if (basicInfo.Type == MEM_IMAGE)
 		{
-			hcmInformation = HcInitializeModuleInformationW(MAX_PATH * sizeof(WCHAR), MAX_PATH * sizeof(WCHAR));
+			hcmInformation = HcInitializeModuleInformationW(MAX_PATH, MAX_PATH);
 
-			hcmInformation->Base = (SIZE_T) basicInfo.AllocationBase;
+			hcmInformation->Base = basicInfo.AllocationBase;
 			allocationSize = 0;
 
 			/* Calculate destination of next module. */
@@ -895,16 +915,16 @@ HcProcessEnumMappedImagesW(HANDLE ProcessHandle,
 			if (HcProcessModuleFileName(ProcessHandle,
 				(PVOID)hcmInformation->Base,
 				hcmInformation->Path,
-				MAX_PATH * sizeof(WCHAR)))
+				MAX_PATH))
 			{
 				/* Temporary.
 					The name should be stripped from the path.
 					The path should be resolved from native to dos.
 				*/
-				HcStringCopyW(hcmInformation->Name, hcmInformation->Path, MAX_PATH * sizeof(WCHAR));
+				HcStringCopyW(hcmInformation->Name, hcmInformation->Path, MAX_PATH);
 			}
 
-			if (hcmCallback(hcmInformation, lParam))
+			if (hcmCallback(*hcmInformation, lParam))
 			{
 				HcDestroyModuleInformationW(hcmInformation);
 				return TRUE;
@@ -936,9 +956,7 @@ ULONG
 HCAPI 
 HcGetProcessListSize()
 {
-	ULONG Size;
-
-	Size = 0;
+	ULONG Size = 0;
 
 	/* Query the Length. */
 	HcQuerySystemInformation(SystemProcessInformation,
@@ -957,18 +975,19 @@ HcGetProcessListSize()
 	return Size;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessQueryByNameExW(LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACK_EVENT_EXW Callback,
 	LPARAM lParam)
 {
-	NTSTATUS Status;
-	PSYSTEM_PROCESS_INFORMATION processInfo;
-	HANDLE CurrentHandle;
-	PHC_PROCESS_INFORMATION_EXW hcpInformation;
-	PVOID Buffer;
-	ULONG Length;
+	NTSTATUS Status = STATUS_SUCCESS;
+	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
+	HANDLE CurrentHandle = NULL;
+	PHC_PROCESS_INFORMATION_EXW hcpInformation = NULL;
+	PVOID Buffer = NULL;
+	ULONG Length = 0;
 
 	/* Query the required size. */
 	Length = HcGetProcessListSize();
@@ -978,7 +997,7 @@ HcProcessQueryByNameExW(LPCWSTR lpProcessName,
 	}
 
 	/* Allocate the buffer with specified size. */
-	if (!(Buffer = HcAlloc(Length)))
+	if (!((Buffer = HcAlloc(Length))))
 	{
 		HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
 		return FALSE;
@@ -1002,10 +1021,10 @@ HcProcessQueryByNameExW(LPCWSTR lpProcessName,
 	/* Loop through the process list */
 	while (TRUE)
 	{
-		hcpInformation = HcInitializeProcessInformationExW(MAX_PATH * sizeof(WCHAR));
+		hcpInformation = HcInitializeProcessInformationExW(MAX_PATH);
 
 		/* Check for a match */
-		if (!lpProcessName || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
+		if (HcStringIsNullOrEmpty(lpProcessName) || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
 		{
 			hcpInformation->Id = HandleToUlong(processInfo->UniqueProcessId);
 
@@ -1025,15 +1044,12 @@ HcProcessQueryByNameExW(LPCWSTR lpProcessName,
 					NULL,
 					hcpInformation->MainModule);
 
-				HcProcessQueryInformationWindow(CurrentHandle,
-					hcpInformation->MainWindow);
-
 				/* Close this handle. */
 				HcClose(CurrentHandle);
 			}
 
 			/* Call the callback as long as the user doesn't return FALSE. */
-			if (Callback(hcpInformation, lParam))
+			if (Callback(*hcpInformation, lParam))
 			{
 				HcDestroyProcessInformationExW(hcpInformation);
 				HcFree(Buffer);
@@ -1056,17 +1072,18 @@ HcProcessQueryByNameExW(LPCWSTR lpProcessName,
 	return FALSE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessQueryByNameW(LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACK_EVENTW Callback,
 	LPARAM lParam)
 {
-	NTSTATUS Status;
-	PSYSTEM_PROCESS_INFORMATION processInfo;
-	PHC_PROCESS_INFORMATIONW hcpInformation;
-	PVOID Buffer;
-	ULONG Length;
+	NTSTATUS Status = STATUS_SUCCESS;
+	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
+	PHC_PROCESS_INFORMATIONW hcpInformation = NULL;
+	PVOID Buffer = NULL;
+	ULONG Length = 0;
 
 	/* Query the required size. */
 	Length = HcGetProcessListSize();
@@ -1077,7 +1094,7 @@ HcProcessQueryByNameW(LPCWSTR lpProcessName,
 	}
 
 	/* Allocate the buffer with specified size. */
-	if (!(Buffer = HcAlloc(Length)))
+	if (!((Buffer = HcAlloc(Length))))
 	{
 		HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
 		return FALSE;
@@ -1101,10 +1118,10 @@ HcProcessQueryByNameW(LPCWSTR lpProcessName,
 	/* Loop through the process list */
 	while (TRUE)
 	{
-		hcpInformation = HcInitializeProcessInformationW(MAX_PATH * sizeof(WCHAR));
+		hcpInformation = HcInitializeProcessInformationW(MAX_PATH);
 
 		/* Check for a match */
-		if (!lpProcessName || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
+		if (HcStringIsNullOrEmpty(lpProcessName) || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
 		{
 			hcpInformation->Id = HandleToUlong(processInfo->UniqueProcessId);
 
@@ -1114,7 +1131,7 @@ HcProcessQueryByNameW(LPCWSTR lpProcessName,
 				processInfo->ImageName.Length);
 
 			/* Call the callback as long as the user doesn't return FALSE. */
-			if (Callback(hcpInformation, lParam))
+			if (Callback(*hcpInformation, lParam))
 			{
 				HcFree(Buffer);
 				HcDestroyProcessInformationW(hcpInformation);
@@ -1137,6 +1154,7 @@ HcProcessQueryByNameW(LPCWSTR lpProcessName,
 	return FALSE;
 }
 
+HC_EXTERN_API
 SIZE_T
 WINAPI
 HcProcessModuleFileName(HANDLE hProcess,
@@ -1144,9 +1162,9 @@ HcProcessModuleFileName(HANDLE hProcess,
 	LPWSTR lpFilename,
 	DWORD nSize)
 {
-	SIZE_T Len;
-	SIZE_T OutSize;
-	NTSTATUS Status;
+	SIZE_T Len = 0;
+	SIZE_T OutSize = 0;
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	struct
 	{
@@ -1191,17 +1209,18 @@ HcProcessModuleFileName(HANDLE hProcess,
 	return OutSize;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessSetPrivilegeA(HANDLE hProcess,
 	LPCSTR Privilege, 
 	BOOLEAN bEnablePrivilege 
 ){
-	NTSTATUS Status;
-	HANDLE hToken;
-	TOKEN_PRIVILEGES tp;
-	PLUID pLuid;
-	TOKEN_PRIVILEGES tpPrevious;
+	NTSTATUS Status = STATUS_SUCCESS;
+	HANDLE hToken = NULL;
+	TOKEN_PRIVILEGES tp = { 0 };
+	PLUID pLuid = NULL;
+	TOKEN_PRIVILEGES tpPrevious = { 0 };
 	DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
 
 	/* Acquire handle to token */
@@ -1284,17 +1303,18 @@ HcProcessSetPrivilegeA(HANDLE hProcess,
 	return TRUE;
 };
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcProcessSetPrivilegeW(HANDLE hProcess,
 	LPCWSTR Privilege,
 	BOOLEAN bEnablePrivilege) 
 {
-	NTSTATUS Status;
-	HANDLE hToken;
-	TOKEN_PRIVILEGES tp;
-	PLUID pLuid;
-	TOKEN_PRIVILEGES tpPrevious;
+	NTSTATUS Status = STATUS_SUCCESS;
+	HANDLE hToken = NULL;
+	TOKEN_PRIVILEGES tp = { 0 };
+	PLUID pLuid = NULL;
+	TOKEN_PRIVILEGES tpPrevious = { 0 };
 	DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
 
 	/* Acquire handle to token */
@@ -1375,3 +1395,89 @@ HcProcessSetPrivilegeW(HANDLE hProcess,
 	HcObjectClose(hToken);
 	return TRUE;
 };
+
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcProcessGetPeb(HANDLE hProcess, PPEB pPeb)
+{
+	NTSTATUS Status = STATUS_SUCCESS;
+	PROCESS_BASIC_INFORMATION ProcInfo = { 0 };
+	ULONG Len = 0;
+
+	/* Query the process information to get its PEB address */
+	Status = HcQueryInformationProcess(hProcess,
+		ProcessBasicInformation,
+		&ProcInfo,
+		sizeof(ProcInfo),
+		&Len);
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	if (ProcInfo.PebBaseAddress == NULL)
+	{
+		HcErrorSetNtStatus(STATUS_PARTIAL_COPY);
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess,
+		ProcInfo.PebBaseAddress,
+		pPeb, sizeof(*pPeb),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcProcessGetCommandLineW(HANDLE hProcess,
+	LPWSTR lpszCommandline,
+	BOOLEAN bAlloc)
+{
+	NTSTATUS Status = STATUS_SUCCESS;
+	PROCESS_BASIC_INFORMATION ProcInfo = { 0 };
+	RTL_USER_PROCESS_PARAMETERS processParameters = { 0 };
+	PEB peb = { 0 };
+
+	if (!HcProcessGetPeb(hProcess, &peb))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess,
+		peb.ProcessParameters,
+		&processParameters,
+		sizeof(processParameters),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	if (bAlloc)
+	{
+		lpszCommandline = (LPWSTR)HcAlloc(processParameters.CommandLine.MaximumLength);
+		if (!lpszCommandline)
+		{
+			HcErrorSetNtStatus(STATUS_NO_MEMORY);
+			return FALSE;
+		}
+	}
+
+	if (!HcProcessReadNullifiedString(hProcess,
+		&(processParameters.CommandLine),
+		lpszCommandline,
+		processParameters.CommandLine.Length / 2))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}

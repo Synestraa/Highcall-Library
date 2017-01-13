@@ -29,7 +29,7 @@ extern "C" {
 	// Implemented in hcvolume.c
 	//
 
-	BOOLEAN HCAPI HcVolumeGetInformationA(
+	HC_EXTERN_API BOOLEAN HCAPI HcVolumeGetInformationA(
 		_In_opt_  LPCSTR lpRootPathName,
 		_Out_opt_ LPSTR  lpVolumeNameBuffer,
 		_In_      DWORD   nVolumeNameSize,
@@ -40,7 +40,7 @@ extern "C" {
 		_In_      DWORD   nFileSystemNameSize
 	);
 
-	BOOLEAN HCAPI HcVolumeGetInformationW(
+	HC_EXTERN_API BOOLEAN HCAPI HcVolumeGetInformationW(
 		_In_opt_  LPCWSTR lpRootPathName,
 		_Out_opt_ LPWSTR  lpVolumeNameBuffer,
 		_In_      DWORD   nVolumeNameSize,

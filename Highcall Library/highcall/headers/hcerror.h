@@ -33,27 +33,27 @@ extern "C" {
 	// Implemented in hcerror.c
 	//
 
-	VOID HCAPI HcErrorSetNoteA(IN LPCSTR lpNote);
-	VOID HCAPI HcErrorGetNoteA(OUT LPSTR lpOutNote);
+	HC_EXTERN_API VOID HCAPI HcErrorSetNoteA(IN LPCSTR lpNote);
+	HC_EXTERN_API VOID HCAPI HcErrorGetNoteA(OUT LPSTR lpOutNote);
 
-	VOID HCAPI HcErrorSetNoteW(IN LPCWSTR lpNote);
-	VOID HCAPI HcErrorGetNoteW(OUT LPWSTR lpOutNote);
+	HC_EXTERN_API VOID HCAPI HcErrorSetNoteW(IN LPCWSTR lpNote);
+	HC_EXTERN_API VOID HCAPI HcErrorGetNoteW(OUT LPWSTR lpOutNote);
 
 	//
 	// Unimplemented.
 	//
 
-	SIZE_T HCAPI HcErrorGetNoteSize();
+	HC_EXTERN_API SIZE_T HCAPI HcErrorGetNoteSize();
 
 	//
 	// Implemented in hcerror.c
 	//
 
-	VOID HCAPI HcErrorSetDosError(IN DWORD dwErrCode);
-	DWORD HCAPI HcErrorGetDosError(VOID);
+	HC_EXTERN_API VOID HCAPI HcErrorSetDosError(IN DWORD dwErrCode);
+	HC_EXTERN_API DWORD HCAPI HcErrorGetDosError(VOID);
 
-	DWORD HCAPI HcErrorSetNtStatus(IN NTSTATUS Status);
-	NTSTATUS HCAPI HcErrorGetLastStatus();
+	HC_EXTERN_API DWORD HCAPI HcErrorSetNtStatus(IN NTSTATUS Status);
+	HC_EXTERN_API NTSTATUS HCAPI HcErrorGetLastStatus();
 
 #if defined (__cplusplus)
 }

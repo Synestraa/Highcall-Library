@@ -34,24 +34,24 @@ Synestra 10/15/2016
 //
 // Outputs the main module's MODULE_INFORMATION struct.
 //
-#define HcInternalMainModule (PHC_MODULE_INFORMATIONW pmi) { HcProcessQueryInformationModule(NtCurrentProcess, NULL, pmi) }
+#define HcInternalMainModule(pmi) (HcProcessQueryInformationModule(NtCurrentProcess, NULL, pmi)) 
 
 //
 // Offsetted pointer validation.
 //
-#define HcInternalValidateEx(lpcAddress, ptOffsets, tCount) HcInternalValidate(HcInternalLocatePointer(lpcAddress, ptOffsets, tCount))
+#define HcInternalValidateEx(lpcAddress, ptOffsets, tCount) (HcInternalValidate(HcInternalLocatePointer(lpcAddress, ptOffsets, tCount)))
 
 //
 // Reads an int from a multi offset pointer.
 //
-#define HcInternalReadInt32(lpcAddress) (INT)(HcInternalValidate(lpcAddress) ? *(DWORD*)lpcAddress : 0)
-#define HcInternalReadInt64(lpcAddress) (INT64)(HcInternalValidate(lpcAddress) ? *(DWORD64*)lpcAddress : 0)
+#define HcInternalReadInt32(lpcAddress) ((INT)(HcInternalValidate(lpcAddress) ? (*(DWORD*)(lpcAddress)) : 0))
+#define HcInternalReadInt64(lpcAddress) ((INT64)(HcInternalValidate(lpcAddress) ? (*(DWORD64*)lpcAddress) : 0))
 
 //
 // Reads a string from a multi offset pointer.
 //
-#define HcInternalReadStringExA(lpcAddress, ptOffsets, tCount) (LPSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount)
-#define HcInternalReadStringExW(lpcAddress, ptOffsets, tCount) (LPWSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount)
+#define HcInternalReadStringExA(lpcAddress, ptOffsets, tCount) ((LPSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount))
+#define HcInternalReadStringExW(lpcAddress, ptOffsets, tCount) ((LPWSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount))
 
 #if defined (__cplusplus)
 extern "C" {
@@ -61,24 +61,26 @@ extern "C" {
 	// Implemented in hcinternal.c
 	//
 
-	PVOID HCAPI HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount);
+	HC_EXTERN_API BOOLEAN HCAPI HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength);
 
-	PVOID HCAPI HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount);
+	HC_EXTERN_API PVOID HCAPI HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount);
 
-	PVOID HCAPI HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount);
+	HC_EXTERN_API PVOID HCAPI HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount);
 
-	BOOLEAN HCAPI HcInternalValidate(LPCVOID lpcAddress);
+	HC_EXTERN_API PVOID HCAPI HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount);
 
-	LPVOID HCAPI HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
+	HC_EXTERN_API BOOLEAN HCAPI HcInternalValidate(LPCVOID lpcAddress);
 
-	INT HCAPI HcInternalReadIntEx32(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
-	INT64 HCAPI HcInternalReadIntEx64(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
+	HC_EXTERN_API LPVOID HCAPI HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
 
-	BOOLEAN HCAPI HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew);
+	HC_EXTERN_API INT HCAPI HcInternalReadIntEx32(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
+	HC_EXTERN_API INT64 HCAPI HcInternalReadIntEx64(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
 
-	BOOLEAN HCAPI HcInternalMemoryNopInstruction(PVOID pAddress);
+	HC_EXTERN_API BOOLEAN HCAPI HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew);
 
-	SIZE_T HCAPI HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo);
+	HC_EXTERN_API BOOLEAN HCAPI HcInternalMemoryNopInstruction(PVOID pAddress);
+
+	HC_EXTERN_API SIZE_T HCAPI HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo);
 
 
 #if defined (__cplusplus)

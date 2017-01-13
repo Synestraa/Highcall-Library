@@ -2,7 +2,7 @@
 
 #include "..\headers\hcmodule.h"
 #include "..\headers\hcfile.h"
-#include "..\headers\global.h"
+#include "..\headers\hcglobal.h"
 
 BOOLEAN
 HCAPI

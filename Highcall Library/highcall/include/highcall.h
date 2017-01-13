@@ -4,7 +4,6 @@
 #include "../sys/hcsyscall.h"
 
 #include "../headers/hcdef.h"
-#include "../headers/hcimport.h"
 #include "../headers/hchook.h"
 #include "../headers/hcmodule.h"
 #include "../headers/hcstring.h"
@@ -14,9 +13,11 @@
 #include "../headers/hcpe.h"
 #include "../headers/hcvirtual.h"
 #include "../headers/hcinternal.h"
-#include "../headers/global.h"
+#include "../headers/hcglobal.h"
 #include "../headers/hcerror.h"
 #include "../headers/hcinject.h"
+#include "../headers/hcvolume.h"
+#include "../headers/hcfile.h"
 
 // Windows version defines for initialization routines.
 

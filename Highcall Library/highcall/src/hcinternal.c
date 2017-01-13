@@ -31,11 +31,29 @@ Synestra 10/15/2016
 #include "../headers/hcvirtual.h"
 
 //
-// Used disassembler. https://github.com/gdabah/distorm
+// Used disassembler engine: https://github.com/gdabah/distorm
 //
 #include "../../../distorm/include/distorm.h"
 
-PVOID HCAPI HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount)
+HC_EXTERN_API 
+BOOLEAN
+HCAPI 
+HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
+{
+	for (; tLength--; pbFirst++, pbSecond++)
+	{
+		if ((*(BYTE*)pbFirst) != (*(BYTE*)pbSecond))
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+HC_EXTERN_API 
+PVOID
+HCAPI 
+HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount)
 {
 	PVOID ret = pDst;
 
@@ -48,7 +66,10 @@ PVOID HCAPI HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount)
 	return (ret);
 }
 
-PVOID HCAPI HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount)
+HC_EXTERN_API
+PVOID 
+HCAPI 
+HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount)
 {
 	PVOID ret = pDst;
 
@@ -78,7 +99,10 @@ PVOID HCAPI HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount)
 	return(ret);
 }
 
-PVOID HCAPI HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount)
+HC_EXTERN_API
+PVOID
+HCAPI 
+HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount)
 {
 	PVOID start = pDst;
 
@@ -88,34 +112,35 @@ PVOID HCAPI HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount)
 	return (start);
 }
 
+//
+// Fixme, crahes sometimes.
+//
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcInternalValidate(LPCVOID lpcAddress)
 {
-	MEMORY_BASIC_INFORMATION mbi;
-	SIZE_T ReturnedSize;
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	SIZE_T ReturnedSize = 0;
 
 	if (!lpcAddress)
-	{
 		return FALSE;
-	}
 
 	ReturnedSize = HcVirtualQuery(lpcAddress, &mbi, sizeof(mbi));
 
 	return !(!ReturnedSize || (mbi.Protect & PAGE_NOACCESS) || (mbi.Protect & PAGE_GUARD));
 }
 
+HC_EXTERN_API
 LPVOID
 HCAPI
 HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 {
-	LPVOID CurrentAddress;
-	SIZE_T Index;
+	LPVOID CurrentAddress = NULL;
+	SIZE_T Index = 0;
 
 	if (!HcInternalValidate(lpcAddress))
-	{
 		return NULL;
-	}
 
 	CurrentAddress = *(LPVOID*)lpcAddress;
 	if (!HcInternalValidate(CurrentAddress))
@@ -126,9 +151,7 @@ HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 	for (Index = 0; Index < tCount - 1; Index++)
 	{
 		if (!HcInternalValidate((LPVOID)((SIZE_T)CurrentAddress + ptOffsets[Index])))
-		{
 			return NULL;
-		}
 
 		CurrentAddress = *(LPVOID*)((SIZE_T)CurrentAddress + ptOffsets[Index]);
 	}
@@ -136,6 +159,7 @@ HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 	return HcInternalValidate(CurrentAddress) ? (LPVOID)((SIZE_T)CurrentAddress + ptOffsets[tCount - 1]) : NULL;
 }
 
+HC_EXTERN_API
 INT
 HCAPI
 HcInternalReadIntEx32(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
@@ -144,6 +168,7 @@ HcInternalReadIntEx32(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 	return HcInternalValidate(lpPtr) ? *(DWORD*)lpPtr : 0;
 }
 
+HC_EXTERN_API
 INT64
 HCAPI
 HcInternalReadIntEx64(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
@@ -152,11 +177,12 @@ HcInternalReadIntEx64(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 	return HcInternalValidate(lpPtr) ? *(DWORD64*)lpPtr : 0;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
 {
-	DWORD dwProtection;
+	DWORD dwProtection = 0;
 
 	//
 	// Change the protection to something we can write to.
@@ -177,15 +203,16 @@ HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
 	return FALSE;
 }
 
+HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcInternalMemoryNopInstruction(PVOID pAddress)
 {
-	DWORD dwProtection;
+	DWORD dwProtection = 0;
 
-	_CodeInfo ci;
-	_DInst di;
-	_DecodedInst inst;
+	_CodeInfo ci = { 0 };
+	_DInst di = { 0 };
+	_DecodedInst inst = { 0 };
 
 	ci.code = (unsigned char*)pAddress;
 	ci.codeLen = 0x100;
@@ -223,22 +250,21 @@ HcInternalMemoryNopInstruction(PVOID pAddress)
 	return FALSE;
 }
 
+HC_EXTERN_API
 SIZE_T
 HCAPI
 HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
 {
-	SIZE_T CurrentAddress;
-	SIZE_T ProbeAddress;
-	DWORD MaskSize; 
+	SIZE_T CurrentAddress = 0;
+	SIZE_T ProbeAddress = 0;
+	SIZE_T MaskSize = 0; 
 
 	MaskSize = HcStringSecureLengthA(szcMask);
 	if (!MaskSize || !HcStringSecureLengthA(szcPattern))
-	{
 		return 0;
-	}
 
 	/* Loop through the entire module .text/code area. */
-	for (CurrentAddress = pmInfo->Base; CurrentAddress < pmInfo->Base + pmInfo->Size - MaskSize; CurrentAddress++)
+	for (CurrentAddress = (SIZE_T)pmInfo->Base; CurrentAddress < (SIZE_T)pmInfo->Base + pmInfo->Size - MaskSize; CurrentAddress++)
 	{
 		/* Check for an initial match to start our larger pattern. */
 		if (*(BYTE*)CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')

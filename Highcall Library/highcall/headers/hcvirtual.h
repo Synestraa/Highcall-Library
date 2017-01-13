@@ -19,7 +19,7 @@ Revision History:
 #ifndef HC_MEM_H
 #define HC_MEM_H
 
-#include "../../native/wintype.h"
+#include "../private/wintype.h"
 
 //
 // defines from virtual.h
@@ -533,25 +533,25 @@ extern "C" {
 	// Defined in hcvirtual.c
 	//
 
-	LPVOID HCAPI HcVirtualAllocEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
+	HC_EXTERN_API LPVOID HCAPI HcVirtualAllocEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
 
-	LPVOID HCAPI HcVirtualAlloc(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
+	HC_EXTERN_API LPVOID HCAPI HcVirtualAlloc(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
 
-	BOOL HCAPI HcVirtualFreeEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
+	HC_EXTERN_API BOOL HCAPI HcVirtualFreeEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
 
-	BOOL HCAPI HcVirtualFree(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
+	HC_EXTERN_API BOOL HCAPI HcVirtualFree(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
 
-	BOOL HCAPI HcVirtualProtect(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
+	HC_EXTERN_API BOOL HCAPI HcVirtualProtect(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
 
-	BOOL HCAPI HcVirtualProtectEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
+	HC_EXTERN_API BOOL HCAPI HcVirtualProtectEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
 
-	BOOL HCAPI HcVirtualLock(IN LPVOID lpAddress, IN SIZE_T dwSize);
+	HC_EXTERN_API BOOL HCAPI HcVirtualLock(IN LPVOID lpAddress, IN SIZE_T dwSize);
 
-	SIZE_T HCAPI HcVirtualQuery(IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
+	HC_EXTERN_API SIZE_T HCAPI HcVirtualQuery(IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
 
-	SIZE_T HCAPI HcVirtualQueryEx(IN HANDLE hProcess, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
+	HC_EXTERN_API SIZE_T HCAPI HcVirtualQueryEx(IN HANDLE hProcess, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
 
-	BOOL HCAPI HcVirtualUnlock(IN LPVOID lpAddress, IN SIZE_T dwSize);
+	HC_EXTERN_API BOOL HCAPI HcVirtualUnlock(IN LPVOID lpAddress, IN SIZE_T dwSize);
 
 	//
 	// @TODO: The function does not allocate on heap when it should, this should be changed.
@@ -559,7 +559,7 @@ extern "C" {
 	// long time replacement.
 	//
 
-	PVOID HCAPI HcAlloc(IN SIZE_T Size);
+	HC_EXTERN_API PVOID HCAPI HcAlloc(IN SIZE_T Size);
 
 	//
 	// @TODO: Reflecting HcAlloc @TODO, this function should free the heap.
@@ -567,7 +567,7 @@ extern "C" {
 	// long time replacement.
 	//
 
-	VOID HCAPI HcFree(IN LPVOID lpAddress);
+	HC_EXTERN_API VOID HCAPI HcFree(IN LPVOID lpAddress);
 
 #if defined (__cplusplus)
 }
