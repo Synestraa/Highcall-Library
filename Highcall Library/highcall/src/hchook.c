@@ -50,17 +50,17 @@ IsConditionalJump(const PBYTE InstructionBytes, const SHORT Size)
 }
 
 static
-SIZE_T CalculateRelative(SIZE_T Source, SIZE_T Destination, SIZE_T Size)
+SIZE_T CalculateRelative(PBYTE Source, PBYTE Destination, SIZE_T Size)
 {
 	return (Source < Destination) ? 0 - (Source - Destination) - Size : Destination - (Source + Size);
 }
 
 static
-SIZE_T FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T MaxLength)
+PBYTE FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T MaxLength)
 {
-	SIZE_T FreeSpace = 0;
+	PBYTE FreeSpace = 0;
 	MEMORY_BASIC_INFORMATION mbi = { 0 };
-	for (SIZE_T Addr = (SIZE_T)lpAddress + Size; Addr < (SIZE_T)lpAddress + MaxLength + Size; Addr = Addr++)
+	for (PBYTE Addr = (PBYTE)lpAddress + Size; Addr < (PBYTE)lpAddress + MaxLength + Size; Addr = Addr++)
 	{
 		__try
 		{
@@ -90,7 +90,7 @@ SIZE_T FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T M
 			if (mbi.State == MEM_FREE)
 			{
 				/* Try and allocate on this spot. */
-				if ((FreeSpace = (SIZE_T)HcVirtualAlloc((LPVOID)Addr,
+				if ((FreeSpace = (PBYTE)HcVirtualAlloc((LPVOID)Addr,
 					MinimumSize,
 					MEM_RESERVE | MEM_COMMIT,
 					PAGE_EXECUTE_READWRITE)))
@@ -105,7 +105,7 @@ SIZE_T FindFreeSpace(LPVOID lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T M
 }
 
 static
-BOOLEAN SetJump(SIZE_T Source, SIZE_T Destination)
+BOOLEAN SetJump(PBYTE Source, PBYTE Destination)
 {
 	DWORD Protection = 0;
 	//
@@ -122,11 +122,11 @@ BOOLEAN SetJump(SIZE_T Source, SIZE_T Destination)
 		//
 		BYTE detour[] = { 0x50, 0x48, 0xB8, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x87, 0x04, 0x24, 0xC3 };
 		HcInternalCopy((PBYTE)Source, detour, sizeof(detour));
-		*(SIZE_T*)&((PBYTE)Source)[3] = Destination;
+		*(PBYTE*)&((PBYTE)Source)[3] = Destination;
 #else
 		/* jmp dword ptr [address] */
 		*(BYTE*)Source = 0xE9;
-		*(DWORD*)(Source + 1) = CalculateRelative(Source, Destination, 5);
+		*(DWORD*)(Source + 1) = (DWORD)CalculateRelative(Source, Destination, 5);
 #endif
 
 		//
@@ -141,7 +141,7 @@ BOOLEAN SetJump(SIZE_T Source, SIZE_T Destination)
 }
 
 static
-BOOLEAN SetRelativeJump64(SIZE_T Source, SIZE_T Destination)
+BOOLEAN SetRelativeJump64(PBYTE Source, PBYTE Destination)
 {
 	DWORD Protection = 0;
 
@@ -149,7 +149,7 @@ BOOLEAN SetRelativeJump64(SIZE_T Source, SIZE_T Destination)
 	if (HcVirtualProtect((LPVOID)Source, 6, PAGE_EXECUTE_READWRITE, &Protection))
 	{
 		*(WORD*)(Source) = 0x25ff;
-		*(DWORD*)(Source + 2) = (DWORD)CalculateRelative((SIZE_T)Source, (SIZE_T)Destination, 6);
+		*(DWORD*)(Source + 2) = (DWORD)CalculateRelative(Source, Destination, 6);
 
 		/* Reset the protection */
 		if (HcVirtualProtect((LPVOID)Source, 6, Protection, &Protection))
@@ -162,9 +162,9 @@ BOOLEAN SetRelativeJump64(SIZE_T Source, SIZE_T Destination)
 
 static
 VOID
-RelocateExistingRelative(SIZE_T InstructionAddress,
-	SIZE_T				Source,
-	SIZE_T				Destination,
+RelocateExistingRelative(PBYTE InstructionAddress,
+	PBYTE				Source,
+	PBYTE				Destination,
 	SIZE_T				Displacement,
 	BYTE				Type,
 	BYTE				Index)
@@ -184,17 +184,17 @@ RelocateExistingRelative(SIZE_T InstructionAddress,
 }
 
 static 
-VOID RelocateConditional(SIZE_T lpAddress, 
+VOID RelocateConditional(PBYTE lpAddress,
 	BYTE						InstSize,
 	DWORD						CodeSize, 
-	SIZE_T						Source, 
-	SIZE_T						Destination, 
+	PBYTE						Source,
+	PBYTE						Destination,
 	const BYTE					Type, 
 	const BYTE					Index, 
 	SIZE_T						Offset)
 {
-	SIZE_T AbsoluteDestination = lpAddress + (Offset - (Destination - Source)) + InstSize;
-	SIZE_T FreeSpace = FindFreeSpace((LPVOID)Destination, CodeSize, JMPSIZE, 0x1000);
+	PBYTE AbsoluteDestination = lpAddress + (Offset - (Destination - Source)) + InstSize;
+	PBYTE FreeSpace = FindFreeSpace((LPVOID)Destination, CodeSize, JMPSIZE, 0x1000);
 
 	if (!FreeSpace)
 	{
@@ -210,7 +210,7 @@ VOID RelocateConditional(SIZE_T lpAddress,
 	}
 
 	/* Calculate the new offset of our conditional, this time to the location of our direct jump. */
-	Offset = CalculateRelative(lpAddress, (SIZE_T)FreeSpace, InstSize);
+	Offset = CalculateRelative(lpAddress, (PBYTE)FreeSpace, InstSize);
 
 	/* Its assumed that the conditional offset is never in a place other than 1 
 
@@ -321,7 +321,7 @@ HStatus
 HCAPI 
 HcHookRelocateCode(PBYTE Code,
 	DWORD Size, 
-	SIZE_T Source)
+	PBYTE Source)
 {
 	_CodeInfo Info = { 0 };
 	_DInst Instruction = { 0 };
@@ -330,7 +330,7 @@ HcHookRelocateCode(PBYTE Code,
 
 	DWORD InstructionIndex = 0;
 	unsigned InstructionCount = 0;
-	SIZE_T InstructionAddress = 0;
+	PBYTE InstructionAddress = 0;
 	BYTE InstructionDispIndex = 0;
 	BYTE InstructionOffsetIndex = 0;
 	LPSTR InstructionMnemonic = NULL;
@@ -380,7 +380,7 @@ HcHookRelocateCode(PBYTE Code,
 		distorm_format(&Info, &Instruction, &InstructionEx);
 
 		/* The address of this instruction */
-		InstructionAddress = (SIZE_T)Code + (SIZE_T)InstructionEx.offset;
+		InstructionAddress = Code + InstructionEx.offset;
 
 		/* Start of the disp (example: [rip + 0xbeef] where the 0xbeef is our disp) 
 		-- dispSize is the size of our disp represented in bits, to get the index we take the size of our instruction, and take out the dispSize in bytes from it,
@@ -412,7 +412,7 @@ HcHookRelocateCode(PBYTE Code,
 
 				RelocateExistingRelative(InstructionAddress, 
 					Source,
-					(SIZE_T)Code, 
+					Code, 
 					(SIZE_T)Instruction.disp,
 					Instruction.dispSize,
 					InstructionDispIndex);
@@ -424,13 +424,13 @@ HcHookRelocateCode(PBYTE Code,
 				if (IsConditionalJump((PBYTE)InstructionAddress, InstructionEx.size))
 				{
 					/* Does the relative jump go beyond our copied code? */
-					if ((SIZE_T)Instruction.imm.addr > Size)
+					if ((DWORD)Instruction.imm.addr > Size)
 					{
 						RelocateConditional(InstructionAddress,
 							InstructionEx.size,
 							Size,
 							Source,
-							(SIZE_T)Code,
+							Code,
 							(BYTE)op.size,
 							InstructionOffsetIndex,
 							(SIZE_T)Instruction.imm.addr);
@@ -440,7 +440,7 @@ HcHookRelocateCode(PBYTE Code,
 				{
 					RelocateExistingRelative(InstructionAddress,
 						Source,
-						(SIZE_T)Code,
+						Code,
 						(SIZE_T)Instruction.imm.addr,
 						(BYTE)op.size,
 						InstructionOffsetIndex);
@@ -471,7 +471,7 @@ HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 	LPVOID lpAddress = 0;
 	MEMORY_BASIC_INFORMATION mbi = { 0 };
 
-	for (SIZE_T Addr = (SIZE_T)lpBaseAddress; Addr > (SIZE_T)lpBaseAddress - INT_MAX; Addr = (SIZE_T)mbi.BaseAddress - 1)
+	for (PBYTE Addr = (PBYTE)lpBaseAddress; Addr > (PBYTE)lpBaseAddress - INT_MAX; Addr = (PBYTE)mbi.BaseAddress - 1)
 	{
 		/* Check the block */
 		if (!HcVirtualQuery((LPCVOID)Addr, &mbi, sizeof(mbi)))
@@ -575,7 +575,7 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	HcInternalCopy(Recreated, Original, SizeOfFunction);
 
 	/* Relocate the block we found. */
-	if (HcHookRelocateCode(Recreated, SizeOfFunction, (SIZE_T)lpBaseAddress) != HOOK_NO_ERR)
+	if (HcHookRelocateCode(Recreated, SizeOfFunction, lpBaseAddress) != HOOK_NO_ERR)
 	{
 		HcFree(Original);
 		return FALSE;
@@ -585,7 +585,7 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	HcFree(Original);
 
 	/* Write the jump. */
-	if (!SetJump((SIZE_T)Recreated + dwRequiredSize, (SIZE_T)lpBaseAddress + dwRequiredSize))
+	if (!SetJump((PBYTE)Recreated + dwRequiredSize, (PBYTE)lpBaseAddress + dwRequiredSize))
 	{
 		return NULL;
 	}
@@ -701,7 +701,7 @@ HcHookDetour(PDetourContext Context)
 	if (Context->Flags & Recreate)
 	{
 		/* Fix relocs in the chunk. */
-		if ((Status = HcHookRelocateCode(Context->pbReconstructed, Context->dwLength, (SIZE_T)Context->lpSource)) != HOOK_NO_ERR)
+		if ((Status = HcHookRelocateCode(Context->pbReconstructed, Context->dwLength, Context->lpSource)) != HOOK_NO_ERR)
 		{
 			return Status;
 		}
@@ -709,7 +709,7 @@ HcHookDetour(PDetourContext Context)
 		if (Context->Flags & JumpOriginal)
 		{
 			/* Set the jump back to the continued code. */
-			if (!SetJump((SIZE_T)(Context->pbReconstructed + Context->dwLength), (SIZE_T)Context->lpSource + Context->dwLength))
+			if (!SetJump((Context->pbReconstructed + Context->dwLength), (PBYTE)Context->lpSource + Context->dwLength))
 			{
 				return HOOK_PROTECTION_FAILURE;
 			}
@@ -720,7 +720,7 @@ HcHookDetour(PDetourContext Context)
 	if (Context->Type == Relative)
 	{
 		/* Set a rip relative 6 byte jump. */
-		if (!SetRelativeJump64((SIZE_T)Context->lpSource, (SIZE_T)Context->lpDestination))
+		if (!SetRelativeJump64((PBYTE)Context->lpSource, (PBYTE)Context->lpDestination))
 		{
 			return HOOK_PROTECTION_FAILURE;
 		}
@@ -728,7 +728,7 @@ HcHookDetour(PDetourContext Context)
 	else
 #endif
 	{
-		if (!SetJump((SIZE_T)Context->lpSource, (SIZE_T)Context->lpDestination))
+		if (!SetJump((PBYTE)Context->lpSource, (PBYTE)Context->lpDestination))
 		{
 			return HOOK_PROTECTION_FAILURE;
 		}
@@ -737,7 +737,7 @@ HcHookDetour(PDetourContext Context)
 		DWORD Protection;
 		if (HcVirtualProtect(Context->lpSource, Context->dwLength, PAGE_EXECUTE_READWRITE, &Protection))
 		{
-			for (int i = 5; i < Context->dwLength; i++)
+			for (DWORD i = 5; i < Context->dwLength; i++)
 				((PBYTE)(Context->lpSource))[i] = 0x90;
 
 			HcVirtualProtect(Context->lpSource, Context->dwLength, Protection, &Protection);

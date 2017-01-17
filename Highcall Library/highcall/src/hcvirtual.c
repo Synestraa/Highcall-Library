@@ -1066,7 +1066,7 @@ PVOID
 HCAPI 
 HcAlloc(IN SIZE_T Size)
 {
-	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	
 	PVOID lpAllocated = malloc(Size);
 	if (lpAllocated)

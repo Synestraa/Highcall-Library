@@ -83,7 +83,7 @@ extern "C" {
 
 	HC_EXTERN_API HStatus HCAPI HcHookDetour(PDetourContext Context);
 	HC_EXTERN_API HStatus HCAPI HcHookDetourContextRestore(PDetourContext Context);
-	HC_EXTERN_API HStatus HCAPI HcHookRelocateCode(PBYTE Code, DWORD Size, SIZE_T Source);
+	HC_EXTERN_API HStatus HCAPI HcHookRelocateCode(PBYTE Code, DWORD Size, PBYTE Source);
 	HC_EXTERN_API DWORD HCAPI HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength);
 	HC_EXTERN_API PVOID HCAPI HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize);
 
