@@ -5,6 +5,8 @@
 //
 #include "../headers/hcobject.h"
 
+#pragma comment(lib, "user32.lib")
+
 //
 // For files
 //
@@ -185,10 +187,13 @@ HCAPI MmInternalResolve(PVOID lParam)
 	return TRUE;
 }
 
+#pragma optimize( "", off )  
 SIZE_T HCAPI MmInternalResolved()
 {
 	return 0;
 }
+#pragma optimize("", on)
+
 #pragma endregion
 
 static
@@ -479,6 +484,8 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	LPVOID lpToLoadLibrary = NULL;
 	LPWSTR szFullPath = NULL;
 	HANDLE hThread = NULL;
+	DWORD ExitCode = 0;
+	HANDLE hFile = NULL;
 
 	if (HcStringIsBad(szcPath))
 	{
@@ -514,7 +521,25 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	PathSize = HcStringSecureLengthW(szFullPath);
+	hFile = CreateFileW(szcPath,
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL);
+
+	if (hFile == INVALID_HANDLE)
+	{
+		HcErrorSetDosError(ERROR_PATH_NOT_FOUND);
+
+		HcFree(szFullPath);
+		return FALSE;
+	}
+
+	HcObjectClose(hFile);
+
+	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)
 	{
 		HcFree(szFullPath);
@@ -539,7 +564,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	if (!HcProcessWriteMemory(hProcess,
 		PathToDll,
 		szFullPath,
-		PathSize + 1,
+		PathSize + sizeof(WCHAR),
 		NULL))
 	{
 		//
@@ -553,7 +578,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	//
 	// Load the dll with a new thread in the process.
 	//
-	hThread = HcProcessCreateThread(hProcess, (LPTHREAD_START_ROUTINE)lpToLoadLibrary, (LPVOID)PathToDll, 0);
+	hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lpToLoadLibrary, (LPVOID)PathToDll, 0, NULL);
 	if (hThread == INVALID_HANDLE)
 	{
 		//
@@ -564,10 +589,28 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	//
-	// Wait for the thread to finish before cleanup.
-	//
+
+	/* Wait for the thread to finish */
 	HcObjectWait(hThread, INFINITE);
+
+	/* Did the thread exit? */
+	GetExitCodeThread(hThread, &ExitCode);
+
+	if (!ExitCode)
+	{
+		/* We're out, something went wrong. */
+		HcErrorSetDosError(ExitCode);
+
+		HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
+		HcFree(szFullPath);
+
+		HcClose(hThread);
+
+		return FALSE;
+	}
+
+	/* Done.*/
+	HcClose(hThread);
 
 	HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
 	HcFree(szFullPath);

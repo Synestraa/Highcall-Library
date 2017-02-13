@@ -620,9 +620,9 @@ HcHookDetour(PDetourContext Context)
 	{
 		PBYTE originalData = (PBYTE)HcHookRecreateCode(Context->lpSource, 16);
 #ifndef _WIN64
-		SIZE_T instructionSize = HcHookAssertLength(originalData, 5);
+		DWORD instructionSize = HcHookAssertLength(originalData, 5);
 #else
-		SIZE_T instructionSize = HcHookAssertLength(originalData, 16);
+		DWORD instructionSize = HcHookAssertLength(originalData, 16);
 #endif
 		if (instructionSize)
 		{

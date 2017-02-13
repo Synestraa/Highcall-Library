@@ -524,7 +524,7 @@ BOOLEAN
 HCAPI
 HcStringContainsA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
 {
-	return HcStringWithinStringA(lpString1, lpString2, CaseInSensitive) > 0;
+	return HcStringWithinStringA(lpString1, lpString2, CaseInSensitive) != NULL;
 }
 
 HC_EXTERN_API
@@ -532,7 +532,7 @@ BOOLEAN
 HCAPI
 HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInsensitive)
 {
-	return HcStringWithinStringW(lpString1, lpString2, CaseInsensitive) > 0;
+	return HcStringWithinStringW(lpString1, lpString2, CaseInsensitive) != NULL;
 }
 
 //
@@ -568,7 +568,7 @@ BOOLEAN
 HCAPI
 HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 	LPSTR lpStringOut,
-	SIZE_T Size)
+	SIZE_T SizeInclusive)
 {
 	/* Do the convert. */
 	if (!WideCharToMultiByte(CP_UTF8,
@@ -576,14 +576,14 @@ HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 		lpStringToConvert,
 		-1,
 		lpStringOut,
-		(DWORD)Size,
+		(DWORD)SizeInclusive,
 		NULL,
 		NULL))
 	{
 		return FALSE;
 	}
 
-	lpStringOut[Size / sizeof(CHAR)] = ANSI_NULL;
+	lpStringOut[(SizeInclusive - 1) / sizeof(CHAR)] = ANSI_NULL;
 
 	return TRUE;
 }
@@ -660,7 +660,7 @@ HcStringConvertWtoA(IN LPCWSTR lpStringConvert)
 		return NULL;
 	}
 
-	if (!HcStringCopyConvertWtoA(lpStringConvert, convertedOut, sizeOfString))
+	if (!HcStringCopyConvertWtoA(lpStringConvert, convertedOut, sizeOfString + sizeof(CHAR)))
 	{
 		return NULL;
 	}
