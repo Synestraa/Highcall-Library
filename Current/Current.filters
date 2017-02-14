@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="distorm">
+      <UniqueIdentifier>{0f2b5851-bfaf-4ff1-abf7-403c34980227}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers">
+      <UniqueIdentifier>{99ffc7b0-34ee-4fff-b8dd-a9e2ff1a542c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{ae4e6c87-d2f3-4852-a52a-cd44f92be811}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal">
+      <UniqueIdentifier>{1f3cb8e6-8f65-4be7-9330-ced7d0a172ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="native">
+      <UniqueIdentifier>{affe6063-7643-421b-8b4f-464271541d85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{3631ecca-c2a2-4a64-a10d-60a25f80bc7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sys">
+      <UniqueIdentifier>{9ea5f219-bb57-4445-b22f-49880bb0103b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sys\asm">
+      <UniqueIdentifier>{1ddcf8c7-7c82-4172-89cb-7472427192b3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\distorm\src\decoder.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\distorm.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\instructions.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\insts.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\mnemonics.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\operands.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\prefix.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\textdefs.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\distorm\src\wstring.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\hcsyscall.c">
+      <Filter>sys</Filter>
+    </ClCompile>
+    <ClCompile Include="include\highcall.c" />
+    <ClCompile Include="src\hcconstruct.c" />
+    <ClCompile Include="src\hcerror.c" />
+    <ClCompile Include="src\hcfile.c" />
+    <ClCompile Include="src\hcfile_placeholder.c" />
+    <ClCompile Include="src\hchook.c" />
+    <ClCompile Include="src\hcinject.c" />
+    <ClCompile Include="src\hcinternal.c" />
+    <ClCompile Include="src\hcmodule.c" />
+    <ClCompile Include="src\hcobject.c" />
+    <ClCompile Include="src\hcpe.c" />
+    <ClCompile Include="src\hcprocess.c" />
+    <ClCompile Include="src\hcstring.c" />
+    <ClCompile Include="src\hctoken.c" />
+    <ClCompile Include="src\hcvirtual.c" />
+    <ClCompile Include="src\hcvolume.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\distorm\include\distorm.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\include\mnemonics.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\config.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\decoder.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\instructions.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\insts.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\operands.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\prefix.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\textdefs.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\wstring.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\distorm\src\x86defs.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\hcsyscall.h">
+      <Filter>sys</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\hcdef.h" />
+    <ClInclude Include="headers\hcerror.h" />
+    <ClInclude Include="headers\hcfile.h" />
+    <ClInclude Include="headers\hcglobal.h" />
+    <ClInclude Include="headers\hchook.h" />
+    <ClInclude Include="headers\hcinject.h" />
+    <ClInclude Include="headers\hcinternal.h" />
+    <ClInclude Include="headers\hcmodule.h" />
+    <ClInclude Include="headers\hcobject.h" />
+    <ClInclude Include="headers\hcpe.h" />
+    <ClInclude Include="headers\hcprocess.h" />
+    <ClInclude Include="headers\hcstring.h" />
+    <ClInclude Include="headers\hctoken.h" />
+    <ClInclude Include="headers\hcvirtual.h" />
+    <ClInclude Include="headers\hcvolume.h" />
+    <ClInclude Include="include\highcall.h" />
+    <ClInclude Include="private\imports.h" />
+    <ClInclude Include="private\native.h" />
+    <ClInclude Include="private\status.h" />
+    <ClInclude Include="private\wintype.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="sys\asm\AdjustPrivilegesToken.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\AllocateVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\Close.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\CreateFile.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\CreateThread.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\CreateThreadEx.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\FlushInstructionCache.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\FreeVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\LockVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\OpenDirectoryObject.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\OpenProcess.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\OpenProcessToken.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\ProtectVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryInformationFile.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryInformationProcess.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryInformationThread.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryInformationToken.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QuerySystemInformation.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\QueryVolumeInformationFile.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\ReadVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\ResumeProcess.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\ResumeThread.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\SetInformationThread.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\SuspendProcess.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\UnlockVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\WaitForMultipleObjects.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\WaitForSingleObject.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+    <MASM Include="sys\asm\WriteVirtualMemory.asm">
+      <Filter>sys\asm</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>

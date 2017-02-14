@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="private\distorm\src\decoder.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\distorm.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcfile.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcerror.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcconstruct.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcfile_placeholder.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hchook.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcinject.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcinternal.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcmodule.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcobject.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcpe.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcprocess.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcstring.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hctoken.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcvirtual.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\hcvolume.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\wstring.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\textdefs.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\prefix.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\operands.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\mnemonics.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\insts.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\distorm\src\instructions.c">
+      <Filter>private\distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\sys\hcsyscall.c">
+      <Filter>private\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="Build\Include\highcall.c">
+      <Filter>include</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="private\distorm\src\config.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\decoder.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\include\distorm.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcdef.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcerror.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcfile.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcglobal.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hchook.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcinject.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcinternal.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcmodule.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcobject.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcpe.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcprocess.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcstring.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hctoken.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcvirtual.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\hcvolume.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\x86defs.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\wstring.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\textdefs.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\prefix.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\operands.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\include\mnemonics.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\insts.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="private\distorm\src\instructions.h">
+      <Filter>private\distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="public\imports.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\wintype.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\status.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="public\native.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="private\sys\hcsyscall.h">
+      <Filter>private\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="Build\Include\highcall.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="private\sys\asm\AdjustPrivilegesToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\Close.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AllocateVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateThreadEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushInstructionCache.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FreeVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ProtectVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySystemInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryVolumeInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReadVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ResumeProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ResumeThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SuspendProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnlockVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForMultipleObjects.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForSingleObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WriteVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenProcessToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenDirectoryObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LockVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="private">
+      <UniqueIdentifier>{0ddf48ab-0694-40d2-bb41-d2d9ef3c8324}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public">
+      <UniqueIdentifier>{930b2bd8-2242-4f73-a0fe-51d6dfe3132a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private\distorm">
+      <UniqueIdentifier>{8ffeac98-cad4-4bf9-8075-323ade4bd889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private\sys">
+      <UniqueIdentifier>{038c6612-06f0-471b-8684-08320b1448b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private\sys\asm">
+      <UniqueIdentifier>{e98453f3-69be-47b5-aad2-6023d51e816e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{8d76bb82-8eab-47eb-ba8c-8599b1a7aaf9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
