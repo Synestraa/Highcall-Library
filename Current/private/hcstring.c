@@ -647,10 +647,10 @@ BOOLEAN
 HCAPI
 HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
 	LPWSTR lpStringOut,
-	DWORD Size)
+	DWORD dwStringCount)
 {
-	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, Size + 1 /* null */);
-	HcStringTerminateW(lpStringOut, Size);
+	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, dwStringCount);
+	TSTR_W(lpStringOut, dwStringCount);
 	return TRUE;
 }
 
@@ -674,10 +674,10 @@ BOOLEAN
 HCAPI
 HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 	LPSTR lpStringOut,
-	DWORD Size)
+	DWORD dwStringCount)
 {
-	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, Size + sizeof(ANSI_NULL));
-	HcStringTerminateA(lpStringOut, Size);
+	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, dwStringCount);
+	TSTR_A(lpStringOut, dwStringCount);
 	return retn > 0;
 }
 
@@ -687,21 +687,21 @@ HCAPI
 HcStringConvertAtoW(IN LPCSTR lpStringConvert)
 {
 	LPWSTR convertedOut;
-	DWORD sizeOfString;
+	DWORD dwCount;
 	
-	sizeOfString = (DWORD) HcStringLenA(lpStringConvert);
-	if (!sizeOfString)
+	dwCount = HcStringLenA(lpStringConvert);
+	if (!dwCount)
 	{
 		return NULL;
 	}
 
-	convertedOut = HcStringAllocW(sizeOfString);
+	convertedOut = HcStringAllocW(dwCount);
 	if (!convertedOut)
 	{
 		return NULL;
 	}
 
-	if (!HcStringCopyConvertAtoW(lpStringConvert, convertedOut, sizeOfString))
+	if (!HcStringCopyConvertAtoW(lpStringConvert, convertedOut, dwCount))
 	{
 		return NULL;
 	}
@@ -709,31 +709,27 @@ HcStringConvertAtoW(IN LPCSTR lpStringConvert)
 	return convertedOut;
 }
 
-//
-// Allocates and converts using HcStringCopyConvert function.
-// Deallocate using HcFree()
-//
 HC_EXTERN_API
 LPSTR
 HCAPI
 HcStringConvertWtoA(IN LPCWSTR lpStringConvert)
 {
 	LPSTR convertedOut;
-	DWORD sizeOfString;
+	DWORD dwCount;
 
-	sizeOfString = (DWORD) HcStringLenW(lpStringConvert);
-	if (!sizeOfString)
+	dwCount = HcStringLenW(lpStringConvert);
+	if (!dwCount)
 	{
 		return NULL;
 	}
 
-	convertedOut = HcStringAllocA(sizeOfString);
+	convertedOut = HcStringAllocA(dwCount);
 	if (!convertedOut)
 	{
 		return NULL;
 	}
 
-	if (!HcStringCopyConvertWtoA(lpStringConvert, convertedOut, sizeOfString))
+	if (!HcStringCopyConvertWtoA(lpStringConvert, convertedOut, dwCount))
 	{
 		return NULL;
 	}
@@ -764,7 +760,7 @@ HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, DWORD dwSize)
 	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
 
-	HcStringTerminateA(szOut, Size / sizeof(CHAR));
+	TSTR_A(szOut, Size / sizeof(CHAR));
 	return TRUE;
 }
 
@@ -790,7 +786,7 @@ HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, DWORD tSize)
 	// Do the copy.
 	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
-	HcStringTerminateW(szOut, Size / sizeof(WCHAR));
+	TSTR_W(szOut, Size / sizeof(WCHAR));
 
 	return TRUE;
 }

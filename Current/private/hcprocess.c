@@ -1565,11 +1565,11 @@ BOOLEAN
 HCAPI
 HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	ULONG Len = 0;
 
-	HcInternalSet(&ProcInfo, 0, sizeof(ProcInfo));
+	ZERO(&ProcInfo);
 
 	/* Query the process information to get its PEB address */
 	Status = HcQueryInformationProcess(hProcess,
@@ -1602,25 +1602,55 @@ HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb)
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessGetCommandLineW(CONST HANDLE hProcess,
-	LPWSTR lpszCommandline,
+HC_EXTERN_API 
+SIZE_T
+HCAPI 
+HcProcessGetCommandLineA(
+	CONST HANDLE hProcess,
+	LPSTR* lpszCommandline,
 	CONST BOOLEAN bAlloc)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	LPWSTR lpCmd = NULL;
+	SIZE_T tRetnLength;
+	
+	if (lpszCommandline == NULL)
+	{
+		/* query jut the length. */
+		return HcProcessGetCommandLineW(hProcess, NULL, FALSE);
+	}
+
+	tRetnLength = HcProcessGetCommandLineW(hProcess, &lpCmd, TRUE);
+
+	if (bAlloc)
+	{
+		*lpszCommandline = HcStringAllocA(tRetnLength);
+		HcStringCopyW(*lpszCommandline, lpCmd, tRetnLength);
+	}
+
+	HcFree(lpCmd);
+	return tRetnLength;
+}
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcProcessGetCommandLineW(CONST HANDLE hProcess,
+	LPWSTR* lpszCommandline,
+	CONST BOOLEAN bAlloc)
+{
+	NTSTATUS Status;
+	SIZE_T tCmdLength;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	RTL_USER_PROCESS_PARAMETERS processParameters;
 	PEB peb;
 
-	HcInternalSet(&peb, 0, sizeof(peb));
-	HcInternalSet(&ProcInfo, 0, sizeof(ProcInfo));
-	HcInternalSet(&processParameters, 0, sizeof(processParameters));
+	ZERO(&peb);
+	ZERO(&ProcInfo);
+	ZERO(&processParameters);
 
 	if (!HcProcessGetPeb(hProcess, &peb))
 	{
-		return FALSE;
+		return 0;
 	}
 
 	if (!HcProcessReadMemory(hProcess,
@@ -1629,64 +1659,55 @@ HcProcessGetCommandLineW(CONST HANDLE hProcess,
 		sizeof(processParameters),
 		NULL))
 	{
-		return FALSE;
+		return 0;
+	}
+
+	tCmdLength = processParameters.CommandLine.Length / sizeof(WCHAR);
+	if (lpszCommandline == NULL)
+	{
+		return tCmdLength;
 	}
 
 	if (bAlloc)
 	{
-		lpszCommandline = HcStringAllocW(processParameters.CommandLine.Length);
-		if (!lpszCommandline)
+		*lpszCommandline = HcStringAllocW(tCmdLength);
+		if (!*lpszCommandline)
 		{
 			HcErrorSetNtStatus(STATUS_NO_MEMORY);
-			return FALSE;
+			return 0;
 		}
 	}
 
 	if (!HcProcessReadNullifiedString(hProcess,
 		&(processParameters.CommandLine),
-		lpszCommandline,
+		*lpszCommandline,
 		processParameters.CommandLine.Length / 2))
 	{
-		return FALSE;
+		return 0;
 	}
 
-	return TRUE;
+	return tCmdLength;
 }
 
 HC_EXTERN_API
-BOOLEAN
+SIZE_T
 HCAPI
-HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR szDirectory, PDWORD ptOutSize)
+HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 {
-	PROCESS_BASIC_INFORMATION	pbi;
+	PROCESS_BASIC_INFORMATION pbi;
 	RTL_USER_PROCESS_PARAMETERS upp;
 	PEB peb;
-	DWORD queryLen = 0;
-	SIZE_T len = queryLen;
+	SIZE_T tReturnLength;
+	SIZE_T len = 0;
 	NTSTATUS Status;
 
-	HcInternalSet(&pbi, 0, sizeof(pbi));
-	HcInternalSet(&upp, 0, sizeof(upp));
-	HcInternalSet(&peb, 0, sizeof(peb));
+	ZERO(&pbi);
+	ZERO(&upp);
+	ZERO(&peb);
 
-	Status = HcQueryInformationProcess(hProcess,
-		ProcessBasicInformation, 
-		&pbi, 
-		sizeof(pbi),
-		&queryLen);
-
-	if (!NT_SUCCESS(Status))
+	if (!HcProcessGetPeb(hProcess, &peb))
 	{
-		return FALSE;
-	}
-
-	if (!HcProcessReadMemory(hProcess, 
-		pbi.PebBaseAddress,
-		&peb, 
-		sizeof(PEB),
-		&len))
-	{
-		return FALSE;
+		return 0;
 	}
 
 	if (!HcProcessReadMemory(hProcess, 
@@ -1695,20 +1716,24 @@ HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR szDirectory, PDWORD 
 		sizeof(RTL_USER_PROCESS_PARAMETERS), 
 		&len))
 	{
-		return FALSE;
+		return 0;
+	}
+
+	tReturnLength = upp.CurrentDirectory.DosPath.Length / sizeof(WCHAR);
+	if (lpszDirectory == NULL)
+	{
+		return tReturnLength;
 	}
 
 	if (!HcProcessReadNullifiedString(hProcess,
 		&upp.CurrentDirectory.DosPath,
-		szDirectory, 
+		*lpszDirectory, 
 		upp.CurrentDirectory.DosPath.Length))
 	{
-		return FALSE;
+		return 0;
 	}
 
-	*ptOutSize = upp.CurrentDirectory.DosPath.Length;
-
-	return TRUE;
+	return tReturnLength;
 }
 
 HC_EXTERN_API
@@ -1719,7 +1744,8 @@ HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR szDirectory)
 	LPWSTR lpCopy = HcStringAllocW(MAX_PATH);
 	DWORD dirSize = 0;
 
-	if (!HcProcessGetCurrentDirectoryW(hProcess, lpCopy, &dirSize))
+	dirSize = HcProcessGetCurrentDirectoryW(hProcess, lpCopy);
+	if (!dirSize)
 	{
 		HcFree(lpCopy);
 		return FALSE;

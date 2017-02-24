@@ -85,8 +85,8 @@ extern "C" {
 	HC_EXTERN_API BOOLEAN HCAPI HcStringContainsA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
 	HC_EXTERN_API BOOLEAN HCAPI HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertAtoW(LPCSTR lpStringToConvert, LPWSTR lpStringOut, DWORD Size);
-	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert, LPSTR lpStringOut, DWORD Size);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertAtoW(LPCSTR lpStringToConvert, LPWSTR lpStringOut, DWORD dwStringCount);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert, LPSTR lpStringOut, DWORD dwStringCount);
 	
 	HC_EXTERN_API LPWSTR HCAPI HcStringConvertAtoW(IN LPCSTR lpStringConvert);
 	HC_EXTERN_API LPSTR HCAPI HcStringConvertWtoA(IN LPCWSTR lpStringConvert);

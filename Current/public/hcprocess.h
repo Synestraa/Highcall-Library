@@ -174,9 +174,10 @@ extern "C" {
 	HC_EXTERN_API BOOLEAN HCAPI HcProcessSetPrivilegeW(CONST HANDLE hProcess, CONST LPCWSTR Privilege, CONST BOOLEAN bEnablePrivilege);
 
 	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCommandLineW(CONST HANDLE hProcess, LPWSTR lpszCommandline, CONST BOOLEAN bAlloc);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR szDirectory, PDWORD ptOutSize);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR szDirectory);
+	HC_EXTERN_API SIZE_T HCAPI HcProcessGetCommandLineA(CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc);
+	HC_EXTERN_API SIZE_T HCAPI HcProcessGetCommandLineW(CONST HANDLE hProcess, LPWSTR* lpszCommandline, CONST BOOLEAN bAlloc);
+	HC_EXTERN_API SIZE_T HCAPI HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* szDirectory);
+	HC_EXTERN_API SIZE_T HCAPI HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR* szDirectory);
 
 #if defined (__cplusplus)
 }
