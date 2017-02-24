@@ -38,11 +38,11 @@ HcFileRead(IN HANDLE hFile,
 	IO_STATUS_BLOCK Iosb;
 	DWORD dwNumberOfBytesRead = 0;
 
-	HcInternalSet(&Iosb, 0, sizeof(Iosb));
+	ZERO(&Iosb);
 
 	hFile = HcObjectTranslateHandle(hFile);
 
-	Status = NtReadFile(hFile,
+	Status = HcReadFile(hFile,
 		NULL,
 		NULL,
 		NULL,
@@ -55,8 +55,7 @@ HcFileRead(IN HANDLE hFile,
 	/* Wait in case operation is pending */
 	if (Status == STATUS_PENDING)
 	{
-		Status = NtWaitForSingleObject(hFile, FALSE, NULL);
-		if (NT_SUCCESS(Status)) 
+		if (HcObjectWait(hFile, INFINITE))
 		{
 			Status = Iosb.Status;
 		}
@@ -161,7 +160,7 @@ HcFileSetCurrent(HANDLE hFile,
 		return 0 /* INVALID_SET_FILE_POINTER */;
 	}
 
-	errCode = NtSetInformationFile(hFile,
+	errCode = HcSetInformationFile(hFile,
 		&IoStatusBlock,
 		&FilePosition,
 		sizeof(FILE_POSITION_INFORMATION),
@@ -196,7 +195,7 @@ HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAcce
 	UNICODE_STRING NtPathU;
 	HANDLE FileHandle;
 	NTSTATUS Status;
-	ULONG FileAttributes = FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY);;
+	ULONG FileAttributes = FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY);
 	ULONG Flags = FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE;
 	PVOID EaBuffer = NULL;
 	DWORD EaLength = 0;

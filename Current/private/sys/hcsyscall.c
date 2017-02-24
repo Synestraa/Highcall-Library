@@ -8,6 +8,7 @@
 #include "../../public/imports.h"
 #include "../../public/hcstring.h"
 #include "../../public/hcpe.h"
+#include "../../public/hcerror.h"
 
 #define NT_SYMBOL "Nt"
 #define SYSINDEX_ASSERT(x) \
@@ -15,6 +16,7 @@
 	if (HcStringCompareContentA(lpCurrentFunction, NT_SYMBOL #x)) \
 	{\
 		sci##x = dwIndex;\
+		continue;\
 	} \
 }
 
@@ -56,6 +58,7 @@ sciTerminateProcess = SYSI_INVALID,
 sciDeviceIoControlFile,
 sciCreateEvent = SYSI_INVALID,
 sciSetInformationFile = SYSI_INVALID,
+sciReadFile = SYSI_INVALID,
 sciDuplicateObject = SYSI_INVALID;
 #pragma endregion
 
@@ -115,6 +118,11 @@ HcSysInitializeNativeSystem()
 	DWORD dwFileSize;
 	FILE_STANDARD_INFORMATION FileStandard;
 	IO_STATUS_BLOCK IoStatusBlock;
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	UNICODE_STRING NtPathU;
+	PVOID EaBuffer = NULL;
+	DWORD EaLength = 0; 
+	DWORD dwNumberOfBytesRead = 0;
 
 	ZERO(&IoStatusBlock);
 	ZERO(&FileStandard);
@@ -134,12 +142,47 @@ HcSysInitializeNativeSystem()
 	wchar_t path[] = L"C:/Windows/System32/ntdll.dll";
 	HcStringCopyW(lpModulePath, path, sizeof(path));
 
-	/* Open it up */
-	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
-	if (hFile == INVALID_HANDLE)
+	/* validate & translate the filename */
+	if (!RtlDosPathNameToNtPathName_U(lpModulePath,
+		&NtPathU,
+		NULL,
+		NULL))
 	{
 		return FALSE;
 	}
+
+	/* build the object attributes */
+	InitializeObjectAttributes(&ObjectAttributes,
+		&NtPathU,
+		0,
+		NULL,
+		NULL);
+
+	ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
+
+	/* Open the file */
+	Status = NtCreateFile(&hFile,
+		GENERIC_READ | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+		&ObjectAttributes,
+		&IoStatusBlock,
+		NULL,
+		FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY),
+		0,
+		FILE_OPEN,
+		FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE,
+		EaBuffer,
+		EaLength);
+
+	/* Don't free with HcFree due to RtlDosPathNameToNtPathName_U allocation type. */
+	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
+
+	if (!NT_SUCCESS(Status))
+	{
+		return FALSE;
+	}
+
+	/* Zero it out for the next call. */
+	ZERO(&IoStatusBlock);
 
 	Status = NtQueryInformationFile(hFile,
 		&IoStatusBlock,
@@ -157,10 +200,40 @@ HcSysInitializeNativeSystem()
 
 	HcFree(lpModulePath);
 
+	/* Zero it out again, for the next call. */
+	ZERO(&IoStatusBlock);
+
 	/* Snatch the data */
-	if (HcFileRead(hFile, lpBuffer, dwFileSize) != dwFileSize)
+	Status = NtReadFile(hFile,
+		NULL,
+		NULL,
+		NULL,
+		&IoStatusBlock,
+		lpBuffer,
+		dwFileSize,
+		NULL,
+		NULL);
+
+	/* Wait in case operation is pending */
+	if (Status == STATUS_PENDING)
 	{
-		NtClose(hFile);
+		if (HcObjectWait(hFile, INFINITE))
+		{
+			Status = IoStatusBlock.Status;
+		}
+	}
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		HcFree(lpBuffer);
+		return FALSE;
+	}
+
+	dwNumberOfBytesRead = (DWORD)IoStatusBlock.Information;
+	if (dwNumberOfBytesRead != dwFileSize)
+	{
+		HcFree(lpBuffer);
 		return FALSE;
 	}
 
@@ -184,7 +257,7 @@ HcSysInitializeNativeSystem()
 		if (VirtualAddress)
 		{
 			/* Calculate the relative offset */
-			RelativeVirtualAddress = VirtualAddress - lpModule;
+			RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
 
 			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 
@@ -233,6 +306,7 @@ HcSysInitializeNativeSystem()
 			SYSINDEX_ASSERT(CreateEvent);
 			SYSINDEX_ASSERT(DuplicateObject);
 			SYSINDEX_ASSERT(SetInformationFile);
+			SYSINDEX_ASSERT(ReadFile);
 		}
 	}
 

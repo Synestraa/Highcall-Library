@@ -65,17 +65,16 @@ static HIGHCALL_STATUS InitializeModules(VOID)
 
 static HIGHCALL_STATUS InitializeVersion(VOID)
 {
-	HIGHCALL_STATUS Status = HIGHCALL_SUCCESS;
+	HIGHCALL_STATUS HcStatus = HIGHCALL_SUCCESS;
 	RTL_OSVERSIONINFOEXW versionInfo;
 	ULONG majorVersion;
 	ULONG minorVersion;
-	NTSTATUS NtStatus;
 
-	HcInternalSet(&versionInfo, 0, sizeof(versionInfo));
+	ZERO(&versionInfo);
 	versionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 
-	NtStatus = RtlGetVersion((PRTL_OSVERSIONINFOW)&versionInfo);
-	if (!NT_SUCCESS(NtStatus))
+	if (!NT_SUCCESS(
+		RtlGetVersion((PRTL_OSVERSIONINFOW)&versionInfo)))
 	{
 		HcGlobal.WindowsVersion = WINDOWS_NOT_DEFINED;
 		return HIGHCALL_WINDOWS_UNDEFINED;
@@ -110,10 +109,10 @@ static HIGHCALL_STATUS InitializeVersion(VOID)
 	{
 		/* We dont support anything else. */
 		HcGlobal.WindowsVersion = WINDOWS_NOT_SUPPORTED;
-		Status = HIGHCALL_WINDOWS_UNDEFINED;
+		HcStatus = HIGHCALL_WINDOWS_UNDEFINED;
 	}
 
-	return Status;
+	return HcStatus;
 }
 
 

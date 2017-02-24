@@ -293,7 +293,20 @@ NTSTATUS HcSetInformationFile(
 	OUT PIO_STATUS_BLOCK       IoStatusBlock,
 	IN  PVOID                  FileInformation,
 	IN  ULONG                  Length,
-	IN  FILE_INFORMATION_CLASS FileInformationClass);
+	IN  FILE_INFORMATION_CLASS FileInformationClass); 
+
+HC_GLOBAL SYS_INDEX sciReadFile;
+NTSTATUS HcReadFile(
+	IN  HANDLE           FileHandle,
+	IN  HANDLE           Event OPTIONAL,
+	IN  PIO_APC_ROUTINE  ApcRoutine OPTIONAL,
+	IN  PVOID            ApcContext OPTIONAL,
+	OUT PIO_STATUS_BLOCK IoStatusBlock,
+	OUT PVOID            Buffer,
+	IN  ULONG            Length,
+	IN  PLARGE_INTEGER   ByteOffset OPTIONAL,
+	IN  PULONG           Key OPTIONAL);
+
 
 #if defined (__cplusplus)
 }
