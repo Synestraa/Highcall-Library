@@ -29,8 +29,8 @@ Revision History:
 #define HcStringAnsiLengthToUnicode(size) (size * sizeof(WCHAR))
 #define HcStringUnicodeLengthToAnsi(size) (size / sizeof(WCHAR))
 
-#define HcStringTerminateA(lpStr, size) (lpStr[size] = ANSI_NULL)
-#define HcStringTerminateW(lpStr, size) (lpStr[size] = UNICODE_NULL)
+#define TERMINATE_A(lpStr, size) (lpStr[size] = ANSI_NULL)
+#define TERMINATE_W(lpStr, size) (lpStr[size] = UNICODE_NULL)
 
 //
 // Determines whether the pointer is invalid.

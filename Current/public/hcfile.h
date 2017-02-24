@@ -250,18 +250,18 @@ extern "C" {
 
 	HC_EXTERN_API BOOLEAN HCAPI HcFileExistsA(LPCSTR lpFilePath);
 	HC_EXTERN_API BOOLEAN HCAPI HcFileExistsW(LPCWSTR lpFilePath);
-	HC_EXTERN_API SIZE_T HCAPI HcFileSize(HANDLE hFile);
-	HC_EXTERN_API SIZE_T HCAPI HcFileSizeA(LPCSTR lpPath);
-	HC_EXTERN_API SIZE_T HCAPI HcFileSizeW(LPCWSTR lpPath);
+	HC_EXTERN_API DWORD HCAPI HcFileSize(HANDLE hFile);
+	HC_EXTERN_API DWORD HCAPI HcFileSizeA(LPCSTR lpPath);
+	HC_EXTERN_API DWORD HCAPI HcFileSizeW(LPCWSTR lpPath);
 	HC_EXTERN_API ULONG HCAPI HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName);
 	HC_EXTERN_API ULONG HCAPI HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName);
 	HC_EXTERN_API ULONG HCAPI HcFileOffsetByVirtualAddress(LPCVOID lpAddress);
-	HC_EXTERN_API SIZE_T HCAPI HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
-	HC_EXTERN_API SIZE_T HCAPI HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
-	HC_EXTERN_API SIZE_T HCAPI HcFileReadAddress(LPCVOID lpAddress, PBYTE lpBufferOut, DWORD dwCountToRead);
+	HC_EXTERN_API DWORD HCAPI HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
+	HC_EXTERN_API DWORD HCAPI HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
+	HC_EXTERN_API DWORD HCAPI HcFileReadAddress(LPCVOID lpAddress, PBYTE lpBufferOut, DWORD dwCountToRead);
 	HC_EXTERN_API SIZE_T HCAPI HcFileGetCurrentDirectoryW(LPWSTR buf);
-	HC_EXTERN_API SIZE_T HCAPI HcFileWrite(IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite OPTIONAL);
-	HC_EXTERN_API SIZE_T HCAPI HcFileRead(IN HANDLE hFile, IN LPVOID lpBuffer, IN DWORD nNumberOfBytesToRead);
+	HC_EXTERN_API DWORD HCAPI HcFileWrite(IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite OPTIONAL);
+	HC_EXTERN_API DWORD HCAPI HcFileRead(IN HANDLE hFile, IN LPVOID lpBuffer, IN DWORD nNumberOfBytesToRead);
 	HC_EXTERN_API DWORD HCAPI HcFileSetCurrent(HANDLE hFile, LONG lDistanceToMove, DWORD dwMoveMethod);
 	HC_EXTERN_API HANDLE HCAPI HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);
 	HC_EXTERN_API HANDLE HCAPI HcFileOpenA(LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);

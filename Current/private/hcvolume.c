@@ -19,8 +19,8 @@ HcFileOpenDirectory(IN LPCWSTR DirName, IN BOOLEAN Write)
 	NTSTATUS errCode;
 	HANDLE hFile = NULL;
 
-	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
-	HcInternalSet(&ObjectAttributes, 0, sizeof(ObjectAttributes));
+	ZERO(&IoStatusBlock);
+	ZERO(&ObjectAttributes);
 
 	if (!RtlDosPathNameToNtPathName_U(DirName, &NtPathU, NULL, NULL))
 	{
@@ -163,16 +163,16 @@ HcVolumeGetInformationW(
 	_In_      DWORD   nFileSystemNameSize
 ) {
 	HANDLE hFile;
-	NTSTATUS errCode;
+	NTSTATUS Status;
 	UCHAR Buffer[max(FS_VOLUME_BUFFER_SIZE, FS_ATTRIBUTE_BUFFER_SIZE)];
 	IO_STATUS_BLOCK IoStatusBlock;
 	WCHAR RootPathName[MAX_PATH];
 	PFILE_FS_VOLUME_INFORMATION FileFsVolume = (PFILE_FS_VOLUME_INFORMATION)Buffer;
 	PFILE_FS_ATTRIBUTE_INFORMATION FileFsAttribute = (PFILE_FS_ATTRIBUTE_INFORMATION)Buffer;
 
-	HcInternalSet(&Buffer, 0, sizeof(Buffer));
-	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
-	HcInternalSet(&RootPathName, 0, sizeof(RootPathName));
+	ZERO(&Buffer);
+	ZERO(&IoStatusBlock);
+	ZERO(&RootPathName);
 
 	if (HcStringIsNullOrEmpty(lpRootPathName))
 	{
@@ -190,74 +190,55 @@ HcVolumeGetInformationW(
 		return FALSE;
 	}
 
-	errCode = HcQueryVolumeInformationFile(hFile,
+	Status = HcQueryVolumeInformationFile(hFile,
 		&IoStatusBlock,
 		FileFsVolume,
 		FS_VOLUME_BUFFER_SIZE,
 		FileFsVolumeInformation);
 
-	if (!NT_SUCCESS(errCode))
+	if (!NT_SUCCESS(Status))
 	{
 		HcObjectClose(hFile);
-		HcErrorSetNtStatus(errCode);
+		HcErrorSetNtStatus(Status);
 		return FALSE;
 	}
 
 	if (lpVolumeSerialNumber)
+	{
 		*lpVolumeSerialNumber = FileFsVolume->VolumeSerialNumber;
+	}
 
 	if (lpVolumeNameBuffer)
 	{
-		if (nVolumeNameSize * sizeof(WCHAR) >= FileFsVolume->VolumeLabelLength + sizeof(WCHAR))
-		{
-			HcInternalCopy(lpVolumeNameBuffer,
-				FileFsVolume->VolumeLabel,
-				FileFsVolume->VolumeLabelLength);
-
-			lpVolumeNameBuffer[FileFsVolume->VolumeLabelLength / sizeof(WCHAR)] = 0;
-		}
-		else
-		{
-			HcObjectClose(hFile);
-			HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
-			return FALSE;
-		}
+		HcStringCopyW(lpVolumeNameBuffer, FileFsVolume->VolumeLabel, nVolumeNameSize);
 	}
 
-	errCode = HcQueryVolumeInformationFile(hFile,
+	Status = HcQueryVolumeInformationFile(hFile,
 		&IoStatusBlock,
 		FileFsAttribute,
 		FS_ATTRIBUTE_BUFFER_SIZE,
 		FileFsAttributeInformation);
 
 	HcObjectClose(hFile);
-	if (!NT_SUCCESS(errCode))
+	if (!NT_SUCCESS(Status))
 	{
-		HcErrorSetNtStatus(errCode);
+		HcErrorSetNtStatus(Status);
 		return FALSE;
 	}
 
 	if (lpFileSystemFlags)
+	{
 		*lpFileSystemFlags = FileFsAttribute->FileSystemAttribute;
+	}
 
 	if (lpMaximumComponentLength)
+	{
 		*lpMaximumComponentLength = FileFsAttribute->MaximumComponentNameLength;
+	}
 
 	if (lpFileSystemNameBuffer)
 	{
-		if (nFileSystemNameSize * sizeof(WCHAR) >= FileFsAttribute->FileSystemNameLength + sizeof(WCHAR))
-		{
-			HcInternalCopy(lpFileSystemNameBuffer,
-				FileFsAttribute->FileSystemName,
-				FileFsAttribute->FileSystemNameLength);
-
-			lpFileSystemNameBuffer[FileFsAttribute->FileSystemNameLength / sizeof(WCHAR)] = 0;
-		}
-		else
-		{
-			HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
-			return FALSE;
-		}
+		HcStringCopyW(lpFileSystemNameBuffer, FileFsAttribute->FileSystemName, nFileSystemNameSize);
 	}
 	return TRUE;
 }

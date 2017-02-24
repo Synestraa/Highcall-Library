@@ -170,7 +170,7 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 	PIMAGE_SECTION_HEADER pHeaderSection;
 	HANDLE hThread, hFile;
 	PVOID ImageBuffer, LoaderBuffer, FileBuffer;
-	DWORD ExitCode, SectionIndex, BytesRead;
+	DWORD ExitCode = 0, SectionIndex;
 	SIZE_T BytesWritten = 0;
 	DWORD dwFileSize;
 
@@ -193,7 +193,6 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 	if (hFile == INVALID_HANDLE)
 	{
 		HcProcessResumeEx(hProcess);
-		HcFree(FileBuffer);
 		return FALSE;
 	}
 
@@ -201,7 +200,6 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 	if (!dwFileSize)
 	{
 		HcProcessResumeEx(hProcess);
-		HcFree(FileBuffer);
 		return FALSE;
 	}
 

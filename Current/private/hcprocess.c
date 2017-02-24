@@ -803,12 +803,12 @@ HcProcessEnumMappedImagesW(CONST HANDLE ProcessHandle,
 	LPARAM lParam)
 {
 	BOOLEAN Continue;
-	PVOID baseAddress;
 	MEMORY_BASIC_INFORMATION basicInfo;
 	PHC_MODULE_INFORMATIONW hcmInformation;
 	SIZE_T allocationSize = 0;
+	PVOID baseAddress = NULL;
 
-	HcInternalSet(&basicInfo, 0, sizeof(basicInfo));
+	ZERO(&basicInfo);
 
 	if (!NT_SUCCESS(HcQueryVirtualMemory(
 		ProcessHandle,
@@ -1457,9 +1457,8 @@ HcProcessSetPrivilegeA(CONST HANDLE hProcess,
 	LPWSTR lpConvertedPrivilege = HcStringConvertAtoW(Privilege);
 	BOOLEAN bReturn;
 
-	bReturn = HcProcessSetPrivilegeA(hProcess, Privilege, bEnablePrivilege);
-
-	if (!lpConvertedPrivilege)
+	bReturn = HcProcessSetPrivilegeW(hProcess, lpConvertedPrivilege, bEnablePrivilege);
+	if (lpConvertedPrivilege != NULL)
 	{
 		HcFree(lpConvertedPrivilege);
 	}
@@ -1603,7 +1602,7 @@ HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb)
 }
 
 HC_EXTERN_API 
-SIZE_T
+DWORD
 HCAPI 
 HcProcessGetCommandLineA(
 	CONST HANDLE hProcess,
@@ -1611,7 +1610,7 @@ HcProcessGetCommandLineA(
 	CONST BOOLEAN bAlloc)
 {
 	LPWSTR lpCmd = NULL;
-	SIZE_T tRetnLength;
+	DWORD dwReturnLEngth;
 	
 	if (lpszCommandline == NULL)
 	{
@@ -1619,27 +1618,26 @@ HcProcessGetCommandLineA(
 		return HcProcessGetCommandLineW(hProcess, NULL, FALSE);
 	}
 
-	tRetnLength = HcProcessGetCommandLineW(hProcess, &lpCmd, TRUE);
+	dwReturnLEngth = HcProcessGetCommandLineW(hProcess, &lpCmd, TRUE);
 
 	if (bAlloc)
 	{
-		*lpszCommandline = HcStringAllocA(tRetnLength);
-		HcStringCopyConvertWtoA(lpCmd, *lpszCommandline, tRetnLength);
+		*lpszCommandline = HcStringAllocA(dwReturnLEngth);
+		HcStringCopyConvertWtoA(lpCmd, *lpszCommandline, dwReturnLEngth);
 	}
 
 	HcFree(lpCmd);
-	return tRetnLength;
+	return dwReturnLEngth;
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcProcessGetCommandLineW(CONST HANDLE hProcess,
 	LPWSTR* lpszCommandline,
 	CONST BOOLEAN bAlloc)
 {
-	NTSTATUS Status;
-	SIZE_T tCmdLength;
+	DWORD dwCmdLength;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	RTL_USER_PROCESS_PARAMETERS processParameters;
 	PEB peb;
@@ -1662,15 +1660,15 @@ HcProcessGetCommandLineW(CONST HANDLE hProcess,
 		return 0;
 	}
 
-	tCmdLength = processParameters.CommandLine.Length / sizeof(WCHAR);
+	dwCmdLength = processParameters.CommandLine.Length / sizeof(WCHAR);
 	if (lpszCommandline == NULL)
 	{
-		return tCmdLength;
+		return dwCmdLength;
 	}
 
 	if (bAlloc)
 	{
-		*lpszCommandline = HcStringAllocW(tCmdLength);
+		*lpszCommandline = HcStringAllocW(dwCmdLength);
 		if (!*lpszCommandline)
 		{
 			HcErrorSetNtStatus(STATUS_NO_MEMORY);
@@ -1686,20 +1684,19 @@ HcProcessGetCommandLineW(CONST HANDLE hProcess,
 		return 0;
 	}
 
-	return tCmdLength;
+	return dwCmdLength;
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 {
 	PROCESS_BASIC_INFORMATION pbi;
 	RTL_USER_PROCESS_PARAMETERS upp;
 	PEB peb;
-	SIZE_T tReturnLength;
+	DWORD dwReturnLength;
 	SIZE_T len = 0;
-	NTSTATUS Status;
 
 	ZERO(&pbi);
 	ZERO(&upp);
@@ -1719,10 +1716,10 @@ HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 		return 0;
 	}
 
-	tReturnLength = upp.CurrentDirectory.DosPath.Length / sizeof(WCHAR);
+	dwReturnLength = upp.CurrentDirectory.DosPath.Length / sizeof(WCHAR);
 	if (lpszDirectory == NULL)
 	{
-		return tReturnLength;
+		return dwReturnLength;
 	}
 
 	if (!HcProcessReadNullifiedString(hProcess,
@@ -1733,30 +1730,36 @@ HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 		return 0;
 	}
 
-	return tReturnLength;
+	return dwReturnLength;
 }
 
 HC_EXTERN_API
-BOOLEAN
+DWORD
 HCAPI
-HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR szDirectory)
+HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR* szDirectory)
 {
 	LPWSTR lpCopy = HcStringAllocW(MAX_PATH);
 	DWORD dwCount;
 
-	dwCount = HcProcessGetCurrentDirectoryW(hProcess, lpCopy);
+	if (szDirectory == NULL)
+	{
+		/* just give the count */
+		return HcProcessGetCurrentDirectoryW(hProcess, NULL);
+	}
+
+	dwCount = HcProcessGetCurrentDirectoryW(hProcess, &lpCopy);
 	if (!dwCount)
 	{
 		HcFree(lpCopy);
-		return FALSE;
+		return 0;
 	}
 
-	if (!HcStringCopyConvertWtoA(lpCopy, szDirectory, dwCount))
+	if (!HcStringCopyConvertWtoA(lpCopy, *szDirectory, dwCount))
 	{
 		HcFree(lpCopy);
-		return FALSE;
+		return 0;
 	}
 
 	HcFree(lpCopy);
-	return TRUE;
+	return dwCount;
 }

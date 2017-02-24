@@ -661,7 +661,7 @@ __wcstombs(register char *s, register const wchar_t *pwcs, int n)
 	
 	while (--i >= 0) 
 	{
-		if (!(*s++ = *pwcs++))
+		if (!(*s++ = (CHAR) *pwcs++))
 		{
 			break;
 		}
@@ -754,7 +754,7 @@ HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, DWORD dwSize)
 
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
 
-	TSTR_A(szOut, Size / sizeof(CHAR));
+	TERMINATE_A(szOut, Size / sizeof(CHAR));
 	return TRUE;
 }
 
@@ -774,7 +774,7 @@ HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, DWORD tSize)
 	}
 
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
-	TSTR_W(szOut, Size / sizeof(WCHAR));
+	TERMINATE_W(szOut, Size / sizeof(WCHAR));
 
 	return TRUE;
 }

@@ -95,7 +95,7 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	lpbModule = (SIZE_T)hModule;
+	lpbModule = (LPBYTE) hModule;
 
 	pExports = HcPEGetExportDirectory(hModule);
 	if (!pExports)

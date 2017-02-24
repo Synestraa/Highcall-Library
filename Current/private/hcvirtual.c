@@ -789,9 +789,6 @@ leave:;
 
 #endif
 
-//
-// kernel32.dll VirtualAllocEx
-//
 HC_EXTERN_API
 LPVOID
 HCAPI
@@ -842,9 +839,6 @@ HcVirtualAlloc(IN LPVOID lpAddress,
 		flProtect);
 }
 
-//
-// kernel32.dll VirtualFreeEx
-//
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -856,7 +850,7 @@ HcVirtualFreeEx(IN HANDLE hProcess,
 	NTSTATUS Status;
 
 	/* Validate size and flags */
-	if (!(dwSize) || !(dwFreeType & MEM_RELEASE))
+	if (!dwSize || !(dwFreeType & MEM_RELEASE))
 	{
 		/* Free the memory */
 		Status = HcFreeVirtualMemory(hProcess,
@@ -880,9 +874,7 @@ HcVirtualFreeEx(IN HANDLE hProcess,
 	return FALSE;
 }
 
-//
-// kernel32.dll VirtualFree
-//
+
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -897,9 +889,6 @@ HcVirtualFree(IN LPVOID lpAddress,
 		dwFreeType);
 }
 
-//
-// kernel32.dll VirtualProtect 
-//
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -916,9 +905,6 @@ HcVirtualProtect(IN LPVOID lpAddress,
 		lpflOldProtect);
 }
 
-//
-// kernel32.dll VirtualProtectEx
-//
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -948,9 +934,6 @@ HcVirtualProtectEx(IN HANDLE hProcess,
 	return TRUE;
 }
 
-//
-// kernel32.dll VirtualLock
-//
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -978,9 +961,6 @@ HcVirtualLock(IN LPVOID lpAddress,
 	return TRUE;
 }
 
-//
-// kernel32.dll VirtualQuery
-//
 HC_EXTERN_API
 SIZE_T
 HCAPI
@@ -995,9 +975,6 @@ HcVirtualQuery(IN LPCVOID lpAddress,
 		dwLength);
 }
 
-//
-// kernel32.dll VirtualQueryEx
-//
 HC_EXTERN_API
 SIZE_T
 HCAPI
@@ -1019,18 +996,14 @@ HcVirtualQueryEx(IN HANDLE hProcess,
 
 	if (!NT_SUCCESS(Status))
 	{
-		/* We failed */
 		HcErrorSetNtStatus(Status);
-		return 0;
+		return ResultLength;
 	}
 
 	/* Return the length returned */
 	return ResultLength;
 }
 
-//
-// kernel32.dll VirtualUnlock
-//
 HC_EXTERN_API
 BOOL
 HCAPI
@@ -1064,30 +1037,12 @@ HCAPI
 HcAlloc(IN SIZE_T Size)
 {
 	return RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
-	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	
-	/*
-	PVOID lpAllocated = malloc(Size);
-	if (lpAllocated)
-	{
-		HcInternalSet(lpAllocated, 0, Size);
-	}
-	return lpAllocated;
-	*/
-	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 }
 
-//
-// @TODO: Reflecting HcAlloc @TODO, this function should free the heap.
-// Currently the function will use free() i nstead, as a temporary and possibly
-// long time replacement.
-//
 HC_EXTERN_API
 VOID 
 HCAPI 
 HcFree(IN LPVOID lpAddress)
 {
-	//free(lpAddress);
 	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
-	//HcVirtualFree(lpAddress, 0, MEM_RELEASE);
 }

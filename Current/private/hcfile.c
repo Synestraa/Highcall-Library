@@ -28,7 +28,7 @@ Revision History:
 #include "../public/hcstring.h"
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileRead(IN HANDLE hFile,
 	IN LPVOID lpBuffer,
@@ -333,7 +333,7 @@ BOOLEAN
 HCAPI
 HcFileExistsA(LPCSTR lpFilePath)
 {
-	LPSTR lpConverted = HcStringConvertAtoW(lpFilePath);
+	LPWSTR lpConverted = HcStringConvertAtoW(lpFilePath);
 	BOOLEAN bValue = HcFileExistsW(lpConverted);
 
 	HcFree(lpConverted);
@@ -352,13 +352,16 @@ HcFileExistsW(LPCWSTR lpFilePath)
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileSize(HANDLE hFile)
 {
 	NTSTATUS Status;
 	IO_STATUS_BLOCK IoStatusBlock;
 	FILE_STANDARD_INFORMATION FileStandard;
+
+	ZERO(&IoStatusBlock);
+	ZERO(&FileStandard);
 
 	Status = HcQueryInformationFile(hFile,
 		&IoStatusBlock,
@@ -376,24 +379,24 @@ HcFileSize(HANDLE hFile)
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileSizeA(LPCSTR lpPath)
 {
-	LPSTR lpConverted = HcStringConvertAtoW(lpPath);
-	SIZE_T tValue = HcFileSizeW(lpConverted);
+	LPWSTR lpConverted = HcStringConvertAtoW(lpPath);
+	DWORD dwSize = HcFileSizeW(lpConverted);
 
 	HcFree(lpConverted);
-	return tValue;
+	return dwSize;
 }
 
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileSizeW(LPCWSTR lpPath)
 {
-	SIZE_T FileSize;
+	DWORD FileSize;
 	HANDLE hFile;
 
 	hFile = HcFileOpenW(lpPath, OPEN_EXISTING, GENERIC_READ);
@@ -531,26 +534,26 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
 {
-	SIZE_T tReturn;
+	DWORD dwRead;
 	LPWSTR lpExportConverted = HcStringConvertAtoW(lpExportName);
 
-	tReturn = HcFileReadModuleW(hModule, lpExportConverted, lpBuffer, dwCount);
+	dwRead = HcFileReadModuleW(hModule, lpExportConverted, lpBuffer, dwCount);
 
 	HcFree(lpExportConverted);
-	return tReturn;
+	return dwRead;
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
 {
 	HANDLE hFile;
-	DWORD dwBytesRead;
+	DWORD tBytesRead;
 	LPWSTR lpModulePath = HcStringAllocW(MAX_PATH);
 	ULONG_PTR dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
 
@@ -582,8 +585,8 @@ HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD d
 	}
 
 	/* Snatch the data */
-	dwBytesRead = HcFileRead(hFile, lpBuffer, dwCount);
-	if (dwBytesRead != dwCount)
+	tBytesRead = HcFileRead(hFile, lpBuffer, dwCount);
+	if (tBytesRead != dwCount)
 	{
 		HcFree(lpModulePath);
 		HcObjectClose(hFile);
@@ -593,18 +596,18 @@ HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD d
 	/* Fuck off */
 	HcFree(lpModulePath);
 	HcObjectClose(hFile);
-	return dwBytesRead;
+	return tBytesRead;
 }
 
 HC_EXTERN_API
-SIZE_T
+DWORD
 HCAPI
 HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 {
 	DWORD dwFileOffset;
 	LPWSTR lpModulePath;
 	HANDLE hFile;
-	DWORD BytesRead;
+	DWORD tBytesRead;
 	HMODULE hModule;
 	MEMORY_BASIC_INFORMATION memInfo;
 
@@ -664,8 +667,8 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	}
 
 	/* Read it */
-	BytesRead = HcFileRead(hFile, lpBufferOut, dwCountToRead);
-	if (BytesRead != dwCountToRead)
+	tBytesRead = HcFileRead(hFile, lpBufferOut, dwCountToRead);
+	if (tBytesRead != dwCountToRead)
 	{
 		HcFree(lpModulePath);
 		HcClose(hFile);
@@ -676,7 +679,7 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 
 	HcFree(lpModulePath);
 	HcClose(hFile);
-	return BytesRead;
+	return tBytesRead;
 }
 
 HC_EXTERN_API
@@ -704,14 +707,14 @@ HcFileGetCurrentDirectoryW(LPWSTR buf)
 }
 
 HC_EXTERN_API
-SIZE_T 
+DWORD
 HCAPI
 HcFileWrite(IN HANDLE hFile,
 	IN LPCVOID lpBuffer,
 	IN DWORD nNumberOfBytesToWrite OPTIONAL)
 {
 	NTSTATUS Status;
-	SIZE_T tNumberOfBytesWritten = 0;
+	DWORD dwNumberOfBytesWritten = 0;
 	IO_STATUS_BLOCK Iosb;
 
 	ZERO(&Iosb);
@@ -745,7 +748,7 @@ HcFileWrite(IN HANDLE hFile,
 		* check that case either and crashes (only after the operation
 		* completed).
 		*/
-		tNumberOfBytesWritten = Iosb.Information;
+		dwNumberOfBytesWritten = (DWORD) Iosb.Information;
 	}
 	else
 	{
@@ -753,5 +756,5 @@ HcFileWrite(IN HANDLE hFile,
 		return 0;
 	}
 
-	return tNumberOfBytesWritten;
+	return dwNumberOfBytesWritten;
 }
