@@ -88,6 +88,9 @@ HANDLE HCAPI HcObjectTranslateHandle(CONST IN HANDLE Handle)
 
 HC_EXTERN_API DWORD HCAPI HcObjectTypeIndexByName(IN LPCWSTR lpObjectName)
 {
+	DWORD typeIndex = 0;
+
+	/* One time initilization */
 	if (_baseObjectTypeAmount == 0)
 	{
 		_baseInitObjectTypes();
@@ -95,11 +98,11 @@ HC_EXTERN_API DWORD HCAPI HcObjectTypeIndexByName(IN LPCWSTR lpObjectName)
 
 	if (_baseObjectTypeAmount > 0)
 	{
-		for (DWORD i = 0; i < _baseObjectTypeAmount; i++)
+		for (; typeIndex < _baseObjectTypeAmount; typeIndex++)
 		{
-			if (HcStringEqualW(_baseObjectTypePairs[i]->Name, lpObjectName, TRUE))
+			if (HcStringEqualW(_baseObjectTypePairs[typeIndex]->Name, lpObjectName, TRUE))
 			{
-				return _baseObjectTypePairs[i]->Index;
+				return _baseObjectTypePairs[typeIndex]->Index;
 			}
 		}
 	}
@@ -126,19 +129,19 @@ HC_EXTERN_API
 DWORD
 HCAPI
 HcObjectWaitMultiple(IN DWORD nCount,
-	IN CONST HANDLE *lpHandles,
+	IN CONST PHANDLE lpHandles,
 	IN BOOL bWaitAll,
 	IN DWORD dwMilliseconds)
 {
-	PLARGE_INTEGER TimePtr = NULL;
+	PLARGE_INTEGER TimePtr;
 	LARGE_INTEGER Time;
 	PHANDLE HandleBuffer = NULL;
 	HANDLE Handles[8];
-	DWORD i = 0;
-	NTSTATUS Status = STATUS_SUCCESS;
+	DWORD HandleIndex = 0;
+	NTSTATUS Status;
 
-	HcInternalSet(&Time, 0, sizeof(Time));
-	HcInternalSet(&Handles, 0, sizeof(Handles));
+	ZERO(&Time);
+	ZERO(&Handles);
 
 	/* Check if we have more handles then we locally optimize */
 	if (nCount > 8)
@@ -161,10 +164,10 @@ HcObjectWaitMultiple(IN DWORD nCount,
 
 	/* Copy the handles into our buffer and loop them all */
 	HcInternalCopy(HandleBuffer, (LPVOID)lpHandles, nCount * sizeof(HANDLE));
-	for (i = 0; i < nCount; i++)
+	for (; HandleIndex < nCount; HandleIndex++)
 	{
 		/* Check what kind of handle this is */
-		HandleBuffer[i] = HcObjectTranslateHandle(HandleBuffer[i]);
+		HandleBuffer[HandleIndex] = HcObjectTranslateHandle(HandleBuffer[HandleIndex]);
 	}
 
 	/* Convert the timeout */
@@ -200,11 +203,11 @@ DWORD
 HCAPI 
 HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
 {
-	PLARGE_INTEGER TimePtr = NULL;
+	PLARGE_INTEGER TimePtr;
 	LARGE_INTEGER Time;
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 
-	HcInternalSet(&Time, 0, sizeof(Time));
+	ZERO(&Time);
 
 	/* Get the real handle */
 	hObject = HcObjectTranslateHandle(hObject);

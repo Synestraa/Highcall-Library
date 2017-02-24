@@ -19,19 +19,11 @@ Synestra 10/15/2016
 --*/
 
 #include "../public/hcinternal.h"
-
-//
-// For HcStringSecureLength
-//
 #include "../public/hcstring.h"
-
-//
-// For HcVirtualQuery, HcVirtualProtect
-//
 #include "../public/hcvirtual.h"
 
 //
-// Used disassembler engine: https://github.com/gdabah/distorm
+// Used (modified) disassembler engine: https://github.com/gdabah/distorm
 //
 #include "distorm/include/distorm.h"
 
@@ -59,12 +51,10 @@ HcInternalCopy(PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
 	SIZE_T sz = tCount;
 	PVOID src = (PVOID) pSrc;
 
-	//
-	// copy from lower addresses to higher addresses
-	//
 	while (sz--)
+	{
 		*((PBYTE)pDst)++ = *((PBYTE)src)++;
-	
+	}
 	return (ret);
 }
 
@@ -129,9 +119,9 @@ HCAPI
 HcInternalValidate(LPCVOID lpcAddress)
 {
 	MEMORY_BASIC_INFORMATION mbi;
-	SIZE_T ReturnedSize = 0;
+	SIZE_T ReturnedSize;
 
-	HcInternalSet(&mbi, 0, sizeof(mbi));
+	ZERO(&mbi);
 
 	ReturnedSize = HcVirtualQuery(lpcAddress, &mbi, sizeof(mbi));
 	return !(!ReturnedSize || (mbi.Protect & PAGE_NOACCESS) || (mbi.Protect & PAGE_GUARD));
@@ -142,11 +132,13 @@ LPVOID
 HCAPI
 HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 {
-	LPVOID CurrentAddress = NULL;
-	SIZE_T Index = 0;
+	LPVOID CurrentAddress;
+	SIZE_T Index;
 
 	if (!HcInternalValidate(lpcAddress))
+	{
 		return NULL;
+	}
 
 	CurrentAddress = *(LPVOID*)lpcAddress;
 	if (!HcInternalValidate(CurrentAddress))
@@ -190,7 +182,7 @@ BOOLEAN
 HCAPI
 HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
 {
-	DWORD dwProtection = 0;
+	DWORD dwProtection = PAGE_EXECUTE;
 
 	//
 	// Change the protection to something we can write to.
@@ -216,25 +208,20 @@ BOOLEAN
 HCAPI
 HcInternalMemoryNopInstruction(PVOID pAddress)
 {
-	DWORD dwProtection = 0;
-
 	_CodeInfo ci;
 	_DInst di;
 	_DecodedInst inst;
+	DWORD dwProtection = PAGE_EXECUTE;
 
-	HcInternalSet(&ci, 0, sizeof(ci));
-	HcInternalSet(&di, 0, sizeof(di));
-	HcInternalSet(&inst, 0, sizeof(inst));
+	ZERO(&ci);
+	ZERO(&di);
+	ZERO(&inst);
 
 	ci.code = (unsigned char*)pAddress;
 	ci.codeLen = 0x100;
-	ci.codeOffset = 0;
 	ci.features = DF_NONE;
 	ci.dt = DISASM_TYPE;
 
-	//
-	// Attempt to disassemble the block.
-	//
 	if (distorm_decompose(&ci, &di, 1, NULL) != DECRES_INPUTERR)
 	{
 		//
@@ -264,9 +251,9 @@ LPBYTE
 HCAPI
 HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
 {
-	LPBYTE CurrentAddress = 0;
-	LPBYTE ProbeAddress = 0;
-	SIZE_T MaskSize = 0; 
+	LPBYTE CurrentAddress;
+	LPBYTE ProbeAddress;
+	SIZE_T MaskSize; 
 
 	MaskSize = HcStringLenA(szcMask);
 	if (!MaskSize || !HcStringLenA(szcPattern))
@@ -301,7 +288,7 @@ HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW
 	}
 
 	/* We found nothing. */
-	return 0;
+	return NULL;
 }
 
 
@@ -311,9 +298,9 @@ LPBYTE
 HCAPI
 HcInternalPatternFindInBuffer(LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size)
 {
-	LPBYTE CurrentAddress = 0;
-	LPBYTE ProbeAddress = 0;
-	SIZE_T MaskSize = 0;
+	LPBYTE CurrentAddress;
+	LPBYTE ProbeAddress;
+	SIZE_T MaskSize;
 
 	MaskSize = HcStringLenA(szcMask);
 	if (!MaskSize || !HcStringLenA(szcPattern))
@@ -348,5 +335,5 @@ HcInternalPatternFindInBuffer(LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer
 	}
 
 	/* We found nothing. */
-	return 0;
+	return NULL;
 }

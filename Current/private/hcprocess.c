@@ -18,47 +18,16 @@ Synestra 10/15/2016
 
 --*/
 
-//
-// Used for HcWriteVirtualMemory, HcSuspendProcess, HcResumeProcess, HcReadVirtualMemory...
-//
 #include "sys/hcsyscall.h"
 
-//
-// Contains this module's declerations.
-//
 #include "../public/hcprocess.h"
-
-//
-// Used for RtlInitUnicodeString
-//
 #include "../public/imports.h"
-
 #include "../public/hcfile.h"
 #include "../public/hcpe.h"
-
-//
-// Used for HcLookupPrivilegeValue()
-//
 #include "../public/hctoken.h"
-
-//
-// Used for HcObjectWait, HcObjectClose
-//
 #include "../public/hcobject.h"
-
-//
-// Used for HcErrorSetNtStatus, HcErrorSetDosError
-//
 #include "../public/hcerror.h"
-
-//
-// Used for HcFree, HcAlloc, HcVirtualFreeEx, HcVirtualAllocEx, HcVirtualAlloc
-//
 #include "../public/hcvirtual.h"
-
-//
-// Used for HcStringEqualW, HcStringCopyW
-//
 #include "../public/hcstring.h"
 
 /*

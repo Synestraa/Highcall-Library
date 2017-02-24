@@ -445,6 +445,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 	*/
+
 	szFullPath = (LPWSTR) szcPath;
 
 	hFile = HcFileOpenW(szcPath, OPEN_EXISTING, GENERIC_READ);

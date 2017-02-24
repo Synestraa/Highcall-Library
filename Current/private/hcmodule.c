@@ -12,19 +12,19 @@ PBYTE
 HCAPI
 HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 {
-	PBYTE szModule = 0;
-	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
-	PDWORD pExportNames = NULL;
-	PDWORD pExportFunctions = NULL;
-	PWORD pExportOrdinals = NULL;
-	LPSTR lpCurrentFunction = NULL;
+	PBYTE pbModule;
+	PIMAGE_EXPORT_DIRECTORY pExports;
+	PDWORD pExportNames;
+	PDWORD pExportFunctions;
+	PWORD pExportOrdinals;
+	LPSTR lpCurrentFunction;
 
 	if (!hModule)
 	{
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	szModule = (PBYTE)hModule;
+	pbModule = (PBYTE)hModule;
 
 	pExports = HcPEGetExportDirectory(hModule);
 	if (!pExports)
@@ -33,12 +33,12 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 	}
 
 	/* Get the address containg null terminated export names, in ASCII */
-	pExportNames = (PDWORD)(pExports->AddressOfNames + szModule);
+	pExportNames = (PDWORD)(pExports->AddressOfNames + pbModule);
 
-	/* List through functions */
+	/* Enumerate the exports */
 	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
 	{
-		lpCurrentFunction = (LPSTR)(pExportNames[i] + szModule);
+		lpCurrentFunction = (LPSTR)(pExportNames[i] + pbModule);
 		if (!lpCurrentFunction)
 		{
 			continue;
@@ -46,10 +46,10 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 		
 		if (HcStringCompareContentA(lpCurrentFunction, lpProcedureName))
 		{
-			pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + szModule);
-			pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + szModule);
+			pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + pbModule);
+			pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + pbModule);
 
-			return pExportFunctions[pExportOrdinals[i]] + szModule;
+			return pExportFunctions[pExportOrdinals[i]] + pbModule;
 		}
 	}
 
@@ -85,17 +85,17 @@ BOOLEAN
 HCAPI
 HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam)
 {
-	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
-	PDWORD pExportNames = NULL;
-	LPSTR lpCurrentFunction = NULL;
-	SIZE_T dwModule = 0;
+	PIMAGE_EXPORT_DIRECTORY pExports;
+	PDWORD pExportNames;
+	LPSTR lpCurrentFunction;
+	LPBYTE lpbModule;
 
 	if (!hModule)
 	{
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	dwModule = (SIZE_T)hModule;
+	lpbModule = (SIZE_T)hModule;
 
 	pExports = HcPEGetExportDirectory(hModule);
 	if (!pExports)
@@ -104,7 +104,7 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 	}
 
 	/* Get the address containg null terminated export names, in ASCII */
-	pExportNames = (PDWORD)(pExports->AddressOfNames + dwModule);
+	pExportNames = (PDWORD)(lpbModule + pExports->AddressOfNames);
 	if (!pExportNames)
 	{
 		return FALSE;
@@ -113,7 +113,7 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 	/* List through functions */
 	for (unsigned int i = 0; i < pExports->NumberOfNames; i++)
 	{
-		lpCurrentFunction = (LPSTR)(pExportNames[i] + dwModule);
+		lpCurrentFunction = (LPSTR)(lpbModule + pExportNames[i]);
 		if (!lpCurrentFunction)
 		{
 			continue;
@@ -134,8 +134,8 @@ HCAPI
 HcModuleHandleW(LPCWSTR lpModuleName)
 {
 	PPEB pPeb = NtCurrentPeb();
-	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
-	PLIST_ENTRY pListHead = NULL, pListEntry = NULL;
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
+	PLIST_ENTRY pListHead, pListEntry;
 
 	/* if there is no name specified, return base address of main module */
 	if (!lpModuleName)
@@ -170,8 +170,8 @@ HCAPI
 HcModuleHide(CONST IN HMODULE hModule)
 {
 	PPEB pPeb = NtCurrentPeb();
-	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
-	PLIST_ENTRY pListHead = NULL, pListEntry = NULL;
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
+	PLIST_ENTRY pListHead, pListEntry;
 
 	/* if there is no name specified, return base address of main module */
 	if (!hModule)
@@ -212,8 +212,8 @@ HMODULE
 HCAPI
 HcModuleHandleA(LPCSTR lpModuleName)
 {
-	LPWSTR lpConvertedName = NULL;
-	HMODULE ReturnValue = NULL;
+	LPWSTR lpConvertedName;
+	HMODULE ReturnValue;
 
 	/* Check if the main module was requested */
 	if (!lpModuleName)
@@ -222,9 +222,6 @@ HcModuleHandleA(LPCSTR lpModuleName)
 		return HcModuleHandleW(NULL);
 	}
 
-	//
-	// Otherwise convert the path.
-	//
 	lpConvertedName = HcStringConvertAtoW(lpModuleName);
 	if (!lpConvertedName)
 	{
@@ -242,9 +239,9 @@ HMODULE
 HCAPI
 HcModuleLoadA(LPCSTR lpPath)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	UNICODE_STRING Path;
-	LPWSTR lpConverted = NULL;
+	LPWSTR lpConverted;
 	HANDLE hModule = NULL;
 
 	lpConverted = HcStringConvertAtoW(lpPath);
@@ -274,7 +271,7 @@ HMODULE
 HCAPI
 HcModuleLoadW(LPCWSTR lpPath)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	UNICODE_STRING Path;
 	HANDLE hModule = NULL;
 

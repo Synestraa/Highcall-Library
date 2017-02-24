@@ -19,7 +19,6 @@ HCAPI
 HcPEGetDosHeader(HMODULE lpModule)
 {
 	PIMAGE_DOS_HEADER pHeaderDOS = (PIMAGE_DOS_HEADER)lpModule;
-
 	if (pHeaderDOS->e_magic != IMAGE_DOS_SIGNATURE)
 	{
 		return NULL;
@@ -33,8 +32,8 @@ PIMAGE_NT_HEADERS
 HCAPI
 HcPEGetNtHeader(HMODULE lpModule)
 {
+	PIMAGE_NT_HEADERS pHeaderNT;
 	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
-	PIMAGE_NT_HEADERS pHeaderNT = NULL;
 	
 	if (!pHeaderDOS)
 	{
@@ -55,7 +54,7 @@ PIMAGE_EXPORT_DIRECTORY
 HCAPI
 HcPEGetExportDirectory(HMODULE lpModule)
 {
-	PIMAGE_EXPORT_DIRECTORY lpExportDirectory = NULL;
+	PIMAGE_EXPORT_DIRECTORY lpExportDirectory;
 	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
 
 	if (!pHeaderNT)
