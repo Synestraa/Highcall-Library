@@ -112,7 +112,7 @@ HcSysInitializeNativeSystem()
 	LPBYTE RelativeVirtualAddress = 0;
 	LPBYTE lpModule = (LPBYTE) HcGlobal.HandleNtdll;
 	HMODULE hModule = HcGlobal.HandleNtdll;
-	SIZE_T FileSize;
+	DWORD dwFileSize;
 	FILE_STANDARD_INFORMATION FileStandard;
 	IO_STATUS_BLOCK IoStatusBlock;
 
@@ -152,13 +152,13 @@ HcSysInitializeNativeSystem()
 		return FALSE;
 	}
 
-	FileSize = FileStandard.EndOfFile.u.LowPart;
-	lpBuffer = (PBYTE)HcAlloc(FileSize);
+	dwFileSize = FileStandard.EndOfFile.u.LowPart;
+	lpBuffer = (PBYTE)HcAlloc(dwFileSize);
 
 	HcFree(lpModulePath);
 
 	/* Snatch the data */
-	if (HcFileRead(hFile, lpBuffer, (DWORD) FileSize) != FileSize)
+	if (HcFileRead(hFile, lpBuffer, dwFileSize) != dwFileSize)
 	{
 		NtClose(hFile);
 		return FALSE;
@@ -184,7 +184,7 @@ HcSysInitializeNativeSystem()
 		if (VirtualAddress)
 		{
 			/* Calculate the relative offset */
-			RelativeVirtualAddress = (LPBYTE)(VirtualAddress - lpModule);
+			RelativeVirtualAddress = VirtualAddress - lpModule;
 
 			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 
