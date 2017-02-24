@@ -46,23 +46,19 @@ static
 SIZE_T
 HCAPI MmInternalResolve(PVOID lParam)
 {
-	PMANUAL_MAP ManualInject = NULL;
-	HMODULE hModule = NULL;
-	SIZE_T Index = 0, Function = 0, Count = 0, Delta = 0;
-	PSIZE_T FunctionPointer = NULL;
-	PWORD ImportList = NULL;
-
-	PIMAGE_BASE_RELOCATION pIBR = NULL;
-	PIMAGE_IMPORT_DESCRIPTOR pIID = NULL;
-	PIMAGE_IMPORT_BY_NAME pIBN = NULL;
-	PIMAGE_THUNK_DATA FirstThunk = NULL, OrigFirstThunk = NULL;
-
-	PDLL_MAIN EntryPoint = NULL;
-
-	ManualInject = (PMANUAL_MAP)lParam;
+	PMANUAL_MAP ManualInject = (PMANUAL_MAP)lParam;
+	HMODULE hModule;
+	ULONG_PTR Index, Function, Count, Delta;
+	PULONG_PTR FunctionPointer;
+	PWORD ImportList;
+	PIMAGE_BASE_RELOCATION pIBR;
+	PIMAGE_IMPORT_DESCRIPTOR pIID;
+	PIMAGE_IMPORT_BY_NAME pIBN;
+	PIMAGE_THUNK_DATA FirstThunk, OrigFirstThunk;
+	PDLL_MAIN EntryPoint;
 
 	pIBR = ManualInject->BaseRelocation;
-	Delta = (SIZE_T)((LPBYTE)ManualInject->ImageBase - ManualInject->NtHeaders->OptionalHeader.ImageBase);
+	Delta = (ULONG_PTR)((LPBYTE)ManualInject->ImageBase - ManualInject->NtHeaders->OptionalHeader.ImageBase);
 
 	while (pIBR->VirtualAddress)
 	{
@@ -75,7 +71,7 @@ HCAPI MmInternalResolve(PVOID lParam)
 			{
 				if (ImportList[Index])
 				{
-					FunctionPointer = (PSIZE_T)((LPBYTE)ManualInject->ImageBase + (pIBR->VirtualAddress + (ImportList[Index] & 0xFFF)));
+					FunctionPointer = (PULONG_PTR) ((LPBYTE)ManualInject->ImageBase + (pIBR->VirtualAddress + (ImportList[Index] & 0xFFF)));
 					*FunctionPointer += Delta;
 				}
 			}
@@ -93,7 +89,6 @@ HCAPI MmInternalResolve(PVOID lParam)
 		FirstThunk = (PIMAGE_THUNK_DATA)((LPBYTE)ManualInject->ImageBase + pIID->FirstThunk);
 
 		hModule = ManualInject->fnLoadLibraryA((LPCSTR)ManualInject->ImageBase + pIID->Name);
-
 		if (!hModule)
 		{
 			return FALSE;
@@ -145,7 +140,7 @@ HCAPI MmInternalResolve(PVOID lParam)
 	return TRUE;
 }
 
-#pragma optimize( "", off )  
+#pragma optimize("", off )  
 SIZE_T HCAPI MmInternalResolved()
 {
 	return 0;
@@ -159,44 +154,28 @@ BOOLEAN
 HCAPI
 HcParameterVerifyInjectModuleManual(PVOID Buffer)
 {
-	PIMAGE_NT_HEADERS pHeaderNt =HcPEGetNtHeader(Buffer);
+	PIMAGE_NT_HEADERS pHeaderNt = HcPEGetNtHeader(Buffer);
 
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
 
-//
-// @inprogress
-//
-// Inserts a dynamic library's code inside of a process, without the use of any windows library linking code.
-// This ensure that any code trying to locate a dll will not succeed, as there is no record of library loading happening.
-//
-// The code currently only supports 32bit to 32bit.
-//
-// For 64bit to 32bit, the internal resolving code will need to be in either shellcode, or an assembly file.
-// For 32bit to 64bit, same story.
-//
-// RETURN
-//		- A boolean indicating success
-//
-// HcErrorGetDosError() for a diagnosis.
-//
 HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 {
-	HC_FILE_INFORMATIONW fileInformation;
 	MANUAL_MAP ManualInject;
-	PIMAGE_DOS_HEADER pHeaderDos = NULL;
-	PIMAGE_NT_HEADERS pHeaderNt = NULL;
-	PIMAGE_SECTION_HEADER pHeaderSection = NULL;
-	HANDLE hThread = NULL, hFile = NULL;
-	PVOID ImageBuffer = NULL, LoaderBuffer = NULL, FileBuffer = NULL;
-	DWORD ExitCode = 0, SectionIndex = 0, BytesRead = 0;
+	PIMAGE_DOS_HEADER pHeaderDos;
+	PIMAGE_NT_HEADERS pHeaderNt;
+	PIMAGE_SECTION_HEADER pHeaderSection;
+	HANDLE hThread, hFile;
+	PVOID ImageBuffer, LoaderBuffer, FileBuffer;
+	DWORD ExitCode, SectionIndex, BytesRead;
 	SIZE_T BytesWritten = 0;
+	DWORD dwFileSize;
 
-	HcInternalSet(&fileInformation, 0, sizeof(fileInformation));
-	HcInternalSet(&ManualInject, 0, sizeof(ManualInject));
+	ZERO(&ManualInject);
+	ZERO(&ManualInject);
 
 	/* Check if we attempted to inject too early. */
 	if (!HcProcessReadyEx(hProcess))
@@ -209,21 +188,6 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	/* Get the basic information about the file */
-	if (!HcFileQueryInformationW(szcPath, &fileInformation))
-	{
-		HcProcessResumeEx(hProcess);
-		return FALSE;
-	}
-
-	/* Allocate for the file information */
-	FileBuffer = HcAlloc(fileInformation.Size);
-	if (!FileBuffer)
-	{
-		HcProcessResumeEx(hProcess);
-		return FALSE;
-	}
-
 	/* Read the file */
 	hFile = HcFileOpenW(szcPath, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
@@ -233,9 +197,23 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	if (HcFileRead(hFile,
-		FileBuffer,
-		fileInformation.Size) != fileInformation.Size)
+	dwFileSize = HcFileSize(hFile);
+	if (!dwFileSize)
+	{
+		HcProcessResumeEx(hProcess);
+		HcFree(FileBuffer);
+		return FALSE;
+	}
+
+	/* Allocate for the file information */
+	FileBuffer = HcAlloc(dwFileSize);
+	if (!FileBuffer)
+	{
+		HcProcessResumeEx(hProcess);
+		return FALSE;
+	}
+
+	if (HcFileRead(hFile, FileBuffer, dwFileSize) != dwFileSize)
 	{
 		HcFree(FileBuffer);
 		HcClose(hFile);
@@ -323,22 +301,20 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	HcInternalSet(&ManualInject, 0, sizeof(MANUAL_MAP));
-
 	/*
-	MANUAL_MAP struct
-
-	ImageBase = allocated image location.
-	NtHeaders = allocated image location, added with relative address pointing Nt header.
-	BaseRelocation = allocated image buffer + relative address of relocation.
-	ImportDirectory = allocated image buffer + relative import directory
-
-	LoadLibraryA - this needs to be reworked.
-	right now, this function is located by looking into our own address.
-	this will not work for when the executable does not match the target executable architecture. (cross dll injection)
-
-	GetProcAddress, same as above.
-	*/
+	 * MANUAL_MAP struct
+	 * 
+	 * ImageBase = allocated image location.
+	 * NtHeaders = allocated image location, added with relative address pointing Nt header.
+	 * BaseRelocation = allocated image buffer + relative address of relocation.
+	 * ImportDirectory = allocated image buffer + relative import directory
+	 * 
+	 * LoadLibraryA - this needs to be reworked.
+	 * right now, this function is located by looking into our own address.
+	 * this will not work for when the executable does not match the target executable architecture. (cross dll injection)
+	 * 
+	 * GetProcAddress, same as above.
+	 */
 
 	ManualInject.ImageBase = ImageBuffer;
 	ManualInject.NtHeaders = (PIMAGE_NT_HEADERS)((LPBYTE)ImageBuffer + pHeaderDos->e_lfanew);
@@ -420,21 +396,18 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 	return TRUE;
 }
 
-//
-// Currently supports only same architecture injection due to the location of LoadLibraryW.
-//
 HC_EXTERN_API
 BOOLEAN 
 HCAPI 
 HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 {
-	LPVOID PathToDll = NULL;
-	SIZE_T PathSize = 0;
-	LPVOID lpToLoadLibrary = NULL;
-	LPWSTR szFullPath = NULL;
-	HANDLE hThread = NULL;
+	LPVOID PathToDll;
+	SIZE_T PathSize;
+	LPVOID lpToLoadLibrary;
+	LPWSTR szFullPath;
+	HANDLE hThread;
 	DWORD ExitCode = 0;
-	HANDLE hFile = NULL;
+	HANDLE hFile;
 
 	if (HcStringIsBad(szcPath))
 	{
