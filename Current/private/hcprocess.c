@@ -30,25 +30,23 @@ Synestra 10/15/2016
 #include "../public/hcvirtual.h"
 #include "../public/hcstring.h"
 
-/*
-* @implemented
-*/
+HC_EXTERN_API
 DWORD
-WINAPI
+HCAPI
 HcProcessGetCurrentId(VOID)
 {
 	return HandleToUlong(NtCurrentTeb()->ClientId.UniqueProcess);
 }
 
-/*
-* @implemented
-*/
+HC_EXTERN_API
 DWORD
-WINAPI
+HCAPI
 HcProcessGetId(IN HANDLE Process)
 {
 	PROCESS_BASIC_INFORMATION ProcessBasic;
 	NTSTATUS Status;
+
+	ZERO(&ProcessBasic);
 
 	/* Query the kernel */
 	Status = HcQueryInformationProcess(Process,
@@ -99,8 +97,8 @@ BOOLEAN
 HCAPI
 HcProcessIsWow64(CONST IN DWORD dwProcessId)
 {
-	HANDLE hProcess = NULL;
-	BOOLEAN Result = FALSE;
+	HANDLE hProcess;
+	BOOLEAN Result;
 
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
 	if (!hProcess)
@@ -120,11 +118,11 @@ HCAPI
 HcProcessExitCode(CONST IN SIZE_T dwProcessId,
 	IN LPDWORD lpExitCode)
 {
-	HANDLE hProcess = NULL;
+	HANDLE hProcess;
 	PROCESS_BASIC_INFORMATION ProcessBasic;
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 
-	HcInternalSet(&ProcessBasic, 0, sizeof(ProcessBasic));
+	ZERO(&ProcessBasic);
 
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
 	if (!hProcess)
@@ -159,9 +157,9 @@ HcProcessExitCodeEx(CONST IN HANDLE hProcess,
 	IN LPDWORD lpExitCode)
 {
 	PROCESS_BASIC_INFORMATION ProcessBasic;
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 
-	HcInternalSet(&ProcessBasic, 0, sizeof(ProcessBasic));
+	ZERO(&ProcessBasic);
 
 	/* Ask the kernel */
 	Status = HcQueryInformationProcess(hProcess,
@@ -187,13 +185,13 @@ HCAPI
 HcProcessOpen(CONST SIZE_T dwProcessId,
 	CONST ACCESS_MASK DesiredAccess)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	OBJECT_ATTRIBUTES oa;
 	CLIENT_ID cid;
 	HANDLE hProcess = NULL;
 
-	HcInternalSet(&oa, 0, sizeof(oa));
-	HcInternalSet(&cid, 0, sizeof(cid));
+	ZERO(&oa);
+	ZERO(&cid);
 
 	cid.UniqueProcess = (HANDLE)dwProcessId;
 	cid.UniqueThread = 0;
@@ -216,13 +214,13 @@ BOOLEAN
 HCAPI
 HcProcessReadyEx(CONST HANDLE hProcess)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
-	PPEB_LDR_DATA LoaderData = NULL;
+	NTSTATUS Status;
+	PPEB_LDR_DATA LoaderData;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	DWORD ExitCode = 0;
-	DWORD Len = 0;
+	DWORD dwPbiLen = 0;
 
-	HcInternalSet(&ProcInfo, 0, sizeof(ProcInfo));
+	ZERO(&ProcInfo);
 
 	/* Will fail if there is a mismatch in compiler architecture. */
 	if (!HcProcessExitCodeEx(hProcess, &ExitCode) || ExitCode != STATUS_PENDING)
@@ -235,7 +233,7 @@ HcProcessReadyEx(CONST HANDLE hProcess)
 		ProcessBasicInformation,
 		&ProcInfo,
 		sizeof(ProcInfo),
-		&Len);
+		&dwPbiLen);
 
 	HcErrorSetNtStatus(Status);
 	if (!NT_SUCCESS(Status))
@@ -261,8 +259,8 @@ BOOLEAN
 HCAPI
 HcProcessReady(CONST SIZE_T dwProcessId)
 {
-	BOOLEAN Success = FALSE;
-	HANDLE hProcess = NULL;
+	BOOLEAN Success;
+	HANDLE hProcess;
 
 	hProcess = HcProcessOpen(dwProcessId,
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
@@ -284,20 +282,17 @@ BOOLEAN
 HCAPI
 HcProcessSuspend(CONST SIZE_T dwProcessId)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
-	HANDLE hProcess = NULL;
+	NTSTATUS Status;
+	HANDLE hProcess;
 
-	/* Open the process */
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_ALL_ACCESS);
 	if (!hProcess)
 	{
 		return FALSE;
 	}
 
-	/* Do the suspend */
 	Status = HcSuspendProcess(hProcess);
 
-	/* Close the process and return */
 	HcClose(hProcess);
 	return NT_SUCCESS(Status);
 }
@@ -316,20 +311,17 @@ BOOLEAN
 HCAPI
 HcProcessResume(CONST SIZE_T dwProcessId)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
-	HANDLE hProcess = NULL;
+	NTSTATUS Status;
+	HANDLE hProcess;
 
-	/* Open the process */
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_ALL_ACCESS);
 	if (!hProcess)
 	{
 		return FALSE;
 	}
 
-	/* Do the resume */
 	Status = HcResumeProcess(hProcess);
 
-	/* Close the handle and return */
 	HcClose(hProcess);
 	return NT_SUCCESS(Status);
 }
@@ -339,7 +331,6 @@ BOOLEAN
 HCAPI
 HcProcessResumeEx(CONST HANDLE hProcess)
 {
-	/* Do the resume */
 	return NT_SUCCESS(HcResumeProcess(hProcess));
 }
 
@@ -460,9 +451,9 @@ HcProcessReadMemory(CONST IN HANDLE hProcess,
 	IN LPCVOID lpBaseAddress,
 	IN LPVOID lpBuffer,
 	IN SIZE_T nSize,
-	OUT SIZE_T* lpNumberOfBytesRead)
+	OUT PSIZE_T lpNumberOfBytesRead)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 
 	/* Do the read */
 	Status = HcReadVirtualMemory(hProcess,
@@ -472,15 +463,16 @@ HcProcessReadMemory(CONST IN HANDLE hProcess,
 		&nSize);
 
 	/* In user-mode, this parameter is optional */
-	if (lpNumberOfBytesRead) *lpNumberOfBytesRead = nSize;
+	if (lpNumberOfBytesRead)
+	{
+		*lpNumberOfBytesRead = nSize;
+	}
 
 	if (!NT_SUCCESS(Status))
 	{
-		/* We failed */
 		return FALSE;
 	}
 
-	/* Return success */
 	return TRUE;
 }
 
@@ -492,7 +484,7 @@ HcProcessCreateThread(CONST IN HANDLE hProcess,
 	CONST IN LPVOID lpParamater,
 	CONST IN DWORD dwCreationFlags)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	HANDLE hThread = 0;
 
 	Status = HcCreateThreadEx(&hThread,
@@ -524,33 +516,33 @@ HcProcessReadNullifiedString(CONST HANDLE hProcess,
 	LPWSTR lpStringOut,
 	CONST SIZE_T lpSize)
 {
-	SIZE_T Len = 0;
+	SIZE_T tStringSize;
 
 	/* Get the maximum len we have/can write in given size */
-	Len = usStringIn->Length + sizeof(UNICODE_NULL);
-	if (lpSize * sizeof(WCHAR) < Len)
+	tStringSize = usStringIn->Length + sizeof(UNICODE_NULL);
+	if (lpSize * sizeof(WCHAR) < tStringSize)
 	{
-		Len = lpSize * sizeof(WCHAR);
+		tStringSize = lpSize * sizeof(WCHAR);
 	}
 
 	/* Read the string */
 	if (!HcProcessReadMemory(hProcess,
 		usStringIn->Buffer,
 		lpStringOut,
-		Len,
+		tStringSize,
 		NULL))
 	{
 		return FALSE;
 	}
 
 	/* If we are at the end of the string, prepare to override to nullify string */
-	if (Len == usStringIn->Length + sizeof(UNICODE_NULL))
+	if (tStringSize == usStringIn->Length + sizeof(UNICODE_NULL))
 	{
-		Len -= sizeof(UNICODE_NULL);
+		tStringSize -= sizeof(UNICODE_NULL);
 	}
 
 	/* Nullify at the end if needed */
-	if (Len >= lpSize * sizeof(WCHAR))
+	if (tStringSize >= lpSize * sizeof(WCHAR))
 	{
 		if (lpSize)
 		{
@@ -558,11 +550,11 @@ HcProcessReadNullifiedString(CONST HANDLE hProcess,
 			lpStringOut[lpSize - 1] = UNICODE_NULL;
 		}
 	}
-	/* Otherwise, nullify at last writen char */
+	/* Otherwise, nullify at last written char */
 	else
 	{
-		ASSERT(Len + sizeof(UNICODE_NULL) <= lpSize * sizeof(WCHAR));
-		lpStringOut[Len / sizeof(WCHAR)] = UNICODE_NULL;
+		ASSERT(tStringSize + sizeof(UNICODE_NULL) <= lpSize * sizeof(WCHAR));
+		lpStringOut[tStringSize / sizeof(WCHAR)] = UNICODE_NULL;
 	}
 
 	return TRUE;
@@ -575,17 +567,11 @@ HcProcessLdrModuleToHighCallModule(CONST IN HANDLE hProcess,
 	CONST IN PLDR_DATA_TABLE_ENTRY Module,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
-	//
-	// Copy the modules name from the process to the out parameter, if specified.
-	//
 	HcProcessReadNullifiedString(hProcess,
 		&Module->BaseModuleName,
 		phcModuleOut->Name,
 		Module->BaseModuleName.Length);
 
-	//
-	// Copy the module's path from the process to the out parameter, if specified.
-	//
 	HcProcessReadNullifiedString(hProcess,
 		&Module->FullModuleName,
 		phcModuleOut->Path,
@@ -605,15 +591,15 @@ HcProcessQueryInformationModule(CONST IN HANDLE hProcess,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
 	SIZE_T Count = 0;
-	NTSTATUS Status = STATUS_SUCCESS;
-	PPEB_LDR_DATA LoaderData = NULL;
-	PLIST_ENTRY ListHead = NULL, ListEntry = NULL;
+	NTSTATUS Status;
+	PPEB_LDR_DATA LoaderData;
+	PLIST_ENTRY ListHead, ListEntry;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	LDR_DATA_TABLE_ENTRY Module;
 	ULONG Len = 0;
 
-	HcInternalSet(&ProcInfo, 0, sizeof(ProcInfo));
-	HcInternalSet(&Module, 0, sizeof(Module));
+	ZERO(&ProcInfo);
+	ZERO(&Module);
 
 	/* Query the process information to get its PEB address */
 	Status = HcQueryInformationProcess(hProcess,
@@ -669,8 +655,6 @@ HcProcessQueryInformationModule(CONST IN HANDLE hProcess,
 		return FALSE;
 	}
 
-	Count = 0;
-
 	/* Loop on the modules */
 	while (ListEntry != ListHead)
 	{
@@ -713,17 +697,17 @@ HcProcessEnumModulesW(CONST HANDLE hProcess,
 	CONST HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
-	PPEB_LDR_DATA LoaderData = NULL;
-	PLIST_ENTRY ListHead = NULL, ListEntry = NULL;
+	NTSTATUS Status;
+	PPEB_LDR_DATA LoaderData;
+	PLIST_ENTRY ListHead, ListEntry;
 	PROCESS_BASIC_INFORMATION ProcInfo;
 	LDR_DATA_TABLE_ENTRY ldrModule;
-	PHC_MODULE_INFORMATIONW Module = NULL;
+	PHC_MODULE_INFORMATIONW Module;
 	SIZE_T Count = 0;
 	ULONG Len = 0;
 
-	HcInternalSet(&ProcInfo, 0, sizeof(ldrModule));
-	HcInternalSet(&ldrModule, 0, sizeof(ProcInfo));
+	ZERO(&ProcInfo);
+	ZERO(&ldrModule);
 
 	/* Query the process information to get its PEB address */
 	Status = HcQueryInformationProcess(hProcess,
@@ -765,8 +749,6 @@ HcProcessEnumModulesW(CONST HANDLE hProcess,
 	{
 		return FALSE;
 	}
-
-	Count = 0;
 
 	/* Loop on the modules */
 	while (ListEntry != ListHead)
@@ -820,10 +802,10 @@ HcProcessEnumMappedImagesW(CONST HANDLE ProcessHandle,
 	CONST HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
-	BOOLEAN Continue = FALSE;
-	PVOID baseAddress = NULL;
+	BOOLEAN Continue;
+	PVOID baseAddress;
 	MEMORY_BASIC_INFORMATION basicInfo;
-	PHC_MODULE_INFORMATIONW hcmInformation = NULL;
+	PHC_MODULE_INFORMATIONW hcmInformation;
 	SIZE_T allocationSize = 0;
 
 	HcInternalSet(&basicInfo, 0, sizeof(basicInfo));
@@ -916,8 +898,8 @@ HCAPI
 GetProcessList(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation)
 {
 	DWORD ReturnLength = 0;
-	LPVOID Buffer = NULL;
-	PSYSTEM_PROCESS_INFORMATION pSysList = NULL;
+	LPVOID Buffer;
+	PSYSTEM_PROCESS_INFORMATION pSysList;
 	NTSTATUS Status;
 	
 	Status = HcQuerySystemInformation(SystemProcessInformation,
@@ -976,10 +958,10 @@ HcProcessEnumByNameExW(CONST LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACK_EXW Callback,
 	LPARAM lParam)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
+	HANDLE CurrentHandle;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
-	HANDLE CurrentHandle = NULL;
-	PHC_PROCESS_INFORMATION_EXW hcpInformation = NULL;
+	PHC_PROCESS_INFORMATION_EXW hcpInformation;
 	PVOID Buffer = NULL;
 
 	/* Query the process list. */
@@ -1009,8 +991,10 @@ HcProcessEnumByNameExW(CONST LPCWSTR lpProcessName,
 				processInfo->ImageName.Length);
 
 			/* Try opening the process */
-			if ((CurrentHandle = HcProcessOpen((SIZE_T)processInfo->UniqueProcessId,
-				PROCESS_QUERY_INFORMATION | PROCESS_VM_READ)))
+			CurrentHandle = HcProcessOpen((SIZE_T)processInfo->UniqueProcessId,
+				PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
+
+			if (CurrentHandle != NULL)
 			{
 				hcpInformation->CanAccess = TRUE;
 
@@ -1052,7 +1036,7 @@ BOOLEAN
 HCAPI 
 HcProcessGetById(CONST IN DWORD dwProcessId, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PVOID Buffer = NULL;
 	BOOLEAN ReturnValue = FALSE;
@@ -1103,7 +1087,7 @@ end:
 
 HC_EXTERN_API BOOLEAN HCAPI HcProcessGetByNameW(CONST IN LPCWSTR lpName, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PVOID Buffer = NULL;
 	BOOLEAN ReturnValue = FALSE;
@@ -1160,7 +1144,7 @@ HcProcessEnumByNameW(CONST LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACKW Callback,
 	LPARAM lParam)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PHC_PROCESS_INFORMATIONW hcpInformation = NULL;
 	PVOID Buffer = NULL;
@@ -1222,11 +1206,10 @@ HcWin32GetModuleFileName(CONST HANDLE hProcess,
 	LPWSTR lpFilename,
 	CONST DWORD nSize)
 {
-
 	// @defineme
-	SIZE_T Len = 0;
-	SIZE_T OutSize = 0;
-	NTSTATUS Status = STATUS_SUCCESS;
+	SIZE_T tFileNameLength = 0;
+	SIZE_T tOutFileNameSize = 0;
+	NTSTATUS Status;
 
 	struct
 	{
@@ -1243,7 +1226,7 @@ HcWin32GetModuleFileName(CONST HANDLE hProcess,
 
 	/* Query section name */
 	Status = NtQueryVirtualMemory(hProcess, lpv, MemoryMappedFilenameInformation,
-		&SectionName, sizeof(SectionName), &OutSize);
+		&SectionName, sizeof(SectionName), &tOutFileNameSize);
 
 	if (!NT_SUCCESS(Status))
 	{
@@ -1252,11 +1235,11 @@ HcWin32GetModuleFileName(CONST HANDLE hProcess,
 	}
 
 	/* Prepare to copy file name */
-	Len = OutSize = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
-	if (OutSize + 1 > nSize)
+	tFileNameLength = tOutFileNameSize = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
+	if (tOutFileNameSize + 1 > nSize)
 	{
-		Len = nSize - 1;
-		OutSize = nSize;
+		tFileNameLength = nSize - 1;
+		tOutFileNameSize = nSize;
 		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 	}
 	else
@@ -1265,10 +1248,10 @@ HcWin32GetModuleFileName(CONST HANDLE hProcess,
 	}
 
 	/* Copy, zero and return */
-	HcInternalCopy(lpFilename, SectionName.memSection.SectionFileName.Buffer, Len * sizeof(WCHAR));
-	lpFilename[Len] = 0;
+	HcInternalCopy(lpFilename, SectionName.memSection.SectionFileName.Buffer, tFileNameLength * sizeof(WCHAR));
+	lpFilename[tFileNameLength] = 0;
 
-	return OutSize;
+	return tOutFileNameSize;
 }
 
 HC_EXTERN_API
@@ -1279,9 +1262,9 @@ HcProcessModuleFileName(CONST HANDLE hProcess,
 	LPWSTR lpFilename,
 	CONST DWORD nSize)
 {
-	SIZE_T Len = 0;
-	SIZE_T OutSize = 0;
-	NTSTATUS Status = STATUS_SUCCESS;
+	SIZE_T tFileNameLength;
+	SIZE_T tFileNameSize = 0;
+	NTSTATUS Status;
 
 	struct
 	{
@@ -1298,7 +1281,7 @@ HcProcessModuleFileName(CONST HANDLE hProcess,
 
 	/* Query section name */
 	Status = HcQueryVirtualMemory(hProcess, lpv, MemoryMappedFilenameInformation,
-		&SectionName, sizeof(SectionName), &OutSize);
+		&SectionName, sizeof(SectionName), &tFileNameSize);
 
 	if (!NT_SUCCESS(Status))
 	{
@@ -1307,11 +1290,11 @@ HcProcessModuleFileName(CONST HANDLE hProcess,
 	}
 
 	/* Prepare to copy file name */
-	Len = OutSize = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
-	if (OutSize + 1 > nSize)
+	tFileNameLength = tFileNameSize = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
+	if (tFileNameSize + 1 > nSize)
 	{
-		Len = nSize - 1;
-		OutSize = nSize;
+		tFileNameLength = nSize - 1;
+		tFileNameSize = nSize;
 		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 	}
 	else
@@ -1320,10 +1303,10 @@ HcProcessModuleFileName(CONST HANDLE hProcess,
 	}
 
 	/* Copy, zero and return */
-	HcInternalCopy(lpFilename, SectionName.memSection.SectionFileName.Buffer, Len * sizeof(WCHAR));
-	lpFilename[Len] = 0;
+	HcInternalCopy(lpFilename, SectionName.memSection.SectionFileName.Buffer, tFileNameLength * sizeof(WCHAR));
+	lpFilename[tFileNameLength] = 0;
 
-	return OutSize;
+	return tFileNameSize;
 }
 
 static HC_EXTERN_API NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
@@ -1377,11 +1360,10 @@ HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumHandleEntries(HC_HANDLE_ENTRY_CALLBACKW
 		if (callback(&curHandle, lParam))
 		{
 			ReturnValue = TRUE;
-			goto done;
+			break;
 		}
 	}
 
-done:
 	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
 	return ReturnValue;
 }
@@ -1472,95 +1454,18 @@ HcProcessSetPrivilegeA(CONST HANDLE hProcess,
 	CONST LPCSTR Privilege,
 	CONST BOOLEAN bEnablePrivilege
 ){
-	NTSTATUS Status = STATUS_SUCCESS;
-	HANDLE hToken = NULL;
-	TOKEN_PRIVILEGES tp;
-	PLUID pLuid = NULL;
-	TOKEN_PRIVILEGES tpPrevious;
-	DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
+	LPWSTR lpConvertedPrivilege = HcStringConvertAtoW(Privilege);
+	BOOLEAN bReturn;
 
-	HcInternalSet(&tp, 0, sizeof(tp));
-	HcInternalSet(&tpPrevious, 0, sizeof(tpPrevious));
+	bReturn = HcProcessSetPrivilegeA(hProcess, Privilege, bEnablePrivilege);
 
-	/* Acquire handle to token */
-	Status = HcOpenProcessToken(hProcess, 
-		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, 
-		&hToken);
-
-	if (!NT_SUCCESS(Status))
+	if (!lpConvertedPrivilege)
 	{
-		HcErrorSetNtStatus(Status);
-		return FALSE;
+		HcFree(lpConvertedPrivilege);
 	}
 
-	/* Find the privilege */
-	pLuid = HcLookupPrivilegeValueA(Privilege);
-	if (!pLuid)
-	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		HcObjectClose(hToken);
-		return FALSE;
-	}
-
-	/* Set one privilege */
-	tp.PrivilegeCount = 1;
-
-	/* The id of our privilege */
-	tp.Privileges[0].Luid = *pLuid;
-
-	/* No special attributes */
-	tp.Privileges[0].Attributes = 0;
-
-	Status = HcAdjustPrivilegesToken(hToken,
-		FALSE,
-		&tp,
-		sizeof(TOKEN_PRIVILEGES),
-		&tpPrevious,
-		&cbPrevious
-	);
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcErrorSetNtStatus(Status);
-		HcObjectClose(hToken);
-		return FALSE;
-	}
-
-	// 
-	// second pass.  set privilege based on previous setting
-	// 
-	tpPrevious.PrivilegeCount = 1;
-	tpPrevious.Privileges[0].Luid = *pLuid;
-
-	if (bEnablePrivilege)
-	{
-		/* Enable this privilege */
-		tpPrevious.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
-	}
-	else 
-	{
-		/* Disable this privilege */
-		tpPrevious.Privileges[0].Attributes ^= (SE_PRIVILEGE_ENABLED &
-			tpPrevious.Privileges[0].Attributes);
-	}
-
-	Status = HcAdjustPrivilegesToken(hToken,
-		FALSE,
-		&tpPrevious,
-		cbPrevious,
-		NULL,
-		NULL);
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcErrorSetNtStatus(Status);
-		HcObjectClose(hToken);
-		return FALSE;
-	}
-
-	HcObjectClose(hToken);
-	return TRUE;
-};
+	return bReturn;
+}
 
 HC_EXTERN_API
 BOOLEAN
@@ -1569,21 +1474,18 @@ HcProcessSetPrivilegeW(CONST HANDLE hProcess,
 	CONST LPCWSTR Privilege,
 	CONST BOOLEAN bEnablePrivilege)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	HANDLE hToken = NULL;
 	TOKEN_PRIVILEGES tp;
-	PLUID pLuid = NULL;
 	TOKEN_PRIVILEGES tpPrevious;
+	PLUID pLuid = NULL;
 	DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
 
-	HcInternalSet(&tp, 0, sizeof(tp));
-	HcInternalSet(&tpPrevious, 0, sizeof(tpPrevious));
+	ZERO(&tp);
+	ZERO(&tpPrevious);
 
 	/* Acquire handle to token */
-	Status = HcOpenProcessToken(hProcess,
-		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-		&hToken);
-
+	Status = HcOpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
