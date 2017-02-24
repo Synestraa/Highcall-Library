@@ -22,6 +22,17 @@
 #define OBJ_FORCE_ACCESS_CHECK  0x00000400L
 #define OBJ_VALID_ATTRIBUTES    0x000007F2L
 
+//
+// MessageId: WAIT_TIMEOUT
+//
+// MessageText:
+//
+// The wait operation timed out.
+//
+#define WAIT_TIMEOUT        258L
+#define WAIT_FAILED			((DWORD)0xFFFFFFFF)
+#define WAIT_OBJECT_0       ((STATUS_WAIT_0 ) + 0 )
+
 #define DEBUG_READ_EVENT        (0x0001)
 #define DEBUG_PROCESS_ASSIGN    (0x0002)
 #define DEBUG_SET_INFORMATION   (0x0004)
@@ -44,6 +55,11 @@
 	(ALIGN_DOWN(((ULONG)(length) + sizeof(type) - 1), type))
 
 #define MAX_MODULES   0x2710
+
+#define WH_MIN	(-1)
+#define WH_MAX	14
+#define WH_MINHOOK	WH_MIN
+#define WH_MAXHOOK	WH_MAX
 #define NB_HOOKS (WH_MAXHOOK - WH_MINHOOK + 1)
 
 #define NtCurrentProcess ((HANDLE)(LONG_PTR)-1)
@@ -719,7 +735,7 @@ typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO
 	UCHAR ObjectTypeIndex;
 	UCHAR HandleAttributes;
 	USHORT HandleValue;
-	PBYTE Object;
+	PVOID Object;
 	ULONG GrantedAccess;
 } SYSTEM_HANDLE_TABLE_ENTRY_INFO, *PSYSTEM_HANDLE_TABLE_ENTRY_INFO;
 
@@ -897,7 +913,7 @@ typedef struct _OBJECT_TYPE_INFORMATION
 typedef struct _OBJECT_TYPES_INFORMATION
 {
 	ULONG NumberOfTypes;
-	OBJECT_TYPE_INFORMATION TypeInformation[1];
+	//OBJECT_TYPE_INFORMATION TypeInformation[1];
 } OBJECT_TYPES_INFORMATION, *POBJECT_TYPES_INFORMATION;
 
 typedef struct _OBJECT_HANDLE_FLAG_INFORMATION
@@ -1466,7 +1482,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 	LIST_ENTRY InLoadOrderLinks;
 	LIST_ENTRY InMemoryOrderLinks;
 	LIST_ENTRY InInitializationOrderLinks;
-	PVOID ModuleBase;
+	HMODULE ModuleBase;
 	PVOID EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING FullModuleName;
@@ -1533,9 +1549,120 @@ typedef struct _NtCreateThreadExBuffer {
 typedef enum _WAIT_TYPE {
 	WaitAll,
 	WaitAny
-} WAIT_TYPE;
+} WAIT_TYPE; 
+
+typedef enum _EVENT_TYPE {
+	NotificationEvent,
+	SynchronizationEvent
+} EVENT_TYPE;
+
+typedef struct _FILE_EA_INFORMATION {
+	ULONG EaSize;
+} FILE_EA_INFORMATION, *PFILE_EA_INFORMATION;
 
 typedef DWORD(WINAPI *PTHREAD_START_ROUTINE)(LPVOID);
 typedef PTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE;
+
+
+//
+// Macro definition for defining IOCTL and FSCTL function control codes.  Note
+// that function codes 0-2047 are reserved for Microsoft Corporation, and
+// 2048-4095 are reserved for customers.
+// 
+// <winioctl.h>
+//
+
+#define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
+    ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
+)
+
+// <winioctl.h>
+#define FILE_DEVICE_BEEP                0x00000001
+#define FILE_DEVICE_CD_ROM              0x00000002
+#define FILE_DEVICE_CD_ROM_FILE_SYSTEM  0x00000003
+#define FILE_DEVICE_CONTROLLER          0x00000004
+#define FILE_DEVICE_DATALINK            0x00000005
+#define FILE_DEVICE_DFS                 0x00000006
+#define FILE_DEVICE_DISK                0x00000007
+#define FILE_DEVICE_DISK_FILE_SYSTEM    0x00000008
+#define FILE_DEVICE_FILE_SYSTEM         0x00000009
+#define FILE_DEVICE_INPORT_PORT         0x0000000a
+#define FILE_DEVICE_KEYBOARD            0x0000000b
+#define FILE_DEVICE_MAILSLOT            0x0000000c
+#define FILE_DEVICE_MIDI_IN             0x0000000d
+#define FILE_DEVICE_MIDI_OUT            0x0000000e
+#define FILE_DEVICE_MOUSE               0x0000000f
+#define FILE_DEVICE_MULTI_UNC_PROVIDER  0x00000010
+#define FILE_DEVICE_NAMED_PIPE          0x00000011
+#define FILE_DEVICE_NETWORK             0x00000012
+#define FILE_DEVICE_NETWORK_BROWSER     0x00000013
+#define FILE_DEVICE_NETWORK_FILE_SYSTEM 0x00000014
+#define FILE_DEVICE_NULL                0x00000015
+#define FILE_DEVICE_PARALLEL_PORT       0x00000016
+#define FILE_DEVICE_PHYSICAL_NETCARD    0x00000017
+#define FILE_DEVICE_PRINTER             0x00000018
+#define FILE_DEVICE_SCANNER             0x00000019
+#define FILE_DEVICE_SERIAL_MOUSE_PORT   0x0000001a
+#define FILE_DEVICE_SERIAL_PORT         0x0000001b
+#define FILE_DEVICE_SCREEN              0x0000001c
+#define FILE_DEVICE_SOUND               0x0000001d
+#define FILE_DEVICE_STREAMS             0x0000001e
+#define FILE_DEVICE_TAPE                0x0000001f
+#define FILE_DEVICE_TAPE_FILE_SYSTEM    0x00000020
+#define FILE_DEVICE_TRANSPORT           0x00000021
+#define FILE_DEVICE_UNKNOWN             0x00000022
+#define FILE_DEVICE_VIDEO               0x00000023
+#define FILE_DEVICE_VIRTUAL_DISK        0x00000024
+#define FILE_DEVICE_WAVE_IN             0x00000025
+#define FILE_DEVICE_WAVE_OUT            0x00000026
+#define FILE_DEVICE_8042_PORT           0x00000027
+#define FILE_DEVICE_NETWORK_REDIRECTOR  0x00000028
+#define FILE_DEVICE_BATTERY             0x00000029
+#define FILE_DEVICE_BUS_EXTENDER        0x0000002a
+#define FILE_DEVICE_MODEM               0x0000002b
+#define FILE_DEVICE_VDM                 0x0000002c
+#define FILE_DEVICE_MASS_STORAGE        0x0000002d
+#define FILE_DEVICE_SMB                 0x0000002e
+#define FILE_DEVICE_KS                  0x0000002f
+#define FILE_DEVICE_CHANGER             0x00000030
+#define FILE_DEVICE_SMARTCARD           0x00000031
+#define FILE_DEVICE_ACPI                0x00000032
+#define FILE_DEVICE_DVD                 0x00000033
+#define FILE_DEVICE_FULLSCREEN_VIDEO    0x00000034
+#define FILE_DEVICE_DFS_FILE_SYSTEM     0x00000035
+#define FILE_DEVICE_DFS_VOLUME          0x00000036
+#define FILE_DEVICE_SERENUM             0x00000037
+#define FILE_DEVICE_TERMSRV             0x00000038
+#define FILE_DEVICE_KSEC                0x00000039
+#define FILE_DEVICE_FIPS                0x0000003A
+#define FILE_DEVICE_INFINIBAND          0x0000003B
+#define FILE_DEVICE_VMBUS               0x0000003E
+#define FILE_DEVICE_CRYPT_PROVIDER      0x0000003F
+#define FILE_DEVICE_WPD                 0x00000040
+#define FILE_DEVICE_BLUETOOTH           0x00000041
+#define FILE_DEVICE_MT_COMPOSITE        0x00000042
+#define FILE_DEVICE_MT_TRANSPORT        0x00000043
+#define FILE_DEVICE_BIOMETRIC           0x00000044
+#define FILE_DEVICE_PMI                 0x00000045
+#define FILE_DEVICE_EHSTOR              0x00000046
+#define FILE_DEVICE_DEVAPI              0x00000047
+#define FILE_DEVICE_GPIO                0x00000048
+#define FILE_DEVICE_USBEX               0x00000049
+#define FILE_DEVICE_CONSOLE             0x00000050
+#define FILE_DEVICE_NFP                 0x00000051
+#define FILE_DEVICE_SYSENV              0x00000052
+#define FILE_DEVICE_VIRTUAL_BLOCK       0x00000053
+#define FILE_DEVICE_POINT_OF_SERVICE    0x00000054
+
+//
+// Define the method codes for how buffers are passed for I/O and FS controls
+// 
+// <winioctl.h>
+//
+
+#define METHOD_BUFFERED                 0
+#define METHOD_IN_DIRECT                1
+#define METHOD_OUT_DIRECT               2
+#define METHOD_NEITHER                  3
 
 #endif

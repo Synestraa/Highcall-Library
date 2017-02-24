@@ -10,6 +10,7 @@ This library is licensed under the BSD license. See the file COPYING.
 
 
 #include "wstring.h"
+#include "../../../public/hcinternal.h"
 
 #ifndef DISTORM_LIGHT
 
@@ -29,18 +30,18 @@ void chrcat_WS(_WString* s, uint8_t ch)
 void strcpylen_WS(_WString* s, const int8_t* buf, unsigned int len)
 {
 	s->length = len;
-	memcpy((int8_t*)s->p, buf, len + 1);
+	HcInternalCopy((int8_t*)s->p, buf, len + 1);
 }
 
 void strcatlen_WS(_WString* s, const int8_t* buf, unsigned int len)
 {
-	memcpy((int8_t*)&s->p[s->length], buf, len + 1);
+	HcInternalCopy((int8_t*)&s->p[s->length], buf, len + 1);
 	s->length += len;
 }
 
 void strcat_WS(_WString* s, const _WString* s2)
 {
-	memcpy((int8_t*)&s->p[s->length], s2->p, s2->length + 1);
+	HcInternalCopy((int8_t*)&s->p[s->length], s2->p, s2->length + 1);
 	s->length += s2->length;
 }
 

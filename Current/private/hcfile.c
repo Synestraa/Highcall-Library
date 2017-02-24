@@ -16,12 +16,6 @@ Revision History:
 
 --*/
 
-//
-// @TODO: Replace the functions from the <windows.h> include with reimplementations using highcall.
-//
-
-#include <windows.h>
-
 #include "sys/hcsyscall.h"
 
 #include "../public/hcfile.h"
@@ -33,186 +27,404 @@ Revision History:
 #include "../public/imports.h"
 #include "../public/hcstring.h"
 
-//
-// Unimplemented.
-//
-
-DWORD HCAPI HcGetFileAttributesA(LPCSTR lpFile)
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcFileRead(IN HANDLE hFile,
+	IN LPVOID lpBuffer,
+	IN DWORD nNumberOfBytesToRead)
 {
-	return 0;
+	NTSTATUS Status;
+	IO_STATUS_BLOCK Iosb;
+	DWORD dwNumberOfBytesRead = 0;
+
+	HcInternalSet(&Iosb, 0, sizeof(Iosb));
+
+	hFile = HcObjectTranslateHandle(hFile);
+
+	Status = NtReadFile(hFile,
+		NULL,
+		NULL,
+		NULL,
+		&Iosb,
+		lpBuffer,
+		nNumberOfBytesToRead,
+		NULL,
+		NULL);
+
+	/* Wait in case operation is pending */
+	if (Status == STATUS_PENDING)
+	{
+		Status = NtWaitForSingleObject(hFile, FALSE, NULL);
+		if (NT_SUCCESS(Status)) 
+		{
+			Status = Iosb.Status;
+		}
+	}
+
+	if (Status == STATUS_END_OF_FILE)
+	{
+		/*
+		* lpNumberOfBytesRead must not be NULL here, in fact Win doesn't
+		* check that case either and crashes (only after the operation
+		* completed).
+		*/
+		return 0;
+	}
+
+	if (NT_SUCCESS(Status))
+	{
+		/*
+		* lpNumberOfBytesRead must not be NULL here, in fact Win doesn't
+		* check that case either and crashes (only after the operation
+		* completed).
+		*/
+		dwNumberOfBytesRead = (DWORD) Iosb.Information;
+	}
+
+	return dwNumberOfBytesRead;
+}
+
+HC_EXTERN_API
+DWORD
+HCAPI
+HcFileSetCurrent(HANDLE hFile,
+	LONG lDistanceToMove,
+	DWORD dwMoveMethod)
+{
+	FILE_POSITION_INFORMATION FilePosition;
+	FILE_STANDARD_INFORMATION FileStandard;
+	NTSTATUS errCode;
+	IO_STATUS_BLOCK IoStatusBlock;
+	LARGE_INTEGER Distance;
+
+	HcInternalSet(&FilePosition, 0, sizeof(FilePosition));
+	HcInternalSet(&FileStandard, 0, sizeof(FileStandard));
+	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
+
+	Distance.QuadPart = lDistanceToMove;
+
+	switch (dwMoveMethod)
+	{
+	case FILE_CURRENT:
+		errCode = HcQueryInformationFile(hFile,
+			&IoStatusBlock,
+			&FilePosition,
+			sizeof(FILE_POSITION_INFORMATION),
+			FilePositionInformation);
+
+		FilePosition.CurrentByteOffset.QuadPart += Distance.QuadPart;
+		if (!NT_SUCCESS(errCode))
+		{
+			HcErrorSetNtStatus(errCode);
+
+			// @defineme
+			return 0 /* INVALID_SET_FILE_POINTER */;
+		}
+		break;
+
+	case FILE_END:
+		errCode = HcQueryInformationFile(hFile,
+			&IoStatusBlock,
+			&FileStandard,
+			sizeof(FILE_STANDARD_INFORMATION),
+			FileStandardInformation);
+
+		FilePosition.CurrentByteOffset.QuadPart =
+			FileStandard.EndOfFile.QuadPart + Distance.QuadPart;
+
+		if (!NT_SUCCESS(errCode))
+		{
+			HcErrorSetNtStatus(errCode);
+
+			// @defineme
+			return 0 /* INVALID_SET_FILE_POINTER */;
+		}
+		break;
+
+	case FILE_BEGIN:
+		FilePosition.CurrentByteOffset.QuadPart = Distance.QuadPart;
+		break;
+
+	default:
+		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+
+		// @defineme
+		return 0/* INVALID_SET_FILE_POINTER */;
+	}
+
+	if (FilePosition.CurrentByteOffset.QuadPart < 0)
+	{
+		HcErrorSetDosError(ERROR_NEGATIVE_SEEK);
+		
+		// @defineme
+		return 0 /* INVALID_SET_FILE_POINTER */;
+	}
+
+	errCode = NtSetInformationFile(hFile,
+		&IoStatusBlock,
+		&FilePosition,
+		sizeof(FILE_POSITION_INFORMATION),
+		FilePositionInformation);
+
+	if (!NT_SUCCESS(errCode))
+	{
+		// @defineme
+		return 0/* INVALID_SET_FILE_POINTER */;
+	}
+
+	if (FilePosition.CurrentByteOffset.u.LowPart == MAXDWORD)
+	{
+		/* The value of -1 is valid here, especially when the new
+		file position is greater than 4 GB. Since NtSetInformationFile
+		succeeded we never set an error code and we explicitly need
+		to clear a previously set error code in this case, which
+		an application will check if INVALID_SET_FILE_POINTER is returned! */
+		HcErrorSetDosError(ERROR_SUCCESS);
+	}
+
+	return FilePosition.CurrentByteOffset.u.LowPart;
+}
+
+HC_EXTERN_API
+HANDLE 
+HCAPI 
+HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
+{
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	IO_STATUS_BLOCK IoStatusBlock;
+	UNICODE_STRING NtPathU;
+	HANDLE FileHandle;
+	NTSTATUS Status;
+	ULONG FileAttributes = FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY);;
+	ULONG Flags = FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE;
+	PVOID EaBuffer = NULL;
+	DWORD EaLength = 0;
+
+	if (HcStringIsNullOrEmpty(lpFileName))
+	{
+		HcErrorSetDosError(ERROR_PATH_NOT_FOUND);
+		return INVALID_HANDLE;
+	}
+
+	ZERO(&IoStatusBlock);
+
+	/* validate & translate the creation disposition */
+	switch (dwCreationDisposition)
+	{
+	case CREATE_NEW:
+		dwCreationDisposition = FILE_CREATE;
+		break;
+
+	case CREATE_ALWAYS:
+		dwCreationDisposition = FILE_OVERWRITE_IF;
+		break;
+
+	case OPEN_EXISTING:
+		dwCreationDisposition = FILE_OPEN;
+		break;
+
+	case OPEN_ALWAYS:
+		dwCreationDisposition = FILE_OPEN_IF;
+		break;
+
+	case TRUNCATE_EXISTING:
+		dwCreationDisposition = FILE_OVERWRITE;
+		break;
+
+	default:
+		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+		return INVALID_HANDLE;
+	}
+
+	dwDesiredAccess |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
+
+	/* validate & translate the filename */
+	if (!RtlDosPathNameToNtPathName_U(lpFileName,
+		&NtPathU,
+		NULL,
+		NULL))
+	{
+		HcErrorSetDosError(ERROR_FILE_NOT_FOUND);
+		return INVALID_HANDLE;
+	}
+
+	/* build the object attributes */
+	InitializeObjectAttributes(&ObjectAttributes,
+		&NtPathU,
+		0,
+		NULL,
+		NULL);
+
+	ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
+
+	/* perform the call */
+	Status = HcCreateFile(&FileHandle,
+		dwDesiredAccess,
+		&ObjectAttributes,
+		&IoStatusBlock,
+		NULL,
+		FileAttributes,
+		0,
+		dwCreationDisposition,
+		Flags,
+		EaBuffer,
+		EaLength);
+	
+	/* Don't free with HcFree due to RtlDosPathNameToNtPathName_U allocation type. */
+	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
+
+	/* error */
+	if (!NT_SUCCESS(Status))
+	{
+		/* In the case file creation was rejected due to CREATE_NEW flag
+		* was specified and file with that name already exists, correct
+		* last error is ERROR_FILE_EXISTS and not ERROR_ALREADY_EXISTS.
+		* Note: RtlNtStatusToDosError is not the subject to blame here.
+		*/
+		if (Status == STATUS_OBJECT_NAME_COLLISION &&
+			dwCreationDisposition == FILE_CREATE)
+		{
+			HcErrorSetDosError(ERROR_FILE_EXISTS);
+		}
+		else
+		{
+			HcErrorSetNtStatus(Status);
+		}
+
+		return INVALID_HANDLE;
+	}
+
+	/*
+	create with OPEN_ALWAYS (FILE_OPEN_IF) returns info = FILE_OPENED or FILE_CREATED
+	create with CREATE_ALWAYS (FILE_OVERWRITE_IF) returns info = FILE_OVERWRITTEN or FILE_CREATED
+	*/
+	if (dwCreationDisposition == FILE_OPEN_IF)
+	{
+		HcErrorSetDosError(
+			IoStatusBlock.Information == FILE_OPENED ?
+			ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+	}
+	else if (dwCreationDisposition == FILE_OVERWRITE_IF)
+	{
+		HcErrorSetDosError(
+			IoStatusBlock.Information == FILE_OVERWRITTEN 
+			? ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+	}
+	else
+	{
+		HcErrorSetDosError(ERROR_SUCCESS);
+	}
+
+	return FileHandle;
+}
+
+HC_EXTERN_API HANDLE HCAPI HcFileOpenA(LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
+{
+	LPWSTR lpConverted = HcStringConvertAtoW(lpFileName);
+	HANDLE hFile = HcFileOpenW(lpConverted, dwCreationDisposition, dwDesiredAccess);
+	
+	HcFree(lpConverted);
+	return hFile;
 }
 
 HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileExistsA(LPCSTR lpFilePath)
-//
-// Retrieves attributes of a file path, determines whether the file is present.
-//
-// Parameters:
-//
-//	1. lpFilePath -> Ansi string representing the file path.
-//
-// Returns:
-//	Success.
-//
 {
-	return (GetFileAttributesA(lpFilePath) != 0xFFFFFFFF);
+	LPSTR lpConverted = HcStringConvertAtoW(lpFilePath);
+	BOOLEAN bValue = HcFileExistsW(lpConverted);
+
+	HcFree(lpConverted);
+	return bValue;
 }
 
 HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcFileExistsW(LPCWSTR lpFilePath)
-//
-// Unicode implementation of HcFileExists.
-//
-// Parameters:
-//
-//	1. lpFilePath -> Unicode string representing the file path.
-//
-// Returns:
-//	Success.
-//
 {
-	return (GetFileAttributesW(lpFilePath) != 0xFFFFFFFF);
+	return HcFileOpenW(
+		lpFilePath,
+		OPEN_EXISTING,
+		GENERIC_READ) != INVALID_HANDLE;
 }
 
 HC_EXTERN_API
 SIZE_T
 HCAPI
-HcFileSize(LPCSTR lpPath)
-//
-// Retrieves the size of a file.
-// @TODO: Implement unicode version, rename to ...A/...W
-//
-// Parameters:
-//
-//	1. lpPath -> Ansi string representing the file path.
-//
-// Returns:
-//	The size of the file in a size_t type.
-//
+HcFileSize(HANDLE hFile)
 {
-	SIZE_T FileSize = 0;
-	HANDLE hFile = CreateFileA(lpPath,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-		NULL);
+	NTSTATUS Status;
+	IO_STATUS_BLOCK IoStatusBlock;
+	FILE_STANDARD_INFORMATION FileStandard;
 
-	if (!hFile)
+	Status = HcQueryInformationFile(hFile,
+		&IoStatusBlock,
+		&FileStandard,
+		sizeof(FILE_STANDARD_INFORMATION),
+		FileStandardInformation);
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return 0;
+	}
+
+	return FileStandard.EndOfFile.u.LowPart;
+}
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcFileSizeA(LPCSTR lpPath)
+{
+	LPSTR lpConverted = HcStringConvertAtoW(lpPath);
+	SIZE_T tValue = HcFileSizeW(lpConverted);
+
+	HcFree(lpConverted);
+	return tValue;
+}
+
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcFileSizeW(LPCWSTR lpPath)
+{
+	SIZE_T FileSize;
+	HANDLE hFile;
+
+	hFile = HcFileOpenW(lpPath, OPEN_EXISTING, GENERIC_READ);
+	if (hFile == INVALID_HANDLE)
 	{
 		return 0;
 	}
 
-	FileSize = GetFileSize(hFile, NULL);
+	FileSize = HcFileSize(hFile);
 
 	/* Close handle and return */
 	HcClose(hFile);
-	return FileSize;
+	return FileSize; 
 }
 
 HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcFileQueryInformationW(LPCWSTR lpPath, PHC_FILE_INFORMATIONW fileInformation)
-//
-// Retrieves a HC_FILE_INFORMATION struct (defined in hcfile.h) from a file.
-//
-// Parameters:
-//
-//	1. lpPath -> Unicode string representing the file path.
-//  2. fileInformation -> Pointer to a HC_FILE_INFORMATIONA struct.
-//
-// Returns:
-//	Success.
-//
-{
-	HANDLE hFile = CreateFileW(lpPath,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		return FALSE;
-	}
-
-	fileInformation->Size = GetFileSize(hFile, NULL);
-
-	HcClose(hFile);
-
-	return TRUE;
-}
-
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcFileQueryInformationA(LPCSTR lpPath, PHC_FILE_INFORMATIONA fileInformation)
-//
-// Ansi implementation of HcFileQueryInformation.
-//
-// Parameters:
-//
-//	1. lpPath -> Ansi string representing the file path.
-//  2. fileInformation -> Pointer to a HC_FILE_INFORMATIONA struct.
-//
-// Returns:
-//	Success.
-//
-{
-	HANDLE hFile = CreateFileA(lpPath,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		return FALSE;
-	}
-
-	fileInformation->Size = GetFileSize(hFile, NULL);
-
-	HcClose(hFile);
-	return TRUE;
-}
-
-HC_EXTERN_API
-DWORD
+ULONG
 HCAPI
 HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
-//
-// Retrieves the offset in bytes to the start of a function exported by a dll.
-//
-// Parameters:
-//
-//	1. hModule -> The handle of the targetted module.
-//  2. lpExportName -> Ansi string representing the functions name.
-//
-// Returns:
-//	An offset inside of a file, in bytes, to the start of a function export located.
-//
 {
-	PIMAGE_NT_HEADERS pHeaderNT = NULL;
-	SIZE_T szExportRVA = 0;
-	SIZE_T szExportVA = 0;
-	SIZE_T szModule = 0;
+	PIMAGE_NT_HEADERS pHeaderNT;
+	LPBYTE RelativeVirtualAddress;
+	LPBYTE VirtualAddress;
+	LPBYTE lpModule;
 
 	if (!hModule)
 	{
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	szModule = (SIZE_T)hModule;
+	lpModule = (LPBYTE) hModule;
 	pHeaderNT = HcPEGetNtHeader(hModule);
 
 	if (!pHeaderNT)
@@ -224,45 +436,34 @@ HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
 	// Get the absolute address of requested export, subtract the module's base,
 	// pass to the PE handler function.
 	//
-	szExportVA = (SIZE_T)HcModuleProcedureAddressA(hModule, lpExportName);
-	if (szExportVA)
+	VirtualAddress = HcModuleProcedureAddressA(hModule, lpExportName);
+	if (VirtualAddress)
 	{
 		/* Calculate the relative offset */
-		szExportRVA = szExportVA - szModule;
+		RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
 
-		return HcPEGetRawFromRva(pHeaderNT, szExportRVA);
+		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 	}
 
 	return 0;
 }
 
 HC_EXTERN_API
-DWORD
+ULONG
 HCAPI
 HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
-//
-// Unicode implementation of HcFileOffsetByExportNameW
-// 
-// Parameters:
-//
-//	1. hModule -> The handle of the targetted module.
-//  2. lpExportName -> Unicode string representing the functions name.
-//
-// Returns:
-//	An offset inside of a file, in bytes, to the start of a function export located.
-//
 {
-	PIMAGE_NT_HEADERS pHeaderNT = NULL;
-	SIZE_T dwExportRVA = 0;
-	SIZE_T dwExportVA = 0;
-	SIZE_T dwModule = 0;
+	PIMAGE_NT_HEADERS pHeaderNT;
+	LPBYTE RelativeVirtualAddress;
+	LPBYTE VirtualAddress;
+	LPBYTE lpModule;
 
 	if (!hModule)
 	{
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	dwModule = (SIZE_T)hModule;
+	lpModule = (LPBYTE)hModule;
 
 	pHeaderNT = HcPEGetNtHeader(hModule);
 	if (!pHeaderNT)
@@ -274,172 +475,30 @@ HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
 	// Get the absolute address of requested export, subtract the module's base,
 	// pass to the PE handler function.
 	//
-	dwExportVA = (SIZE_T)HcModuleProcedureAddressW(hModule, lpExportName);
-	if (dwExportVA)
+	VirtualAddress = (LPBYTE)HcModuleProcedureAddressW(hModule, lpExportName);
+	if (VirtualAddress)
 	{
 		/* Calculate the relative offset */
-		dwExportRVA = dwExportVA - dwModule;
+		RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
 
-		return HcPEGetRawFromRva(pHeaderNT, dwExportRVA);
+		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 	}
 
 	return 0;
 }
 
 HC_EXTERN_API
-SIZE_T
-HCAPI
-HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
-//
-// Translates a loaded module's virtual address into a file offset, reads the data inside of lpBuffer.
-//
-// Parameters:
-//
-//	1. hModule -> The handle of the targetted module.
-//  2. lpExportName -> Ansi string representing the functions name.
-//	3. lpBuffer -> Pointer to a block of memory to write the file data to.
-//  4. dwCount -> The max amount of bytes to read.
-//
-// Returns:
-//	The amount of bytes successfully read from the file.
-//
-{
-	DWORD dwFileOffse = 0;
-	HANDLE hFile = NULL;
-	DWORD BytesRead = 0;
-	LPSTR lpModulePath = HcStringAllocA(MAX_PATH);
-	DWORD dwFileOffset = HcFileOffsetByExportNameA(hModule, lpExportName);
-
-	if (!dwFileOffset || !lpModulePath)
-	{
-		return 0;
-	}
-
-	/* Acquire path of targetted module. */
-	GetModuleFileNameA(hModule, lpModulePath, MAX_PATH);
-
-	/* Open it up */
-	if (!(hFile = CreateFileA(lpModulePath,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL)))
-	{
-		HcFree(lpModulePath);
-		return 0;
-	}
-
-	/* Run to the offset */
-	if (!(SetFilePointer(hFile, dwFileOffset, 0, FILE_BEGIN)))
-	{
-		HcFree(lpModulePath);
-		HcObjectClose(hFile);
-		return 0;
-	}
-
-	/* Snatch the data */
-	if (!ReadFile(hFile, lpBuffer, dwCount, &BytesRead, NULL))
-	{
-		HcFree(lpModulePath);
-		HcObjectClose(hFile);
-		return 0;
-	}
-
-	/* Fuck off */
-	HcFree(lpModulePath);
-	HcObjectClose(hFile);
-	return BytesRead;
-}
-
-HC_EXTERN_API
-SIZE_T
-HCAPI
-HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
-//
-// Unicode implementation of HcFileReadModule.
-//
-// Parameters:
-//
-//	1. hModule -> The handle of the targetted module.
-//  2. lpExportName -> Ansi string representing the functions name.
-//	3. lpBuffer -> Pointer to a block of memory to write the file data to.
-//  4. dwCount -> The max amount of bytes to read.
-//
-// Returns:
-//	The amount of bytes successfully read from the file.
-//
-{
-	HANDLE hFile = NULL;
-	DWORD BytesRead = 0;
-	LPWSTR lpModulePath = lpModulePath = HcStringAllocW(MAX_PATH);
-	DWORD dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
-
-	if (!dwFileOffset || !lpModulePath)
-	{
-		return 0;
-	}
-
-	/* Acquire path of targetted module. */
-	GetModuleFileNameW(hModule, lpModulePath, MAX_PATH);
-
-	/* Open it up */
-	if (!(hFile = CreateFileW(lpModulePath,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL)))
-	{
-		HcFree(lpModulePath);
-		return 0;
-	}
-
-	/* Run to the offset */
-	if (!(SetFilePointer(hFile, dwFileOffset, 0, FILE_BEGIN)))
-	{
-		HcFree(lpModulePath);
-		HcObjectClose(hFile);
-		return 0;
-	}
-
-	/* Snatch the data */
-	if (!ReadFile(hFile, lpBuffer, dwCount, &BytesRead, NULL))
-	{
-		HcFree(lpModulePath);
-		HcObjectClose(hFile);
-		return 0;
-	}
-
-	/* Fuck off */
-	HcFree(lpModulePath);
-	HcObjectClose(hFile);
-	return BytesRead;
-}
-
-HC_EXTERN_API
-DWORD
+ULONG
 HCAPI
 HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
-//
-// Similar to HcFileOffsetByExportName, it retrieves an offset to the module.
-// This function retrieves the offset of an address instead of an export.
-//
-// Parameters:
-//
-//	1. lpddress -> The address to locate.
-//
-// Returns:
-//	The offset to the file in bytes.
-//
 {
-	PIMAGE_NT_HEADERS pHeaderNT = NULL;
-	SIZE_T szRva = 0;
-	SIZE_T szModule = 0;
-	MEMORY_BASIC_INFORMATION memInfo = { 0 };
-	HMODULE hModule = NULL;
+	PIMAGE_NT_HEADERS pHeaderNT;
+	PBYTE RelativeVirtualAddress;
+	PBYTE lpModule;
+	MEMORY_BASIC_INFORMATION memInfo;
+	HMODULE hModule;
+
+	ZERO(&memInfo);
 
 	/* Find the module that allocated the address */
 	if (!HcVirtualQuery(lpAddress,
@@ -456,7 +515,7 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 		return 0;
 	}
 
-	szModule = (SIZE_T)hModule;
+	lpModule = (PBYTE)hModule;
 
 	pHeaderNT = HcPEGetNtHeader(hModule);
 	if (!pHeaderNT)
@@ -465,35 +524,91 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 	}
 
 	/* Calculate the relative offset */
-	szRva = ((SIZE_T)lpAddress) - szModule;
+	RelativeVirtualAddress = (LPBYTE)((PBYTE)lpAddress - lpModule);
 
-	return HcPEGetRawFromRva(pHeaderNT, szRva);
+	return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+}
+
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
+{
+	SIZE_T tReturn;
+	LPWSTR lpExportConverted = HcStringConvertAtoW(lpExportName);
+
+	tReturn = HcFileReadModuleW(hModule, lpExportConverted, lpBuffer, dwCount);
+
+	HcFree(lpExportConverted);
+	return tReturn;
+}
+
+HC_EXTERN_API
+SIZE_T
+HCAPI
+HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
+{
+	HANDLE hFile;
+	DWORD dwBytesRead;
+	LPWSTR lpModulePath = HcStringAllocW(MAX_PATH);
+	ULONG_PTR dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
+
+	if (!dwFileOffset || !lpModulePath)
+	{
+		return 0;
+	}
+
+	/* Acquire path of targetted module. */
+	if (!HcProcessModuleFileName(NtCurrentProcess, hModule, lpModulePath, MAX_PATH))
+	{
+		return 0;
+	}
+
+	/* Open it up */
+	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
+	if (!hFile)
+	{
+		HcFree(lpModulePath);
+		return 0;
+	}
+
+	/* Run to the offset */
+	if (!(HcFileSetCurrent(hFile, (LONG) dwFileOffset, FILE_BEGIN)))
+	{
+		HcFree(lpModulePath);
+		HcObjectClose(hFile);
+		return 0;
+	}
+
+	/* Snatch the data */
+	dwBytesRead = HcFileRead(hFile, lpBuffer, dwCount);
+	if (dwBytesRead != dwCount)
+	{
+		HcFree(lpModulePath);
+		HcObjectClose(hFile);
+		return 0;
+	}
+
+	/* Fuck off */
+	HcFree(lpModulePath);
+	HcObjectClose(hFile);
+	return dwBytesRead;
 }
 
 HC_EXTERN_API
 SIZE_T
 HCAPI
 HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
-//
-// Similar to HcFileReadModule, it reads a module from it's file path.
-// The difference is that this read any arbitrary address located inside of the disk and not just the RAM.
-//
-// Parameters:
-//
-//	1. lpAddress -> The address to read from.
-//  2. lpBufferOut -> The buffer to write the data from the file to.
-//  3. dwCountToRead -> The amount of bytes to read from the file.
-//
-// Returns:
-//	The amount of bytes successfully read.
-//
 {
-	DWORD dwFileOffset = 0;
-	LPWSTR lpModulePath = NULL;
-	HANDLE hFile = NULL;
-	DWORD BytesRead = 0;
-	HMODULE hModule = NULL;
-	MEMORY_BASIC_INFORMATION memInfo = { 0 };
+	DWORD dwFileOffset;
+	LPWSTR lpModulePath;
+	HANDLE hFile;
+	DWORD BytesRead;
+	HMODULE hModule;
+	MEMORY_BASIC_INFORMATION memInfo;
+
+	ZERO(&memInfo);
 
 	/* Find the module that allocated the address */
 	if (!HcVirtualQuery(lpBaseAddress,
@@ -519,7 +634,6 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 
 	/* Allocate for the path of the module */
 	lpModulePath = HcStringAllocW(MAX_PATH);
-
 	if (!lpModulePath)
 	{
 		HcErrorSetDosError(STATUS_INSUFFICIENT_RESOURCES);
@@ -527,27 +641,22 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	}
 
 	/* Acquire path of targetted module. */
-	if (!GetModuleFileNameW(hModule, lpModulePath, MAX_PATH))
+	if (!HcProcessModuleFileName(NtCurrentProcess, hModule, lpModulePath, MAX_PATH))
 	{
 		HcFree(lpModulePath);
 		return 0;
 	}
 
 	/* Open the file */
-	if (!(hFile = CreateFileW(lpModulePath,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL)))
+	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
+	if (!hFile)
 	{
 		HcFree(lpModulePath);
 		return 0;
 	}
 
 	/* Go to the offset */
-	if (!(SetFilePointer(hFile, dwFileOffset, 0, FILE_BEGIN)))
+	if (!(HcFileSetCurrent(hFile, dwFileOffset, FILE_BEGIN)))
 	{
 		HcFree(lpModulePath);
 		HcClose(hFile);
@@ -555,10 +664,13 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	}
 
 	/* Read it */
-	if (!ReadFile(hFile, lpBufferOut, dwCountToRead, &BytesRead, NULL))
+	BytesRead = HcFileRead(hFile, lpBufferOut, dwCountToRead);
+	if (BytesRead != dwCountToRead)
 	{
 		HcFree(lpModulePath);
 		HcClose(hFile);
+
+		HcErrorSetDosError(ERROR_PARTIAL_COPY);
 		return 0;
 	}
 
@@ -567,32 +679,79 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	return BytesRead;
 }
 
-NTSTATUS WINAPI HcFileGetCurrentDirectoryW(ULONG buflen, LPWSTR buf)
+HC_EXTERN_API
+SIZE_T 
+HCAPI
+HcFileGetCurrentDirectoryW(LPWSTR buf)
 {
-	UNICODE_STRING* us = NULL;
-	ULONG len = 0;
+	PUNICODE_STRING UsCurDir;
+	ULONG ULen;
 
 	RtlAcquirePebLock();
 
-	us = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
-	len = us->Length / sizeof(WCHAR);
+	UsCurDir = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+	ULen = UsCurDir->Length / sizeof(WCHAR);
 
-	if (us->Buffer[len - 1] == '\\' && us->Buffer[len - 2] != ':')
+	if (UsCurDir->Buffer[ULen - 1] == '\\' && UsCurDir->Buffer[ULen - 2] != ':')
 	{
-		len--;
+		ULen--;
 	}
-	
-	if (buflen / sizeof(WCHAR) > len)
+
+	HcStringCopyW(buf, UsCurDir->Buffer, ULen);
+
+	RtlReleasePebLock();
+	return ULen * sizeof(WCHAR);
+}
+
+HC_EXTERN_API
+SIZE_T 
+HCAPI
+HcFileWrite(IN HANDLE hFile,
+	IN LPCVOID lpBuffer,
+	IN DWORD nNumberOfBytesToWrite OPTIONAL)
+{
+	NTSTATUS Status;
+	SIZE_T tNumberOfBytesWritten = 0;
+	IO_STATUS_BLOCK Iosb;
+
+	ZERO(&Iosb);
+
+	hFile = HcObjectTranslateHandle(hFile);
+
+	Status = HcWriteFile(hFile,
+		NULL,
+		NULL,
+		NULL,
+		&Iosb,
+		(PVOID)lpBuffer,
+		nNumberOfBytesToWrite,
+		NULL,
+		NULL);
+
+	/* Wait in case operation is pending */
+	if (Status == STATUS_PENDING)
 	{
-		memcpy(buf, us->Buffer, len * sizeof(WCHAR));
-		buf[len] = '\0';
+		Status = HcWaitForSingleObject(hFile, FALSE, NULL);
+		if (NT_SUCCESS(Status))
+		{
+			Status = Iosb.Status;
+		}
+	}
+
+	if (NT_SUCCESS(Status))
+	{
+		/*
+		* lpNumberOfBytesWritten must not be NULL here, in fact Win doesn't
+		* check that case either and crashes (only after the operation
+		* completed).
+		*/
+		tNumberOfBytesWritten = Iosb.Information;
 	}
 	else
 	{
-		len++;
+		HcErrorSetNtStatus(Status);
+		return 0;
 	}
 
-	RtlReleasePebLock();
-
-	return len * sizeof(WCHAR);
+	return tNumberOfBytesWritten;
 }

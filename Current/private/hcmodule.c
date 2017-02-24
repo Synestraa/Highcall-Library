@@ -8,11 +8,11 @@
 #include "../public/hcerror.h"
 
 HC_EXTERN_API
-SIZE_T
+PBYTE
 HCAPI
 HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 {
-	SIZE_T szModule = 0;
+	PBYTE szModule = 0;
 	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
 	PDWORD pExportNames = NULL;
 	PDWORD pExportFunctions = NULL;
@@ -24,7 +24,7 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
 	}
 
-	szModule = (SIZE_T)hModule;
+	szModule = (PBYTE)hModule;
 
 	pExports = HcPEGetExportDirectory(hModule);
 	if (!pExports)
@@ -44,33 +44,26 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 			continue;
 		}
 		
-		if (!strcmp(lpCurrentFunction, lpProcedureName))
+		if (HcStringCompareContentA(lpCurrentFunction, lpProcedureName))
 		{
-			/* Check for a match*/
-			if (HcStringEqualA(lpCurrentFunction, lpProcedureName, TRUE))
-			{
-				pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + szModule);
-				pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + szModule);
+			pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + szModule);
+			pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + szModule);
 
-				return pExportFunctions[pExportOrdinals[i]] + szModule;
-			}
+			return pExportFunctions[pExportOrdinals[i]] + szModule;
 		}
 	}
 
 	return 0;
 }
 
-//
-// Crashes. FIXME
-//
 HC_EXTERN_API
-SIZE_T
+PBYTE
 HCAPI
 HcModuleProcedureAddressW(HANDLE hModule, LPCWSTR lpProcedureName)
 {
-	SIZE_T Size = 0;
-	SIZE_T ReturnValue = 0;
-	LPSTR lpConvertedName = NULL;
+	SIZE_T Size;
+	PBYTE ReturnValue;
+	LPSTR lpConvertedName;
 
 	Size = HcStringLenW(lpProcedureName);
 	if (!Size)
@@ -168,6 +161,52 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 	return 0;
 }
 
+#define RemoveEntryList(x) (x).Blink->Flink = (x).Flink; \
+	(x).Flink->Blink = (x).Blink;
+
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcModuleHide(CONST IN HMODULE hModule)
+{
+	PPEB pPeb = NtCurrentPeb();
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
+	PLIST_ENTRY pListHead = NULL, pListEntry = NULL;
+
+	/* if there is no name specified, return base address of main module */
+	if (!hModule)
+	{
+		/* we shouldn't unlink ourselves imo */
+		return FALSE;
+	}
+
+	/* Get the module list in load order */
+	pListHead = &(pPeb->LoaderData->InInitializationOrderModuleList);
+
+	/* Loop through entry list till we find a match for the module's name */
+	for (pListEntry = pListHead->Blink; pListEntry != pListHead; pListEntry = pListEntry->Blink)
+	{
+		pLdrDataTableEntry = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InInitializationOrderLinks);
+
+		if (pLdrDataTableEntry->ModuleBase == hModule)
+		{
+			HcInternalSet(pLdrDataTableEntry->FullModuleName.Buffer, 0, pLdrDataTableEntry->FullModuleName.Length);
+			*(&pLdrDataTableEntry->FullModuleName.Length) = 0;
+			*(&pLdrDataTableEntry->FullModuleName.MaximumLength) = 0;
+
+			RemoveEntryList(pLdrDataTableEntry->InMemoryOrderLinks);
+			RemoveEntryList(pLdrDataTableEntry->InInitializationOrderLinks);
+			RemoveEntryList(pLdrDataTableEntry->InLoadOrderLinks);
+			RemoveEntryList(pLdrDataTableEntry->HashLinks);
+
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+
 HC_EXTERN_API
 HMODULE
 HCAPI
@@ -186,7 +225,6 @@ HcModuleHandleA(LPCSTR lpModuleName)
 	//
 	// Otherwise convert the path.
 	//
-
 	lpConvertedName = HcStringConvertAtoW(lpModuleName);
 	if (!lpConvertedName)
 	{
@@ -205,12 +243,9 @@ HCAPI
 HcModuleLoadA(LPCSTR lpPath)
 {
 	NTSTATUS Status = STATUS_SUCCESS;
-	UNICODE_STRING Path = { 0 };
+	UNICODE_STRING Path;
 	LPWSTR lpConverted = NULL;
 	HANDLE hModule = NULL;
-
-	if (HcStringIsBad(lpPath))
-		return NULL;
 
 	lpConverted = HcStringConvertAtoW(lpPath);
 	if (!lpConverted)
@@ -240,11 +275,8 @@ HCAPI
 HcModuleLoadW(LPCWSTR lpPath)
 {
 	NTSTATUS Status = STATUS_SUCCESS;
-	UNICODE_STRING Path = { 0 };
+	UNICODE_STRING Path;
 	HANDLE hModule = NULL;
-
-	if (HcStringIsBad(lpPath))
-		return NULL;
 
 	RtlInitUnicodeString(&Path, lpPath);
 
@@ -257,4 +289,12 @@ HcModuleLoadW(LPCWSTR lpPath)
 	}
 
 	return (HMODULE)hModule;
+}
+
+HC_EXTERN_API
+BOOLEAN
+HCAPI
+HcModuleUnload(HMODULE hModule)
+{
+	return NT_SUCCESS(LdrUnloadDll(hModule));
 }

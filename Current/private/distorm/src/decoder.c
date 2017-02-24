@@ -18,6 +18,7 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "insts.h"
 #include "../include/mnemonics.h"
 
+#include "../../../public/hcinternal.h" // HcInternalSet
 
 /* Instruction Prefixes - Opcode - ModR/M - SIB - Displacement - Immediate */
 
@@ -173,7 +174,7 @@ static _DecodeResult decode_inst(_CodeInfo* ci, _PrefixState* ps, _DInst* di)
 	effOpSz = decode_get_effective_op_size(ci->dt, ps->decodedPrefixes, vrex, instFlags);
 	effAdrSz = decode_get_effective_addr_size(ci->dt, ps->decodedPrefixes);
 
-	memset(di, 0, sizeof(_DInst));
+	HcInternalSet(di, 0, sizeof(_DInst));
 	di->base = R_NONE;
 
 	/*
@@ -377,7 +378,7 @@ static _DecodeResult decode_inst(_CodeInfo* ci, _PrefixState* ps, _DInst* di)
 	return DECRES_SUCCESS;
 
 _Undecodable: /* If the instruction couldn't be decoded for some reason, drop the first byte. */
-	memset(di, 0, sizeof(_DInst));
+	HcInternalSet(di, 0, sizeof(_DInst));
 	di->base = R_NONE;
 
 	di->size = 1;
@@ -455,8 +456,8 @@ _DecodeResult decode_internal(_CodeInfo* _ci, int supportOldIntr, _DInst result[
 		/* startInstOffset holds the displayed offset of current instruction. */
 		startInstOffset = codeOffset;
 
-		memset(&ps, 0, (size_t)((char*)&ps.pfxIndexer[0] - (char*)&ps));
-		memset(ps.pfxIndexer, PFXIDX_NONE, sizeof(int) * PFXIDX_MAX);
+		HcInternalSet(&ps, 0, (size_t)((char*)&ps.pfxIndexer[0] - (char*)&ps));
+		HcInternalSet(ps.pfxIndexer, PFXIDX_NONE, sizeof(int) * PFXIDX_MAX);
 		ps.start = code;
 		ps.last = code;
 		prefixSize = 0;
@@ -488,7 +489,7 @@ _DecodeResult decode_internal(_CodeInfo* _ci, int supportOldIntr, _DInst result[
 							pdi = &result[nextPos];
 						}
 						nextPos++;
-						memset(pdi, 0, sizeof(_DInst));
+						HcInternalSet(pdi, 0, sizeof(_DInst));
 
 						pdi->flags = FLAG_NOT_DECODABLE;
 						pdi->imm.byte = *p;
@@ -608,7 +609,7 @@ _DecodeResult decode_internal(_CodeInfo* _ci, int supportOldIntr, _DInst result[
 					}
 					nextPos++;
 
-					memset(pdi, 0, sizeof(_DInst));
+					HcInternalSet(pdi, 0, sizeof(_DInst));
 					pdi->flags = FLAG_NOT_DECODABLE;
 					pdi->imm.byte = *p;
 					pdi->size = 1;

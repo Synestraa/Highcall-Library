@@ -6,7 +6,7 @@ hcinternal.h
 
 Abstract:
 
-This module defines internal memory handling functions. i.e. memcpy, memmove, memset... as well as helpers for defined functions.
+This module defines internal memory handling functions. i.e. HcInternalCopy, memmove, HcInternalSet... as well as helpers for defined functions.
 
 Author:
 
@@ -53,6 +53,8 @@ Synestra 10/15/2016
 #define HcInternalReadStringExA(lpcAddress, ptOffsets, tCount) ((LPSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount))
 #define HcInternalReadStringExW(lpcAddress, ptOffsets, tCount) ((LPWSTR)HcInternalLocatePointer(lpcAddress, ptOffsets, tCount))
 
+#define ZERO(x) { HcInternalSet(x, 0, sizeof(*(x))); }
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -63,7 +65,7 @@ extern "C" {
 
 	HC_EXTERN_API BOOLEAN HCAPI HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength);
 
-	HC_EXTERN_API PVOID HCAPI HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount);
+	HC_EXTERN_API PVOID HCAPI HcInternalCopy(PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount);
 
 	HC_EXTERN_API PVOID HCAPI HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount);
 
@@ -80,8 +82,8 @@ extern "C" {
 
 	HC_EXTERN_API BOOLEAN HCAPI HcInternalMemoryNopInstruction(PVOID pAddress);
 
-	HC_EXTERN_API SIZE_T HCAPI HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo);
-
+	HC_EXTERN_API LPBYTE HCAPI HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo);
+	HC_EXTERN_API LPBYTE HCAPI HcInternalPatternFindInBuffer(LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size);
 
 #if defined (__cplusplus)
 }

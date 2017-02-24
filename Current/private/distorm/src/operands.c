@@ -15,6 +15,7 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "insts.h"
 #include "../include/mnemonics.h"
 
+#include "../../../public/hcdef.h"
 
 /* Maps a register to its register-class mask. */
 uint32_t _REGISTERTORCLASS[] = /* Based on _RegisterType enumeration! */

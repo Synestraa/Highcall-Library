@@ -29,8 +29,8 @@ Revision History:
 #define HcStringAnsiLengthToUnicode(size) (size * sizeof(WCHAR))
 #define HcStringUnicodeLengthToAnsi(size) (size / sizeof(WCHAR))
 
-#define HcStringTerminateA(lpStr, size) ((lpStr)[size] = ANSI_NULL)
-#define HcStringTerminateW(lpStr, size) ((lpStr)[size / sizeof(WCHAR)] = UNICODE_NULL)
+#define HcStringTerminateA(lpStr, size) (lpStr[size] = ANSI_NULL)
+#define HcStringTerminateW(lpStr, size) (lpStr[size] = UNICODE_NULL)
 
 //
 // Determines whether the pointer is invalid.
@@ -71,6 +71,10 @@ extern "C" {
 	HC_EXTERN_API BOOLEAN HCAPI HcStringToLowerW(LPWSTR lpStr);
 
 	HC_EXTERN_API BOOLEAN HCAPI HcStringToUpperA(LPSTR lpStr);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringToUpperW(LPWSTR lpStr);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCompareContentA(LPCSTR lpStr1, LPCSTR lpStr2);
+	HC_EXTERN_API BOOLEAN HCAPI HcStringCompareContentW(LPCWSTR lpStr1, LPCWSTR lpStr2);
 
 	HC_EXTERN_API BOOLEAN HCAPI HcStringEqualA(LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
 	HC_EXTERN_API BOOLEAN HCAPI HcStringEqualW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);

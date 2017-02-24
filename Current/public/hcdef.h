@@ -30,6 +30,10 @@ typedef long SYS_INDEX;
 #define INVALID_HANDLE ((HANDLE)-1)
 #endif
 
+#ifndef INFINITE
+#define INFINITE 0xFFFFFFFF  // Infinite timeout
+#endif
+
 #ifdef HIGHCALL_DYNAMIC
 
 #ifdef __cplusplus

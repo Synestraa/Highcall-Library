@@ -529,28 +529,15 @@ typedef struct _HEAP_STOP_ON_VALUES {
 extern "C" {
 #endif
 
-	//
-	// Defined in hcvirtual.c
-	//
-
 	HC_EXTERN_API LPVOID HCAPI HcVirtualAllocEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
-
 	HC_EXTERN_API LPVOID HCAPI HcVirtualAlloc(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualFreeEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualFree(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualProtect(IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualProtectEx(IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualLock(IN LPVOID lpAddress, IN SIZE_T dwSize);
-
 	HC_EXTERN_API SIZE_T HCAPI HcVirtualQuery(IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
-
 	HC_EXTERN_API SIZE_T HCAPI HcVirtualQueryEx(IN HANDLE hProcess, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
-
 	HC_EXTERN_API BOOL HCAPI HcVirtualUnlock(IN LPVOID lpAddress, IN SIZE_T dwSize);
 
 	//
@@ -558,7 +545,6 @@ extern "C" {
 	// Currently the function will use malloc() instead, as a temporary and possibly
 	// long time replacement.
 	//
-
 	HC_EXTERN_API PVOID HCAPI HcAlloc(IN SIZE_T Size);
 
 	//
@@ -566,7 +552,6 @@ extern "C" {
 	// Currently the function will use free() i nstead, as a temporary and possibly
 	// long time replacement.
 	//
-
 	HC_EXTERN_API VOID HCAPI HcFree(IN LPVOID lpAddress);
 
 #if defined (__cplusplus)

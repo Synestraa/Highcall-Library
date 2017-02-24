@@ -25,25 +25,11 @@ Revision History:
 
 #include "hcdef.h"
 
+#include <winerror.h> // for the error codes
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-	//
-	// Implemented in hcerror.c
-	//
-
-	HC_EXTERN_API VOID HCAPI HcErrorSetNoteA(IN LPCSTR lpNote);
-	HC_EXTERN_API VOID HCAPI HcErrorGetNoteA(OUT LPSTR lpOutNote);
-
-	HC_EXTERN_API VOID HCAPI HcErrorSetNoteW(IN LPCWSTR lpNote);
-	HC_EXTERN_API VOID HCAPI HcErrorGetNoteW(OUT LPWSTR lpOutNote);
-
-	//
-	// Unimplemented.
-	//
-
-	HC_EXTERN_API SIZE_T HCAPI HcErrorGetNoteSize();
 
 	//
 	// Implemented in hcerror.c

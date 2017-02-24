@@ -18,6 +18,8 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "wstring.h"
 #include "../include/mnemonics.h"
 
+#include "../../../public/hcinternal.h"
+
 /* C DLL EXPORTS */
 #ifdef SUPPORT_64BIT_OFFSET
 	_DLLEXPORT_ _DecodeResult distorm_decompose64(_CodeInfo* ci, _DInst result[], unsigned int maxInstructions, unsigned int* usedInstructionsCount)
@@ -190,7 +192,7 @@ static void distorm_format_signed_disp(_WString* str, const _DInst* di, uint64_t
 	}
 
 	mnemonic = (const _WMnemonic*)&_MNEMONICS[di->opcode];
-	memcpy((int8_t*)&str->p[str->length], mnemonic->p, mnemonic->length + 1);
+	HcInternalCopy((int8_t*)&str->p[str->length], mnemonic->p, mnemonic->length + 1);
 	str->length += mnemonic->length;
 
 	/* Format operands: */
@@ -393,7 +395,7 @@ static void distorm_format_signed_disp(_WString* str, const _DInst* di, uint64_t
 		if ((*usedInstructionsCount + i) >= maxInstructions) return DECRES_MEMORYERR;
 
 		/* Copy the current decomposed result to a temp structure, so we can override the result with text. */
-		memcpy(&di, (char*)result + (i * sizeof(_DecodedInst)), sizeof(_DInst));
+		HcInternalCopy(&di, (char*)result + (i * sizeof(_DecodedInst)), sizeof(_DInst));
 #ifdef SUPPORT_64BIT_OFFSET
 		distorm_format64(&ci, &di, &result[i]);
 #else

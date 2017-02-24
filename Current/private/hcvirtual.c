@@ -1058,22 +1058,22 @@ HcVirtualUnlock(IN LPVOID lpAddress,
 	return TRUE;
 }
 
-#include <malloc.h>
-
 HC_EXTERN_API
 PVOID
 HCAPI 
 HcAlloc(IN SIZE_T Size)
 {
+	return RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
 	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	
+	/*
 	PVOID lpAllocated = malloc(Size);
 	if (lpAllocated)
 	{
 		HcInternalSet(lpAllocated, 0, Size);
 	}
 	return lpAllocated;
-	
+	*/
 	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 }
 
@@ -1087,7 +1087,7 @@ VOID
 HCAPI 
 HcFree(IN LPVOID lpAddress)
 {
-	free(lpAddress);
-	//RtlFreeHeap(RtlProcessHeap(), 0, lpAddress);
+	//free(lpAddress);
+	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
 	//HcVirtualFree(lpAddress, 0, MEM_RELEASE);
 }

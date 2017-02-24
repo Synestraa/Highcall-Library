@@ -7,25 +7,9 @@
 	@version 9/11/2016
 */
 
-#include <windows.h>
-
 #include "../public/hcerror.h"
 #include "../public/hcstring.h"
 #include "../public/hcvirtual.h"
-
-typedef struct _error_note_A
-{
-	LPSTR note;
-	DWORD size;
-} error_note_A, perror_note_A;
-static error_note_A last_note_A;
-
-typedef struct _error_note_W
-{
-	LPWSTR note;
-	DWORD size;
-} error_note_W, perror_note_W;
-static error_note_W last_note_W;
 
 struct error_table
 {
@@ -41,7 +25,7 @@ DWORD
 HCAPI
 HcErrorStatusTranslate(IN NTSTATUS Status)
 {
-	DWORD ErrorCode = 0;
+	DWORD ErrorCode;
 	const struct error_table *table = error_table;
 
 	if (!Status || (Status & 0x20000000)) 
@@ -117,7 +101,7 @@ DWORD
 WINAPI
 HcErrorSetNtStatus(IN NTSTATUS Status)
 {
-	DWORD dwErrCode = 0;
+	DWORD dwErrCode;
 	PTEB Teb = NtCurrentTeb();
 
 	if (Teb != NULL)
@@ -137,111 +121,6 @@ HCAPI
 HcErrorGetLastStatus() 
 {
 	return NtCurrentTeb()->LastStatusValue;
-}
-
-static VOID SetNoteA(IN LPCSTR lpNote)
-{
-	DWORD sizeOfNewNote;
-
-	if (!last_note_A.note)
-	{
-		/* Max size of a note is 1kb. */
-		last_note_A.note = HcStringAllocA(1024);
-		last_note_A.size = 1024;
-	}
-
-	/* Get the size we need to copy. */
-	sizeOfNewNote = HcStringLenA(lpNote);
-
-	/* If the string is invalid, we will simply set the last note to a null note. */
-	if (!sizeOfNewNote)
-	{
-		HcStringCopyA(last_note_A.note, "(null)", 6);
-		last_note_A.note[6] = ANSI_NULL;
-	}
-	/* Otherwise just copy the entire string and terminate the last character. */
-	else
-	{
-		HcStringCopyA(last_note_A.note, lpNote, sizeOfNewNote);
-		last_note_A.note[sizeOfNewNote] = ANSI_NULL;
-	}
-
-	/* Set the size of our new string. */
-	last_note_A.size = HcStringSizeA(last_note_A.note);
-}
-
-HC_EXTERN_API
-VOID 
-HCAPI
-HcErrorSetNoteA(IN LPCSTR lpNote)
-{
-	SetNoteA(lpNote);
-}
-
-HC_EXTERN_API
-VOID 
-HCAPI
-HcErrorGetNoteA(OUT LPSTR lpOutNote)
-{
-	if (!last_note_A.note)
-	{
-		SetNoteA("(null)");
-	}
-
-	HcStringCopyA(lpOutNote, last_note_A.note, last_note_A.size);
-	lpOutNote[last_note_A.size] = ANSI_NULL;
-}
-
-static VOID SetNoteW(IN LPCWSTR lpNote)
-{
-	DWORD sizeOfNewNote = 0;
-	if (!last_note_W.note)
-	{
-		/* Max size of a note is 1kb. */
-		last_note_W.note = HcStringAllocW(1024);
-		last_note_W.size = 1024;
-	}
-
-	/* Get the size we need to copy. */
-	sizeOfNewNote = HcStringLenW(lpNote);
-
-	/* If the string is invalid, we will simply set the last note to a null note. */
-	if (!sizeOfNewNote)
-	{
-		HcStringCopyW(last_note_W.note, L"(null)", 6);
-		last_note_W.note[6] = UNICODE_NULL;
-	}
-	/* Otherwise just copy the entire string and terminate the last character. */
-	else
-	{
-		HcStringCopyW(last_note_W.note, lpNote, sizeOfNewNote);
-		last_note_W.note[sizeOfNewNote] = UNICODE_NULL;
-	}
-
-	/* Set the size of our new string. */
-	last_note_W.size = HcStringSizeW(last_note_W.note);
-}
-
-HC_EXTERN_API
-VOID
-HCAPI 
-HcErrorSetNoteW(IN LPCWSTR lpNote)
-{
-	SetNoteW(lpNote);
-}
-
-HC_EXTERN_API
-VOID
-HCAPI
-HcErrorGetNoteW(OUT LPWSTR lpOutNote)
-{
-	if (!last_note_W.note)
-	{
-		SetNoteW(L"(null)");
-	}
-
-	HcStringCopyW(lpOutNote, last_note_W.note, last_note_W.size);
-	lpOutNote[last_note_W.size] = UNICODE_NULL;
 }
 
 static const DWORD table_00000001[3] =

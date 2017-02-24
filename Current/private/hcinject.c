@@ -10,7 +10,6 @@
 //
 // For files
 //
-#include <windows.h>
 #include "../public/hcfile.h"
 
 //
@@ -225,20 +224,20 @@ HcParameterVerifyInjectModuleManual(PVOID Buffer)
 HC_EXTERN_API
 BOOLEAN
 HCAPI
-HcInjectManualMapW(HANDLE hProcess,
-	LPCWSTR szcPath)
+HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 {
-	HC_FILE_INFORMATIONW fileInformation = { 0 };
-	MANUAL_MAP ManualInject = { 0 };
-
+	HC_FILE_INFORMATIONW fileInformation;
+	MANUAL_MAP ManualInject;
 	PIMAGE_DOS_HEADER pHeaderDos = NULL;
 	PIMAGE_NT_HEADERS pHeaderNt = NULL;
 	PIMAGE_SECTION_HEADER pHeaderSection = NULL;
-
 	HANDLE hThread = NULL, hFile = NULL;
 	PVOID ImageBuffer = NULL, LoaderBuffer = NULL, FileBuffer = NULL;
 	DWORD ExitCode = 0, SectionIndex = 0, BytesRead = 0;
 	SIZE_T BytesWritten = 0;
+
+	HcInternalSet(&fileInformation, 0, sizeof(fileInformation));
+	HcInternalSet(&ManualInject, 0, sizeof(ManualInject));
 
 	/* Check if we attempted to inject too early. */
 	if (!HcProcessReadyEx(hProcess))
@@ -267,26 +266,17 @@ HcInjectManualMapW(HANDLE hProcess,
 	}
 
 	/* Read the file */
-	hFile = CreateFileW(szcPath,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-
-	if (hFile == INVALID_HANDLE_VALUE)
+	hFile = HcFileOpenW(szcPath, OPEN_EXISTING, GENERIC_READ);
+	if (hFile == INVALID_HANDLE)
 	{
 		HcProcessResumeEx(hProcess);
 		HcFree(FileBuffer);
 		return FALSE;
 	}
 
-	if (!ReadFile(hFile,
+	if (HcFileRead(hFile,
 		FileBuffer,
-		fileInformation.Size,
-		&BytesRead,
-		NULL) || BytesRead != fileInformation.Size)
+		fileInformation.Size) != fileInformation.Size)
 	{
 		HcFree(FileBuffer);
 		HcClose(hFile);
@@ -374,7 +364,7 @@ HcInjectManualMapW(HANDLE hProcess,
 		return FALSE;
 	}
 
-	memset(&ManualInject, 0, sizeof(MANUAL_MAP));
+	HcInternalSet(&ManualInject, 0, sizeof(MANUAL_MAP));
 
 	/*
 	MANUAL_MAP struct
@@ -395,8 +385,8 @@ HcInjectManualMapW(HANDLE hProcess,
 	ManualInject.NtHeaders = (PIMAGE_NT_HEADERS)((LPBYTE)ImageBuffer + pHeaderDos->e_lfanew);
 	ManualInject.BaseRelocation = (PIMAGE_BASE_RELOCATION)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 	ManualInject.ImportDirectory = (PIMAGE_IMPORT_DESCRIPTOR)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-	ManualInject.fnLoadLibraryA = LoadLibraryA;
-	ManualInject.fnGetProcAddress = GetProcAddress;
+	ManualInject.fnLoadLibraryA = (pLoadLibraryA) HcModuleProcedureAddressW(HcModuleHandleW(L"kernel32.dll"), L"LoadLibraryA");
+	ManualInject.fnGetProcAddress = (pGetProcAddress) HcModuleProcedureAddressW(HcModuleHandleW(L"kernel32.dll"), L"GetProcAddress");
 
 	/* Set the manual map information */
 	if (!HcProcessWriteMemory(hProcess,
@@ -447,7 +437,7 @@ HcInjectManualMapW(HANDLE hProcess,
 	HcObjectWait(hThread, INFINITE);
 
 	/* Did the thread exit? */
-	GetExitCodeThread(hThread, &ExitCode);
+	// @defineme GetExitCodeThread(hThread, &ExitCode);
 
 	if (!ExitCode)
 	{
@@ -489,7 +479,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 
 	if (HcStringIsBad(szcPath))
 	{
-		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 		return FALSE;
 	}
 
@@ -512,6 +502,8 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
+	/*
+	// @defineme
 	if (!GetFullPathNameW(szcPath, MAX_PATH, szFullPath, NULL))
 	{
 		//
@@ -520,18 +512,13 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 		HcFree(szFullPath);
 		return FALSE;
 	}
+	*/
+	szFullPath = (LPWSTR) szcPath;
 
-	hFile = CreateFileW(szcPath,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-
+	hFile = HcFileOpenW(szcPath, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
 	{
-		HcErrorSetDosError(ERROR_PATH_NOT_FOUND);
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 
 		HcFree(szFullPath);
 		return FALSE;
@@ -578,7 +565,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	//
 	// Load the dll with a new thread in the process.
 	//
-	hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lpToLoadLibrary, (LPVOID)PathToDll, 0, NULL);
+	hThread = HcProcessCreateThread(hProcess, (LPTHREAD_START_ROUTINE)lpToLoadLibrary, (LPVOID)PathToDll, 0);
 	if (hThread == INVALID_HANDLE)
 	{
 		//
@@ -594,7 +581,7 @@ HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
 	HcObjectWait(hThread, INFINITE);
 
 	/* Did the thread exit? */
-	GetExitCodeThread(hThread, &ExitCode);
+	// @defineme GetExitCodeThread(hThread, &ExitCode);
 
 	if (!ExitCode)
 	{

@@ -9,8 +9,6 @@ PHC_MODULE_INFORMATIONW HCAPI HcInitializeModuleInformationW(DWORD tNameSize, DW
 
 	obj->Name = HcStringAllocW(tNameSize);
 	obj->Path = HcStringAllocW(tPathSize);
-	obj->Size = 0;
-	obj->Base = 0;
 
 	return obj;
 }
@@ -21,14 +19,13 @@ VOID HCAPI HcDestroyModuleInformationW(PHC_MODULE_INFORMATIONW o)
 	HcFree(o->Path);
 	HcFree(o);
 }
+
 PHC_PROCESS_INFORMATION_EXW HCAPI HcInitializeProcessInformationExW(DWORD tNameSize)
 {
 	PHC_PROCESS_INFORMATION_EXW obj = HcAlloc(sizeof(*obj));
 
 	obj->MainModule = HcInitializeModuleInformationW(tNameSize, tNameSize);
 	obj->Name = HcStringAllocW(tNameSize);
-	obj->Id = 0;
-	obj->CanAccess = 0;
 
 	return obj;
 }
@@ -46,7 +43,6 @@ PHC_PROCESS_INFORMATIONW HCAPI HcInitializeProcessInformationW(DWORD tNameSize)
 
 	obj = HcAlloc(sizeof(*obj));
 	obj->Name = HcStringAllocW(tNameSize);
-	obj->Id = 0;
 
 	return obj;
 }

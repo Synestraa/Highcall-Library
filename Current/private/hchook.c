@@ -7,8 +7,6 @@
 	@version 9/11/2016
 */
 
-#include <windows.h>
-
 #include "sys/hcsyscall.h"
 #include "distorm/include/distorm.h"
 
@@ -67,45 +65,28 @@ static
 PBYTE GetClosestFreeSpace(PBYTE lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE_T MaxLength)
 {
 	PBYTE FreeSpace = NULL;
-	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	MEMORY_BASIC_INFORMATION mbi;
+	ZERO(&mbi);
 
 	for (PBYTE Addr = lpAddress + Size; Addr < (PBYTE)lpAddress + MaxLength + Size; Addr = Addr++)
 	{
-		__try
+		/* Check the block */
+		if (!HcVirtualQuery((LPCVOID)Addr, &mbi, sizeof(mbi)))
 		{
-			DWORD Length = 0;
-			for (; Length < MinimumSize; Length++)
-			{
-				if (*(Length + Addr) != 0)
-				{
-					break;
-				}
-			}
-
-			if (Length == MinimumSize)
-			{
-				FreeSpace = Length + Addr;
-				break;
-			}
+			break;
 		}
-		__except (EXCEPTION_EXECUTE_HANDLER)
+
+		if (mbi.State == MEM_FREE)
 		{
-			/* Check the block */
-			if (!HcVirtualQuery((LPCVOID)Addr, &mbi, sizeof(mbi)))
+			/* Try and allocate on this spot. */
+			FreeSpace = (PBYTE)HcVirtualAlloc((LPVOID)Addr,
+				MinimumSize,
+				MEM_RESERVE | MEM_COMMIT,
+				PAGE_EXECUTE_READWRITE);
+
+			if (FreeSpace)
 			{
 				break;
-			}
-
-			if (mbi.State == MEM_FREE)
-			{
-				/* Try and allocate on this spot. */
-				if ((FreeSpace = (PBYTE)HcVirtualAlloc((LPVOID)Addr,
-					MinimumSize,
-					MEM_RESERVE | MEM_COMMIT,
-					PAGE_EXECUTE_READWRITE)))
-				{
-					break;
-				}
 			}
 		}
 	}
@@ -116,7 +97,7 @@ PBYTE GetClosestFreeSpace(PBYTE lpAddress, SIZE_T Size, SIZE_T MinimumSize, SIZE
 static
 BOOLEAN SetJump(PBYTE Source, PBYTE Destination)
 {
-	DWORD Protection = 0;
+	DWORD Protection = PAGE_EXECUTE;
 	//
 	// Set the protection to something we can use. 
 	//
@@ -152,7 +133,7 @@ BOOLEAN SetJump(PBYTE Source, PBYTE Destination)
 static
 BOOLEAN SetRelativeJump64(PBYTE Source, PBYTE Destination)
 {
-	DWORD Protection;
+	DWORD Protection = PAGE_EXECUTE;
 
 	/* Set the protection to something we can use. */
 	if (HcVirtualProtect((LPVOID)Source, 6, PAGE_EXECUTE_READWRITE, &Protection))
@@ -202,7 +183,7 @@ VOID RelocateConditional(PBYTE lpAddress,
 	const BYTE					Index, 
 	PBYTE						Offset)
 {
-	ULONG_PTR estimatedOffset = 0;
+	ULONG_PTR estimatedOffset;
 	PBYTE AbsoluteDestination = lpAddress + ((ULONG_PTR)Offset - (Destination - Source)) + InstSize;
 	PBYTE FreeSpace = GetClosestFreeSpace(Destination, CodeSize, JMPSIZE, 0x1000);
 
@@ -234,15 +215,15 @@ VOID RelocateConditional(PBYTE lpAddress,
 		so lets say jne 0x2e is located at 0x4000
 		we would jump to 0x4000 + 0x2 (size of the instruction) + 0x2e (the offset)
 	*/
-	if (Type == 8 && estimatedOffset <= UCHAR_MAX)
+	if (Type == 8 && estimatedOffset <= 0xff)
 	{
 		*(BYTE*)(lpAddress + Index) = (BYTE)estimatedOffset;
 	}
-	else if (Type == 16 && estimatedOffset <= USHRT_MAX)
+	else if (Type == 16 && estimatedOffset <= 0xffff)
 	{
 		*(WORD*)(lpAddress + Index) = (WORD)estimatedOffset;
 	}
-	else if (Type == 32 && estimatedOffset <= UINT_MAX)
+	else if (Type == 32 && estimatedOffset <= 0xffffffff)
 	{
 		*(DWORD*)(lpAddress + Index) = (DWORD)estimatedOffset;
 	}
@@ -252,28 +233,18 @@ VOID RelocateConditional(PBYTE lpAddress,
 	}
 }
 
-//
-//	CODER: Synestra
-//
-//	PURPOSE: Determine whether parameter MinimumLength is large enough to cover an instruction
-//
-//	PARAMETERS: lpBaseAddress start address
-//	MinimumLength: the length to test
-//
-//	RETURN: Determined size for given minimum length
-//
-//	HISTORY: 8/29/2016 Created
-//
 HC_EXTERN_API
 DWORD
 HCAPI 
 HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
 {
-	_CodeInfo Info = { 0 };
+	_CodeInfo Info;
 	_DInst* Instructions = NULL;
 	DWORD Size = 0;
 	DWORD InstructionIndex = 0;
 	DWORD InstructionCount = 0;
+
+	HcInternalSet(&Info, 0, sizeof(Info));
 
 	Info.code = (unsigned char*)lpBaseAddress;
 	Info.codeLen = MAX_INSTRUCTIONS * 10;
@@ -332,21 +303,23 @@ HcHookRelocateCode(PBYTE Code,
 	DWORD Size, 
 	PBYTE Source)
 {
-	_CodeInfo Info = { 0 };
-	_DInst Instruction = { 0 };
-	_DecodedInst InstructionEx = { 0 };
-	_DInst* Instructions = NULL;
-
-	DWORD InstructionIndex = 0;
+	_CodeInfo Info;
+	_DInst Instruction;
+	_DecodedInst InstructionEx;
+	_DInst* Instructions;
+	DWORD InstructionIndex;
 	DWORD InstructionCount = 0;
-	PBYTE InstructionAddress = 0;
-	BYTE InstructionDispIndex = 0;
-	BYTE InstructionOffsetIndex = 0;
-	LPSTR InstructionMnemonic = NULL;
+	PBYTE InstructionAddress;
+	BYTE InstructionDispIndex;
+	BYTE InstructionOffsetIndex;
+	LPSTR InstructionMnemonic;
 
-	Info.code = (unsigned char*) Code;
-	Info.codeLen = (Size * 10);
-	Info.codeOffset = 0;
+	ZERO(&Info);
+	ZERO(&Instruction);
+	ZERO(&InstructionEx);
+
+	Info.code = (LPBYTE) Code;
+	Info.codeLen = Size * 10;
 	Info.features = DF_NONE;
 	Info.dt = DISASM_TYPE;
 
@@ -477,10 +450,11 @@ PVOID
 HCAPI
 HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 {
-	LPVOID lpAddress = 0;
-	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	LPVOID lpAddress = NULL;
+	MEMORY_BASIC_INFORMATION mbi;
+	ZERO(&mbi);
 
-	for (PBYTE Addr = (PBYTE)lpBaseAddress; Addr > (PBYTE)lpBaseAddress - INT_MAX; Addr = (PBYTE)mbi.BaseAddress - 1)
+	for (PBYTE Addr = (PBYTE)lpBaseAddress; Addr > (PBYTE)lpBaseAddress - 0xffffffff / 2; Addr = (PBYTE)mbi.BaseAddress - 1)
 	{
 		/* Check the block */
 		if (!HcVirtualQuery((LPCVOID)Addr, &mbi, sizeof(mbi)))
@@ -496,10 +470,12 @@ HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 		}
 
 		/* Try and allocate on this spot. */
-		if ((lpAddress = HcVirtualAlloc(mbi.BaseAddress,
+		lpAddress = HcVirtualAlloc(mbi.BaseAddress,
 			Size,
 			MEM_RESERVE | MEM_COMMIT,
-			PAGE_EXECUTE_READWRITE)))
+			PAGE_EXECUTE_READWRITE);
+
+		if (lpAddress)
 		{
 			break;
 		}
@@ -540,7 +516,7 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	if (!lpBaseAddress)
 	{
 		/* Invalid parameter */
-		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 		return NULL;
 	}
 
@@ -548,7 +524,7 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	if (!dwRequiredSize)
 	{
 		/* Invalid function */
-		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 		return NULL;
 	}
 

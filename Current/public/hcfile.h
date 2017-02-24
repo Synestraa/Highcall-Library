@@ -20,16 +20,10 @@ Revision History:
 #ifndef HC_FILE_H
 #define HC_FILE_H
 
-//
-// Standard highcall definition file.
-//
-
 #include "hcdef.h"
 
-//
-// Contains out information about a file.
-// Used by HcFileQueryInformation.
-//
+#include <minwinbase.h>
+
 typedef struct _HC_FILE_INFORMATIONA
 {
 	DWORD Size;
@@ -205,32 +199,72 @@ typedef struct _HC_FILE_INFORMATIONW
 #define FILE_256_BYTE_ALIGNMENT         0x000000ff
 #define FILE_512_BYTE_ALIGNMENT         0x000001ff
 
+#define FILE_FLAG_WRITE_THROUGH         0x80000000
+#define FILE_FLAG_OVERLAPPED            0x40000000
+#define FILE_FLAG_NO_BUFFERING          0x20000000
+#define FILE_FLAG_RANDOM_ACCESS         0x10000000
+#define FILE_FLAG_SEQUENTIAL_SCAN       0x08000000
+#define FILE_FLAG_DELETE_ON_CLOSE       0x04000000
+#define FILE_FLAG_BACKUP_SEMANTICS      0x02000000
+#define FILE_FLAG_POSIX_SEMANTICS       0x01000000
+#define FILE_FLAG_SESSION_AWARE         0x00800000
+#define FILE_FLAG_OPEN_REPARSE_POINT    0x00200000
+#define FILE_FLAG_OPEN_NO_RECALL        0x00100000
+#define FILE_FLAG_FIRST_PIPE_INSTANCE   0x00080000
+
+#define FILE_OPEN_REMOTE_INSTANCE         0x00000400
+#define FILE_RANDOM_ACCESS                0x00000800
+#define FILE_DELETE_ON_CLOSE              0x00001000
+#define FILE_OPEN_BY_FILE_ID              0x00002000
+#define FILE_OPEN_FOR_BACKUP_INTENT       0x00004000
+#define FILE_NO_COMPRESSION               0x00008000
+#define FILE_RESERVE_OPFILTER             0x00100000
+#define FILE_OPEN_REPARSE_POINT           0x00200000
+#define FILE_OPEN_NO_RECALL               0x00400000
+
+#define CREATE_NEW          1
+#define CREATE_ALWAYS       2
+#define OPEN_EXISTING       3
+#define OPEN_ALWAYS         4
+#define TRUNCATE_EXISTING   5
+
+#define FILE_BEGIN           0
+#define FILE_CURRENT         1
+#define FILE_END             2
+
+typedef struct _FILE_POSITION_INFORMATION {
+	LARGE_INTEGER CurrentByteOffset;
+	} FILE_POSITION_INFORMATION, *PFILE_POSITION_INFORMATION;
+
+typedef struct _FILE_STANDARD_INFORMATION {
+	LARGE_INTEGER AllocationSize;
+	LARGE_INTEGER EndOfFile;
+	ULONG         NumberOfLinks;
+	BOOLEAN       DeletePending;
+	BOOLEAN       Directory;
+} FILE_STANDARD_INFORMATION, *PFILE_STANDARD_INFORMATION;
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-	//
-	// Implemented in hcfile.c
-	//
-
 	HC_EXTERN_API BOOLEAN HCAPI HcFileExistsA(LPCSTR lpFilePath);
 	HC_EXTERN_API BOOLEAN HCAPI HcFileExistsW(LPCWSTR lpFilePath);
-
-	HC_EXTERN_API SIZE_T HCAPI HcFileSize(LPCSTR lpPath);
-
-	HC_EXTERN_API BOOLEAN HCAPI HcFileQueryInformationW(LPCWSTR lpPath, PHC_FILE_INFORMATIONW fileInformation);
-	HC_EXTERN_API BOOLEAN HCAPI HcFileQueryInformationA(LPCSTR lpPath, PHC_FILE_INFORMATIONA fileInformation);
-
-	HC_EXTERN_API DWORD HCAPI HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName);
-	HC_EXTERN_API DWORD HCAPI HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName);
-
-	HC_EXTERN_API DWORD HCAPI HcFileOffsetByVirtualAddress(LPCVOID lpAddress);
-
+	HC_EXTERN_API SIZE_T HCAPI HcFileSize(HANDLE hFile);
+	HC_EXTERN_API SIZE_T HCAPI HcFileSizeA(LPCSTR lpPath);
+	HC_EXTERN_API SIZE_T HCAPI HcFileSizeW(LPCWSTR lpPath);
+	HC_EXTERN_API ULONG HCAPI HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName);
+	HC_EXTERN_API ULONG HCAPI HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName);
+	HC_EXTERN_API ULONG HCAPI HcFileOffsetByVirtualAddress(LPCVOID lpAddress);
 	HC_EXTERN_API SIZE_T HCAPI HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
 	HC_EXTERN_API SIZE_T HCAPI HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
 	HC_EXTERN_API SIZE_T HCAPI HcFileReadAddress(LPCVOID lpAddress, PBYTE lpBufferOut, DWORD dwCountToRead);
-
-	HC_EXTERN_API NTSTATUS HCAPI HcFileGetCurrentDirectoryW(ULONG buflen, LPWSTR buf);
+	HC_EXTERN_API SIZE_T HCAPI HcFileGetCurrentDirectoryW(LPWSTR buf);
+	HC_EXTERN_API SIZE_T HCAPI HcFileWrite(IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite OPTIONAL);
+	HC_EXTERN_API SIZE_T HCAPI HcFileRead(IN HANDLE hFile, IN LPVOID lpBuffer, IN DWORD nNumberOfBytesToRead);
+	HC_EXTERN_API DWORD HCAPI HcFileSetCurrent(HANDLE hFile, LONG lDistanceToMove, DWORD dwMoveMethod);
+	HC_EXTERN_API HANDLE HCAPI HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);
+	HC_EXTERN_API HANDLE HCAPI HcFileOpenA(LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);
 
 #endif
 

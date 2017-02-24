@@ -41,7 +41,7 @@ typedef struct {
 	/* The fields B/X/R/W/L of REX and VEX are stored together in this byte. */
 	unsigned int vrex;
 
-	/* !! Make sure pfxIndexer is LAST! Otherwise memset won't work well with it. !! */
+	/* !! Make sure pfxIndexer is LAST! Otherwise HcInternalSet won't work well with it. !! */
 
 	/* Holds the offset to the prefix byte by its type. */
 	int pfxIndexer[PFXIDX_MAX];

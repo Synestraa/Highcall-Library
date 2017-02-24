@@ -21,10 +21,8 @@ Synestra 10/15/2016
 #ifndef HC_PROCESS_H
 #define HC_PROCESS_H
 
-//
-// Main definition file, i.e. HCAPI __stdcall
-//
 #include "hcdef.h"
+#include "hcobject.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -69,6 +67,7 @@ extern "C" {
 		LPWSTR					Name;
 		PHC_MODULE_INFORMATIONW	MainModule;
 		BOOLEAN					CanAccess;
+		DWORD					ParentProcessId;
 	} HC_PROCESS_INFORMATION_EXW, *PHC_PROCESS_INFORMATION_EXW;
 
 	//
@@ -84,17 +83,18 @@ extern "C" {
 	HC_EXTERN_API VOID HCAPI HcDestroyProcessInformationExW(PHC_PROCESS_INFORMATION_EXW o);
 
 	//
-	// Callback for HcProcessQueryByNameExW
+	// Callback for HcProcessEnumByNameExW
 	//
-	typedef BOOLEAN(CALLBACK* HC_PROCESS_CALLBACK_EVENT_EXW)(HC_PROCESS_INFORMATION_EXW, LPARAM);
+	typedef BOOLEAN(CALLBACK* HC_PROCESS_CALLBACK_EXW)(CONST HC_PROCESS_INFORMATION_EXW, LPARAM);
 
 	//
-	// Struct used in HcProcessQueryByNameW callback, containing information about the current callback process.
+	// Struct used in HcProcessEnumByNameW callback, containing information about the current callback process.
 	//
 	typedef struct _HC_PROCESS_INFORMATIONW
 	{
-		DWORD					Id;
-		LPWSTR					Name;
+		DWORD	Id;
+		LPWSTR	Name;
+		DWORD   ParentProcessId;
 	} HC_PROCESS_INFORMATIONW, *PHC_PROCESS_INFORMATIONW;
 
 	//
@@ -107,60 +107,79 @@ extern "C" {
 	// Deconstructor for HC_PROCESS_INFORMATIONW
 	// Implemented in hcconstruct.c
 	//
-	HC_EXTERN_API VOID HCAPI HcDestroyProcessInformationW(PHC_PROCESS_INFORMATIONW o);
+	HC_EXTERN_API VOID HCAPI HcDestroyProcessInformationW(PHC_PROCESS_INFORMATIONW pObj);
 
 	//
-	// Callback for HcProcessQueryByNameW
+	// Callback for HcProcessEnumByNameW
 	//
-	typedef BOOLEAN(CALLBACK* HC_PROCESS_CALLBACK_EVENTW)(HC_PROCESS_INFORMATIONW, LPARAM);
+	typedef BOOLEAN(CALLBACK* HC_PROCESS_CALLBACKW)(CONST HC_PROCESS_INFORMATIONW Entry, LPARAM lParam);
 
 	//
-	// Implemented in hcprocess.c
+	// Callback for HcProcessEnumHandleEntries
 	//
+	typedef BOOLEAN(CALLBACK* HC_HANDLE_ENTRY_CALLBACKW)(CONST PSYSTEM_HANDLE_TABLE_ENTRY_INFO Entry, LPARAM lParam);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessIsWow64Ex(IN HANDLE hProcess);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessIsWow64(IN DWORD dwProcessId);
+	//
+	// Callback for HcProcessEnumHandles
+	//
+	typedef BOOLEAN(CALLBACK* HC_HANDLE_CALLBACKW)(CONST HANDLE Handle, CONST HANDLE hOwner, LPARAM lParam);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessExitCode(IN SIZE_T dwProcessId, IN LPDWORD lpExitCode);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessExitCodeEx(IN HANDLE hProcess, IN LPDWORD lpExitCode);
+	DWORD WINAPI HcProcessGetCurrentId(VOID);
 
-	HC_EXTERN_API HANDLE HCAPI HcProcessOpen(SIZE_T dwProcessId, ACCESS_MASK DesiredAccess);
+	DWORD
+		WINAPI
+		HcProcessGetId(IN HANDLE Process);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessWriteMemory(HANDLE hProcess, LPVOID lpBaseAddress, CONST VOID* lpBuffer, SIZE_T nSize, PSIZE_T lpNumberOfBytesWritten);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadMemory(IN HANDLE hProcess, IN LPCVOID lpBaseAddress, IN LPVOID lpBuffer, IN SIZE_T nSize, OUT SIZE_T* lpNumberOfBytesRead);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessIsWow64Ex(CONST IN HANDLE hProcess);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessIsWow64(CONST IN DWORD dwProcessId);
 
-	HC_EXTERN_API HANDLE HCAPI HcProcessCreateThread(IN HANDLE hProcess, IN LPTHREAD_START_ROUTINE lpStartAddress, IN LPVOID lpParamater, IN DWORD dwCreationFlags);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessExitCode(CONST IN SIZE_T dwProcessId, IN LPDWORD lpExitCode);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessExitCodeEx(CONST IN HANDLE hProcess, IN LPDWORD lpExitCode);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadNullifiedString(HANDLE hProcess, PUNICODE_STRING usStringIn, LPWSTR lpStringOut, SIZE_T lpSize);
+	HC_EXTERN_API HANDLE HCAPI HcProcessOpen(CONST SIZE_T dwProcessId, CONST ACCESS_MASK DesiredAccess);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessLdrModuleToHighCallModule(IN HANDLE hProcess, IN PLDR_DATA_TABLE_ENTRY Module, OUT PHC_MODULE_INFORMATIONW phcModuleOut);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessWriteMemory(CONST HANDLE hProcess, CONST LPVOID lpBaseAddress, CONST VOID* lpBuffer, SIZE_T nSize, PSIZE_T lpNumberOfBytesWritten);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadMemory(CONST IN HANDLE hProcess, IN LPCVOID lpBaseAddress, IN LPVOID lpBuffer, IN SIZE_T nSize, OUT SIZE_T* lpNumberOfBytesRead);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessQueryInformationModule(IN HANDLE hProcess, IN HMODULE hModule OPTIONAL, OUT PHC_MODULE_INFORMATIONW phcModuleOut);
+	HC_EXTERN_API HANDLE HCAPI HcProcessCreateThread(CONST IN HANDLE hProcess, CONST IN LPTHREAD_START_ROUTINE lpStartAddress, CONST IN LPVOID lpParamater, CONST IN DWORD dwCreationFlags);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumModulesW(HANDLE hProcess, HC_MODULE_CALLBACK_EVENTW hcmCallback, LPARAM lParam);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumMappedImagesW(HANDLE ProcessHandle, HC_MODULE_CALLBACK_EVENTW hcmCallback, LPARAM lParam);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadNullifiedString(CONST HANDLE hProcess, CONST PUNICODE_STRING usStringIn, LPWSTR lpStringOut, CONST SIZE_T lpSize);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessReady(SIZE_T dwProcessId);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadyEx(HANDLE hProcess);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessLdrModuleToHighCallModule(CONST IN HANDLE hProcess, CONST IN PLDR_DATA_TABLE_ENTRY Module, OUT PHC_MODULE_INFORMATIONW phcModuleOut);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessSuspend(SIZE_T dwProcessId);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessSuspendEx(HANDLE hProcess);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessQueryInformationModule(CONST IN HANDLE hProcess, IN HMODULE hModule OPTIONAL, OUT PHC_MODULE_INFORMATIONW phcModuleOut);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessResume(SIZE_T dwProcessId);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessResumeEx(HANDLE hProcess);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumModulesW(CONST HANDLE hProcess, CONST HC_MODULE_CALLBACK_EVENTW hcmCallback, LPARAM lParam);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumMappedImagesW(CONST HANDLE ProcessHandle, CONST HC_MODULE_CALLBACK_EVENTW hcmCallback, LPARAM lParam);
 
-	HC_EXTERN_API SIZE_T HCAPI HcProcessModuleFileName(HANDLE hProcess, LPVOID lpv, LPWSTR lpFilename, DWORD nSize);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessReady(CONST SIZE_T dwProcessId);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessReadyEx(CONST HANDLE hProcess);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessQueryByNameW(LPCWSTR lpProcessName, HC_PROCESS_CALLBACK_EVENTW Callback, LPARAM lParam);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessQueryByNameExW(LPCWSTR lpProcessName, HC_PROCESS_CALLBACK_EVENT_EXW hcpCallback, LPARAM lParam);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessSuspend(CONST SIZE_T dwProcessId);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessSuspendEx(CONST HANDLE hProcess);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessSetPrivilegeA(HANDLE hProcess, LPCSTR Privilege,  BOOLEAN bEnablePrivilege);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessSetPrivilegeW(HANDLE hProcess, LPCWSTR Privilege, BOOLEAN bEnablePrivilege);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessResume(CONST SIZE_T dwProcessId);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessResumeEx(CONST HANDLE hProcess);
 
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetPeb(HANDLE hProcess, PPEB pPeb);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCommandLineW(HANDLE hProcess, LPWSTR lpszCommandline, BOOLEAN bAlloc);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryW(HANDLE hProcess, LPWSTR szDirectory, PDWORD ptOutSize);
-	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryA(HANDLE hProcess, LPSTR szDirectory);
+	HC_EXTERN_API SIZE_T HCAPI HcWin32GetModuleFileName(CONST HANDLE hProcess, CONST LPVOID lpv, LPWSTR lpFilename, CONST DWORD nSize);
+	HC_EXTERN_API SIZE_T HCAPI HcProcessModuleFileName(CONST HANDLE hProcess, CONST LPVOID lpv, LPWSTR lpFilename, CONST DWORD nSize);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetById(CONST IN DWORD dwProcessId, OUT PHC_PROCESS_INFORMATIONW pProcessInfo);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetByNameW(CONST IN LPCWSTR lpName, OUT PHC_PROCESS_INFORMATIONW pProcessInfo);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumHandleEntries(HC_HANDLE_ENTRY_CALLBACKW callback, LPARAM lParam);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumHandles(HC_HANDLE_CALLBACKW callback, DWORD dwTypeIndex, LPARAM lParam);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumByNameW(CONST LPCWSTR lpProcessName, HC_PROCESS_CALLBACKW Callback, LPARAM lParam);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumByNameExW(CONST LPCWSTR lpProcessName, HC_PROCESS_CALLBACK_EXW hcpCallback, LPARAM lParam);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessSetPrivilegeA(CONST HANDLE hProcess, CONST LPCSTR Privilege, CONST BOOLEAN bEnablePrivilege);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessSetPrivilegeW(CONST HANDLE hProcess, CONST LPCWSTR Privilege, CONST BOOLEAN bEnablePrivilege);
+
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCommandLineW(CONST HANDLE hProcess, LPWSTR lpszCommandline, CONST BOOLEAN bAlloc);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR szDirectory, PDWORD ptOutSize);
+	HC_EXTERN_API BOOLEAN HCAPI HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR szDirectory);
 
 #if defined (__cplusplus)
 }

@@ -106,7 +106,9 @@ HcLookupPrivilegeValueW(LPCWSTR Name)
 	ULONG Priv;
 
 	if (HcStringIsBad(Name))
+	{
 		return NULL;
+	}
 
 	for (Priv = 0; Priv < sizeof(WellKnownPrivileges) / sizeof(WellKnownPrivileges[0]); Priv++)
 	{
@@ -126,7 +128,9 @@ HcLookupPrivilegeValueA(LPCSTR Name)
 	LPWSTR Converted;
 
 	if (HcStringIsBad(Name))
+	{
 		return NULL;
+	}
 
 	Converted = (LPWSTR)HcStringConvertAtoW(Name);
 
@@ -150,8 +154,10 @@ HcTokenIsElevated(HANDLE TokenHandle,
 	PBOOLEAN Elevated
 ) {
 	NTSTATUS Status;
-	TOKEN_ELEVATION Elevation = { 0 };
+	TOKEN_ELEVATION Elevation;
 	ULONG returnLength = 0;
+
+	HcInternalSet(&Elevation, 0, sizeof(Elevation));
 
 	Status = HcQueryInformationToken(TokenHandle,
 		TokenElevation,

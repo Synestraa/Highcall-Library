@@ -2,17 +2,6 @@
 #define HC_IMPORT_H
 
 #include "../public/hcdef.h"
-
-//
-// -- undocumented, cleared up.
-// this header contains function imports for things that are not yet implemented but extremely necessary
-// this is what is refered to as "being lazy"
-// hopefully, one day, I will stop being a lazy fucking retard and actually update it with the proper code.
-// cheers, me.
-//
-// well, seems like im using ntdll.lib now.
-//
-
 #pragma comment(lib, "ntdll.lib")
 
 //
@@ -30,7 +19,20 @@ typedef enum _RTL_PATH_TYPE
 	RtlPathTypeRootLocalDevice,
 } RTL_PATH_TYPE;
 
-#define RtlProcessHeap() ((HANDLE)(NtCurrentPeb()->ProcessHeap))
+#define RtlGetProcessHeap() ((HANDLE)(NtCurrentPeb()->ProcessHeap))
+
+#define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_AMBIGUOUS   (0x00000001)
+#define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_UNC         (0x00000002)
+#define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_DRIVE       (0x00000003)
+#define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_ALREADY_DOS (0x00000004)
+
+NTSYSAPI
+NTSTATUS
+NTAPI RtlNtPathNameToDosPathName(
+	ULONG Flags,
+	PRTL_UNICODE_STRING_BUFFER Path,
+	PULONG Disposition,
+	PWSTR* FilePart);
 
 NTSYSAPI NTSTATUS NTAPI RtlGetVersion(
 	_Out_ PRTL_OSVERSIONINFOW lpInformation);
@@ -43,6 +45,10 @@ NTSYSAPI BOOLEAN NTAPI RtlEqualUnicodeString(
 NTSYSAPI VOID NTAPI RtlInitUnicodeString(
 	_Out_    PUNICODE_STRING DestinationString,
 	_In_opt_ PCWSTR          SourceString);
+
+NTSYSAPI
+NTSTATUS
+NTAPI LdrUnloadDll(IN HANDLE ModuleHandle);
 
 NTSYSAPI NTSTATUS NTAPI LdrLoadDll(
 	IN PWCHAR		   PathToFile OPTIONAL,
@@ -75,5 +81,73 @@ NTSYSAPI PVOID NTAPI RtlAllocateHeap(
 NTSYSAPI BOOLEAN NTAPI RtlFreeHeap(IN PVOID HeapHandle,
 	IN ULONG 	Flags,
 	IN PVOID 	HeapBase);
+
+NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(
+	IN  HANDLE                 FileHandle,
+	OUT PIO_STATUS_BLOCK       IoStatusBlock,
+	OUT PVOID                  FileInformation,
+	IN  ULONG                  Length,
+	IN  FILE_INFORMATION_CLASS FileInformationClass
+);
+
+
+NTSYSAPI NTSTATUS NTAPI NtWaitForSingleObject(IN HANDLE hObject,
+	IN BOOLEAN bAlertable,
+	IN PLARGE_INTEGER Timeout);
+
+NTSYSAPI NTSTATUS NTAPI NtReadFile(
+	_In_     HANDLE           FileHandle,
+	_In_opt_ HANDLE           Event,
+	_In_opt_ PIO_APC_ROUTINE  ApcRoutine,
+	_In_opt_ PVOID            ApcContext,
+	_Out_    PIO_STATUS_BLOCK IoStatusBlock,
+	_Out_    PVOID            Buffer,
+	_In_     ULONG            Length,
+	_In_opt_ PLARGE_INTEGER   ByteOffset,
+	_In_opt_ PULONG           Key
+);
+
+
+NTSYSAPI NTSTATUS NTAPI NtQueryEaFile(
+	HANDLE           hFile,
+	PIO_STATUS_BLOCK iosb,
+	PVOID            buffer,
+	ULONG            length,
+	BOOLEAN          single_entry,
+	PVOID            ea_list,
+	ULONG            ea_list_len,
+	PULONG           ea_index,
+	BOOLEAN          restart);
+
+NTSYSAPI NTSTATUS NTAPI NtCreateFile(
+	OUT    PHANDLE            FileHandle,
+	IN     ACCESS_MASK        DesiredAccess,
+	IN     POBJECT_ATTRIBUTES ObjectAttributes,
+	OUT    PIO_STATUS_BLOCK   IoStatusBlock,
+	IN	   PLARGE_INTEGER	  AllocationSize OPTIONAL,
+	IN     ULONG              FileAttributes,
+	IN     ULONG              ShareAccess,
+	IN     ULONG              CreateDisposition,
+	IN     ULONG              CreateOptions,
+	IN     PVOID              EaBuffer,
+	IN     ULONG              EaLength
+);
+
+NTSYSAPI NTSTATUS NTAPI NtClose(HANDLE hObject);
+
+NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(
+	_In_  HANDLE                 FileHandle,
+	_Out_ PIO_STATUS_BLOCK       IoStatusBlock,
+	_In_  PVOID                  FileInformation,
+	_In_  ULONG                  Length,
+	_In_  FILE_INFORMATION_CLASS FileInformationClass
+);
+
+NTSYSAPI NTSTATUS NTAPI NtQueryVirtualMemory(IN HANDLE ProcessHandle,
+	IN LPVOID BaseAddress,
+	IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
+	OUT LPVOID MemoryInformation,
+	IN SIZE_T MemoryInformationLength,
+	OUT PSIZE_T ReturnLength);
 
 #endif

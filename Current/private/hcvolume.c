@@ -11,14 +11,16 @@
 static
 HANDLE
 HCAPI
-HcFileOpenDirectory(IN LPCWSTR DirName,
-	IN BOOLEAN Write)
+HcFileOpenDirectory(IN LPCWSTR DirName, IN BOOLEAN Write)
 {
-	UNICODE_STRING NtPathU = { 0 };
-	OBJECT_ATTRIBUTES ObjectAttributes = { 0 };
+	UNICODE_STRING NtPathU;
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	IO_STATUS_BLOCK IoStatusBlock;
 	NTSTATUS errCode;
-	IO_STATUS_BLOCK IoStatusBlock = { 0 };
 	HANDLE hFile = NULL;
+
+	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
+	HcInternalSet(&ObjectAttributes, 0, sizeof(ObjectAttributes));
 
 	if (!RtlDosPathNameToNtPathName_U(DirName, &NtPathU, NULL, NULL))
 	{
@@ -44,7 +46,7 @@ HcFileOpenDirectory(IN LPCWSTR DirName,
 		NULL,
 		0);
 
-	RtlFreeHeap(RtlProcessHeap(), 0, NtPathU.Buffer);
+	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
 
 	if (!NT_SUCCESS(errCode))
 	{
@@ -160,17 +162,21 @@ HcVolumeGetInformationW(
 	_Out_opt_ LPWSTR  lpFileSystemNameBuffer,
 	_In_      DWORD   nFileSystemNameSize
 ) {
-	UCHAR Buffer[max(FS_VOLUME_BUFFER_SIZE, FS_ATTRIBUTE_BUFFER_SIZE)] = { 0 };
-	PFILE_FS_VOLUME_INFORMATION FileFsVolume = (PFILE_FS_VOLUME_INFORMATION)Buffer;
-	PFILE_FS_ATTRIBUTE_INFORMATION FileFsAttribute = (PFILE_FS_ATTRIBUTE_INFORMATION)Buffer;
-	IO_STATUS_BLOCK IoStatusBlock = { 0 };
-	WCHAR RootPathName[MAX_PATH] = { 0 };
 	HANDLE hFile;
 	NTSTATUS errCode;
+	UCHAR Buffer[max(FS_VOLUME_BUFFER_SIZE, FS_ATTRIBUTE_BUFFER_SIZE)];
+	IO_STATUS_BLOCK IoStatusBlock;
+	WCHAR RootPathName[MAX_PATH];
+	PFILE_FS_VOLUME_INFORMATION FileFsVolume = (PFILE_FS_VOLUME_INFORMATION)Buffer;
+	PFILE_FS_ATTRIBUTE_INFORMATION FileFsAttribute = (PFILE_FS_ATTRIBUTE_INFORMATION)Buffer;
+
+	HcInternalSet(&Buffer, 0, sizeof(Buffer));
+	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
+	HcInternalSet(&RootPathName, 0, sizeof(RootPathName));
 
 	if (HcStringIsNullOrEmpty(lpRootPathName))
 	{
-		HcFileGetCurrentDirectoryW(MAX_PATH, RootPathName);
+		HcFileGetCurrentDirectoryW(RootPathName);
 	}
 	else
 	{

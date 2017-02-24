@@ -6,26 +6,73 @@
 	@version 9/10/2016
 */
 
-#include <windows.h>
-
 #include "sys/hcsyscall.h"
 
 #include "../public/hcobject.h"
 #include "../public/hcdef.h"
 #include "../public/hcvirtual.h"
 #include "../public/hcerror.h"
+#include "../public/hcstring.h"
 
-static PLARGE_INTEGER HCAPI TranslateTime(OUT PLARGE_INTEGER Timeout, IN DWORD dwMiliseconds)
+#define STD_INPUT_HANDLE    ((DWORD)-10)
+#define STD_OUTPUT_HANDLE   ((DWORD)-11)
+#define STD_ERROR_HANDLE    ((DWORD)-12)
+
+#define WAIT_FAILED ((DWORD)0xFFFFFFFF)
+
+typedef struct _ObjectTypePair
 {
-	/* Check if this is an infinite wait, which means no timeout argument */
-	if (dwMiliseconds == INFINITE) return NULL;
+	LPWSTR Name;
+	DWORD Index;
+} ObjectTypePair;
 
-	/* Otherwise, convert the time to NT Format */
-	Timeout->QuadPart = dwMiliseconds * -10000LL;
-	return Timeout;
+static ObjectTypePair** _baseObjectTypePairs;
+static DWORD _baseObjectTypeAmount = 0;
+
+static VOID _baseInitObjectTypes(VOID)
+{
+	ULONG RequiredLength = 0xffff;
+	UCHAR  KeyType = 0;
+	NTSTATUS Status;
+	POBJECT_TYPES_INFORMATION Types;
+
+	_baseObjectTypeAmount = 0;
+
+	Types = (OBJECT_TYPES_INFORMATION*)HcAlloc(RequiredLength);
+	while ((Status = HcQueryObject(NULL, ObjectTypesInformation, Types, RequiredLength, &RequiredLength)) == STATUS_INFO_LENGTH_MISMATCH)
+	{
+		HcFree(Types);
+		Types = (OBJECT_TYPES_INFORMATION*)HcAlloc(RequiredLength);
+	}
+
+	if (NT_SUCCESS(Status))
+	{
+		_baseObjectTypeAmount = Types->NumberOfTypes;
+		_baseObjectTypePairs = (ObjectTypePair**)HcAlloc(_baseObjectTypeAmount * sizeof(ObjectTypePair*));
+
+		POBJECT_TYPE_INFORMATION type = (POBJECT_TYPE_INFORMATION)((PCHAR)Types + ALIGN_UP(sizeof(*Types), ULONG_PTR));
+		for (DWORD i = 0; i < Types->NumberOfTypes; i++)
+		{
+			_baseObjectTypePairs[i] = (ObjectTypePair*)HcAlloc(sizeof(ObjectTypePair));
+			_baseObjectTypePairs[i]->Index = i + 2;
+			
+			if (type->TypeName.Buffer != NULL)
+			{
+				_baseObjectTypePairs[i]->Name = HcStringAllocW(type->TypeName.Length);
+
+				HcStringCopyW(_baseObjectTypePairs[i]->Name,
+					type->TypeName.Buffer,
+					type->TypeName.Length);
+			}
+
+			type = (POBJECT_TYPE_INFORMATION)((PCHAR)(type + 1) + ALIGN_UP(type->TypeName.MaximumLength, ULONG_PTR));
+		}
+	}
+
+	HcFree(Types);
 }
 
-static HANDLE HCAPI TranslateHandle(IN HANDLE Handle)
+HANDLE HCAPI HcObjectTranslateHandle(CONST IN HANDLE Handle)
 {
 	PRTL_USER_PROCESS_PARAMETERS Ppb = NtCurrentPeb()->ProcessParameters;
 	
@@ -39,6 +86,42 @@ static HANDLE HCAPI TranslateHandle(IN HANDLE Handle)
 	return Handle;
 }
 
+HC_EXTERN_API DWORD HCAPI HcObjectTypeIndexByName(IN LPCWSTR lpObjectName)
+{
+	if (_baseObjectTypeAmount == 0)
+	{
+		_baseInitObjectTypes();
+	}
+
+	if (_baseObjectTypeAmount > 0)
+	{
+		for (DWORD i = 0; i < _baseObjectTypeAmount; i++)
+		{
+			if (HcStringEqualW(_baseObjectTypePairs[i]->Name, lpObjectName, TRUE))
+			{
+				return _baseObjectTypePairs[i]->Index;
+			}
+		}
+	}
+
+	return OBJECT_TYPE_ANY;
+}
+
+HC_EXTERN_API
+PLARGE_INTEGER 
+HCAPI 
+HcObjectMillisecondsToNano(OUT PLARGE_INTEGER Timeout, CONST IN DWORD dwMiliseconds)
+{
+	if (dwMiliseconds == INFINITE)
+	{
+		return NULL;
+	}
+
+	/* Convert the time to NT Format */
+	Timeout->QuadPart = dwMiliseconds * -10000LL;
+	return Timeout;
+}
+
 HC_EXTERN_API
 DWORD
 HCAPI
@@ -48,11 +131,14 @@ HcObjectWaitMultiple(IN DWORD nCount,
 	IN DWORD dwMilliseconds)
 {
 	PLARGE_INTEGER TimePtr = NULL;
-	LARGE_INTEGER Time = { 0 };
+	LARGE_INTEGER Time;
 	PHANDLE HandleBuffer = NULL;
-	HANDLE Handle[8] = { 0 };
+	HANDLE Handles[8];
 	DWORD i = 0;
 	NTSTATUS Status = STATUS_SUCCESS;
+
+	HcInternalSet(&Time, 0, sizeof(Time));
+	HcInternalSet(&Handles, 0, sizeof(Handles));
 
 	/* Check if we have more handles then we locally optimize */
 	if (nCount > 8)
@@ -63,26 +149,26 @@ HcObjectWaitMultiple(IN DWORD nCount,
 		if (!HandleBuffer)
 		{
 			/* No buffer, fail the wait */
-			HcErrorSetDosError(ERROR_NOT_ENOUGH_MEMORY);
+			HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
 			return WAIT_FAILED;
 		}
 	}
 	else
 	{
 		/* Otherwise, use our local buffer */
-		HandleBuffer = Handle;
+		HandleBuffer = Handles;
 	}
 
 	/* Copy the handles into our buffer and loop them all */
-	RtlCopyMemory(HandleBuffer, (LPVOID)lpHandles, nCount * sizeof(HANDLE));
+	HcInternalCopy(HandleBuffer, (LPVOID)lpHandles, nCount * sizeof(HANDLE));
 	for (i = 0; i < nCount; i++)
 	{
 		/* Check what kind of handle this is */
-		HandleBuffer[i] = TranslateHandle(HandleBuffer[i]);
+		HandleBuffer[i] = HcObjectTranslateHandle(HandleBuffer[i]);
 	}
 
 	/* Convert the timeout */
-	TimePtr = TranslateTime(&Time, dwMilliseconds);
+	TimePtr = HcObjectMillisecondsToNano(&Time, dwMilliseconds);
 
 	/* Do the wait */
 	Status = HcWaitForMultipleObjects(nCount,
@@ -99,7 +185,7 @@ HcObjectWaitMultiple(IN DWORD nCount,
 	}
 
 	/* Check if we didn't use our local buffer */
-	if (HandleBuffer != Handle)
+	if (HandleBuffer != Handles)
 	{
 		/* Free the allocated one */
 		HcFree(HandleBuffer);
@@ -115,14 +201,16 @@ HCAPI
 HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
 {
 	PLARGE_INTEGER TimePtr = NULL;
-	LARGE_INTEGER Time = { 0 };
+	LARGE_INTEGER Time;
 	NTSTATUS Status = STATUS_SUCCESS;
 
+	HcInternalSet(&Time, 0, sizeof(Time));
+
 	/* Get the real handle */
-	hObject = TranslateHandle(hObject);
+	hObject = HcObjectTranslateHandle(hObject);
 
 	/* Convert the timeout */
-	TimePtr = TranslateTime(&Time, dwMiliseconds);
+	TimePtr = HcObjectMillisecondsToNano(&Time, dwMiliseconds);
 
 	/* Do the wait */
 	Status = HcWaitForSingleObject(hObject, FALSE, TimePtr);
@@ -139,8 +227,5 @@ VOID
 HCAPI
 HcObjectClose(HANDLE hObject)
 {
-	//
-	// Forward the call to the kernel.
-	//
 	HcClose(hObject);
 }

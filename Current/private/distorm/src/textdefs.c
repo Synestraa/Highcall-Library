@@ -11,6 +11,8 @@ This library is licensed under the BSD license. See the file COPYING.
 
 #include "textdefs.h"
 
+#include "../../../public/hcinternal.h"
+
 #ifndef DISTORM_LIGHT
 
 static uint8_t Nibble2ChrTable[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -49,7 +51,7 @@ void _FASTCALL_ str_hex_b(_WString* s, unsigned int x)
 	/*
 	 * Fixed length of 3 including null terminate character.
 	 */
-	memcpy(&s->p[s->length], TextBTable[x & 255], 3);
+	HcInternalCopy(&s->p[s->length], TextBTable[x & 255], 3);
 	s->length += 2;
 }
 
@@ -84,10 +86,10 @@ void _FASTCALL_ str_code_hb(_WString* s, unsigned int x)
 	};
 
 	if (x < 0x10) {	/* < 0x10 has a fixed length of 4 including null terminate. */
-		memcpy(&s->p[s->length], TextHBTable[x & 255], 4);
+		HcInternalCopy(&s->p[s->length], TextHBTable[x & 255], 4);
 		s->length += 3;
 	} else { /* >= 0x10 has a fixed length of 5 including null terminate. */
-		memcpy(&s->p[s->length], TextHBTable[x & 255], 5);
+		HcInternalCopy(&s->p[s->length], TextHBTable[x & 255], 5);
 		s->length += 4;
 	}
 }

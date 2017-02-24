@@ -6,7 +6,7 @@ hcinternal.c
 
 Abstract:
 
-This module implements internal memory handling functions. i.e. memcpy, memmove, memset... as well as other functions used in gamehacking.
+This module implements internal memory handling functions. i.e. HcInternalCopy, memmove, HcInternalSet... as well as other functions used in gamehacking.
 
 Author:
 
@@ -53,15 +53,17 @@ HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
 HC_EXTERN_API 
 PVOID
 HCAPI 
-HcInternalCopy(PVOID pDst, PVOID pSrc, SIZE_T tCount)
+HcInternalCopy(PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
 {
 	PVOID ret = pDst;
+	SIZE_T sz = tCount;
+	PVOID src = (PVOID) pSrc;
 
 	//
 	// copy from lower addresses to higher addresses
 	//
-	while (tCount--)
-		*((PBYTE)pDst)++ = *((PBYTE)pSrc)++;
+	while (sz--)
+		*((PBYTE)pDst)++ = *((PBYTE)src)++;
 	
 	return (ret);
 }
@@ -126,14 +128,12 @@ BOOLEAN
 HCAPI
 HcInternalValidate(LPCVOID lpcAddress)
 {
-	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	MEMORY_BASIC_INFORMATION mbi;
 	SIZE_T ReturnedSize = 0;
 
-	if (!lpcAddress)
-		return FALSE;
+	HcInternalSet(&mbi, 0, sizeof(mbi));
 
 	ReturnedSize = HcVirtualQuery(lpcAddress, &mbi, sizeof(mbi));
-
 	return !(!ReturnedSize || (mbi.Protect & PAGE_NOACCESS) || (mbi.Protect & PAGE_GUARD));
 }
 
@@ -218,18 +218,19 @@ HcInternalMemoryNopInstruction(PVOID pAddress)
 {
 	DWORD dwProtection = 0;
 
-	_CodeInfo ci = { 0 };
-	_DInst di = { 0 };
-	_DecodedInst inst = { 0 };
+	_CodeInfo ci;
+	_DInst di;
+	_DecodedInst inst;
+
+	HcInternalSet(&ci, 0, sizeof(ci));
+	HcInternalSet(&di, 0, sizeof(di));
+	HcInternalSet(&inst, 0, sizeof(inst));
 
 	ci.code = (unsigned char*)pAddress;
 	ci.codeLen = 0x100;
 	ci.codeOffset = 0;
 	ci.features = DF_NONE;
 	ci.dt = DISASM_TYPE;
-
-	HcInternalSet(&di, 0, sizeof(di));
-	HcInternalSet(&inst, 0, sizeof(inst));
 
 	//
 	// Attempt to disassemble the block.
@@ -259,12 +260,12 @@ HcInternalMemoryNopInstruction(PVOID pAddress)
 }
 
 HC_EXTERN_API
-SIZE_T
+LPBYTE
 HCAPI
 HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
 {
-	SIZE_T CurrentAddress = 0;
-	SIZE_T ProbeAddress = 0;
+	LPBYTE CurrentAddress = 0;
+	LPBYTE ProbeAddress = 0;
 	SIZE_T MaskSize = 0; 
 
 	MaskSize = HcStringLenA(szcMask);
@@ -274,10 +275,10 @@ HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW
 	}
 
 	/* Loop through the entire module .text/code area. */
-	for (CurrentAddress = (SIZE_T)pmInfo->Base; CurrentAddress < (SIZE_T)pmInfo->Base + pmInfo->Size - MaskSize; CurrentAddress++)
+	for (CurrentAddress = pmInfo->Base; CurrentAddress < (LPBYTE)pmInfo->Base + pmInfo->Size - MaskSize; CurrentAddress++)
 	{
 		/* Check for an initial match to start our larger pattern. */
-		if (*(BYTE*)CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')
+		if (*CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')
 		{
 			ProbeAddress = CurrentAddress;
 
@@ -285,13 +286,60 @@ HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW
 			for (int i = 0; szcMask[i] != '\0'; i++, ProbeAddress++)
 			{
 				/* This is not our pattern. */
-				if ((szcPattern[i] & 0xff) != *(BYTE*)ProbeAddress && szcMask[i] != '?')
+				if ((szcPattern[i] & 0xff) != *ProbeAddress && szcMask[i] != '?')
 				{
 					break;
 				}
 
 				/* This is a match. */
-				if (((szcPattern[i] & 0xff) == *(BYTE*)ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
+				if (((szcPattern[i] & 0xff) == *ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
+				{
+					return CurrentAddress;
+				}
+			}
+		}
+	}
+
+	/* We found nothing. */
+	return 0;
+}
+
+
+
+HC_EXTERN_API
+LPBYTE
+HCAPI
+HcInternalPatternFindInBuffer(LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size)
+{
+	LPBYTE CurrentAddress = 0;
+	LPBYTE ProbeAddress = 0;
+	SIZE_T MaskSize = 0;
+
+	MaskSize = HcStringLenA(szcMask);
+	if (!MaskSize || !HcStringLenA(szcPattern))
+	{
+		return 0;
+	}
+
+	/* Loop through the entire module .text/code area. */
+	for (CurrentAddress = lpBuffer; CurrentAddress < lpBuffer + Size - MaskSize; CurrentAddress++)
+	{
+		/* Check for an initial match to start our larger pattern. */
+		if (*CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')
+		{
+			ProbeAddress = CurrentAddress;
+
+			/* Loop through the address that contained our first byte. */
+			for (int i = 0; szcMask[i] != '\0'; i++, ProbeAddress++)
+			{
+				/* This is not our pattern. */
+				if ((szcPattern[i] & 0xff) != *ProbeAddress && szcMask[i] != '?')
+				{
+					break;
+				}
+
+				/* This is a match. */
+				if (((szcPattern[i] & 0xff) == *ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
 				{
 					return CurrentAddress;
 				}

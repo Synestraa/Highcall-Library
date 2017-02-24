@@ -12,10 +12,9 @@ typedef enum
 
 typedef struct _HcGlobalEnv
 {
-	/* Is the process running with elevated permissions? */
+	/* Is the process running with administrative privileges? */
 	BOOLEAN IsElevated;
 
-	/* What version (highcall identified) is the process running on? */
 	ULONG WindowsVersion;
 	Architecture_Type ProcessorArchitecture;
 

@@ -309,3 +309,8 @@ __pycache__/
 *.exe
 *.out
 *.app
+
+AntiCheat/
+AntiCheatLibrary/
+Driver/
+Tests/

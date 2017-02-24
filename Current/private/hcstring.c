@@ -17,11 +17,6 @@ Revision History:
 --*/
 
 //
-// For ERROR_INVALID_PARAMETER, CP_UTF8, WideCharToMultiByte(), MultiByteToWideChar()
-//
-#include <windows.h>
-
-//
 // For structure definitions
 //
 #include "../public/hcstring.h"
@@ -46,6 +41,8 @@ BOOLEAN
 HCAPI
 HcStringSplitA(LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PDWORD pdwCount)
 {
+	return FALSE;
+
 	DWORD strSize = HcStringLenA(lpStr);
 	if (strSize == 0)
 	{
@@ -61,13 +58,13 @@ HcStringSplitA(LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PDWORD
 	*pdwCount = 0;
 
 	/* Get the first token. */
-	lpToken = strtok_s(lpCopy, lpTerminatedDelim, &lpToken);
+	//lpToken = strtok_s(lpCopy, lpTerminatedDelim, &lpToken);
 
 	/* Loop over the splits. */
 	while (lpToken)
 	{
 		/* Duplicate the string and insert into return array. */
-		lpStrArrayOut[*pdwCount] = _strdup(strtok_s(NULL, lpTerminatedDelim, &lpToken));
+		//lpStrArrayOut[*pdwCount] = _strdup(strtok_s(NULL, lpTerminatedDelim, &lpToken));
 
 		*pdwCount += 1;
 	}
@@ -84,6 +81,8 @@ BOOLEAN
 HCAPI
 HcStringSplitW(LPWSTR lpStr, const WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PDWORD pdwCount)
 {
+	return FALSE;
+
 	DWORD tlpStrSize = HcStringLenW(lpStr);
 	if (!tlpStrSize)
 	{
@@ -97,13 +96,13 @@ HcStringSplitW(LPWSTR lpStr, const WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PDW
 	*pdwCount = 0;
 
 	/* Get the first token. */
-	lpToken = wcstok_s(lpCopy, lpTerminatedDelim, &lpToken);
+	//lpToken = wcstok_s(lpCopy, lpTerminatedDelim, &lpToken);
 
 	/* Loop over the splits. */
 	while (lpToken)
 	{
 		/* Duplicate the string and insert into return array. */
-		lpStrArrayOut[*pdwCount] = _wcsdup(wcstok_s(0, lpTerminatedDelim, &lpToken));
+		//lpStrArrayOut[*pdwCount] = _wcsdup(wcstok_s(0, lpTerminatedDelim, &lpToken));
 
 		*pdwCount += 1;
 	}
@@ -120,9 +119,6 @@ BOOLEAN
 HCAPI
 HcStringSubtractA(LPCSTR lpStr, LPSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex)
 {
-	if (HcStringIsBad(lpStr))
-		return FALSE;
-
 	if (szEndIndex == -1)
 	{
 		szEndIndex = HcStringLenA(lpStr) - 1;
@@ -143,9 +139,6 @@ BOOLEAN
 HCAPI
 HcStringSubtractW(LPCWSTR lpStr, LPWSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex)
 {
-	if (HcStringIsBad(lpStr))
-		return FALSE;
-
 	if (szEndIndex == -1)
 	{
 		szEndIndex = HcStringLenW(lpStr) - 1;
@@ -224,11 +217,6 @@ DWORD
 HCAPI
 HcStringLenA(LPCSTR lpString)
 {
-	if (HcStringIsBad(lpString))
-	{
-		return 0;
-	}
-
 	return HcStringSizeA(lpString) / sizeof(CHAR);
 }
 
@@ -237,11 +225,6 @@ DWORD
 HCAPI
 HcStringLenW(LPCWSTR lpString)
 {
-	if (HcStringIsBad(lpString))
-	{
-		return 0;
-	}
-
 	return HcStringSizeW(lpString) / sizeof(WCHAR);
 }
 
@@ -275,20 +258,35 @@ HcStringSizeW(LPCWSTR szcString)
 	return (DWORD) (p - szcString) * sizeof(WCHAR);
 }
 
+static int __tolower(int c)
+{
+	if (c <= 'Z' && c >= 'A')
+	{
+		return c + 32;
+	}
+
+	return c;
+}
+
+static int __islower(int c)
+{
+	return c <= 'z' && c >= 'a';
+}
+
+static int __toupper(int c)
+{
+	return __islower(c) ? c - 'a' + 'A' : c;
+}
+
 HC_EXTERN_API
 BOOLEAN
 HCAPI
 HcStringToLowerA(LPSTR lpStr)
 {
-	if (HcStringIsBad(lpStr))
-	{
-		return FALSE;
-	}
-
 	LPSTR p = lpStr;
 	for (; *p; ++p)
 	{
-		*p = tolower(*p);
+		*p = __tolower(*p);
 	}
 
 	return TRUE;
@@ -299,15 +297,10 @@ BOOLEAN
 HCAPI
 HcStringToLowerW(LPWSTR lpStr)
 {
-	if (HcStringIsBad(lpStr))
-	{
-		return FALSE;
-	}
-
 	LPWSTR p = lpStr;
 	for (; *p; ++p)
 	{
-		*p = tolower(*p);
+		*p = __tolower(*p);
 	}
 
 	return TRUE;
@@ -318,14 +311,9 @@ BOOLEAN
 HCAPI
 HcStringToUpperA(LPSTR lpStr)
 {
-	if (HcStringIsBad(lpStr))
-	{
-		return FALSE;
-	}
-
 	for (; *lpStr; *lpStr++)
 	{
-		*lpStr = toupper(*lpStr);
+		*lpStr = __toupper(*lpStr);
 	}
 
 	return TRUE;
@@ -336,17 +324,72 @@ BOOLEAN
 HCAPI
 HcStringToUpperW(LPWSTR lpStr)
 {
-	if (HcStringIsBad(lpStr))
+	for (; *lpStr; *lpStr++)
+	{
+		*lpStr = __toupper(*lpStr);
+	}
+
+	return TRUE;
+}
+
+HC_EXTERN_API BOOLEAN HCAPI HcStringCompareContentA(LPCSTR lpStr1, LPCSTR lpStr2)
+{
+	DWORD Size1, Size2;
+
+	if (lpStr1 == NULL && lpStr2 == NULL)
+	{
+		return TRUE;
+	}
+
+	if (lpStr1 != NULL && lpStr2 == NULL)
 	{
 		return FALSE;
 	}
 
-	for (; *lpStr; *lpStr++)
+	if (lpStr2 != NULL && lpStr1 == NULL)
 	{
-		*lpStr = towupper(*lpStr);
+		return FALSE;
 	}
 
-	return TRUE;
+	Size1 = HcStringSizeA(lpStr1);
+	Size2 = HcStringSizeA(lpStr2);
+
+	if (Size1 != Size2)
+	{
+		return FALSE;
+	}
+
+	return HcInternalCompare((PBYTE)lpStr1, (PBYTE)lpStr2, Size1);
+}
+
+HC_EXTERN_API BOOLEAN HCAPI HcStringCompareContentW(LPCWSTR lpStr1, LPCWSTR lpStr2)
+{
+	DWORD Size1, Size2;
+
+	if (lpStr1 == NULL && lpStr2 == NULL)
+	{
+		return TRUE;
+	}
+
+	if (lpStr1 != NULL && lpStr2 == NULL)
+	{
+		return FALSE;
+	}
+
+	if (lpStr2 != NULL && lpStr1 == NULL)
+	{
+		return FALSE;
+	}
+
+	Size1 = HcStringSizeW(lpStr1);
+	Size2 = HcStringSizeW(lpStr2);
+
+	if (Size1 != Size2)
+	{
+		return FALSE;
+	}
+
+	return HcInternalCompare((PBYTE)lpStr1, (PBYTE)lpStr2, Size1);;
 }
 
 HC_EXTERN_API
@@ -480,11 +523,7 @@ HcStringWithinStringA(LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
 	DWORD tLen;
 	LPSTR lpStr1 = (LPSTR)szStr, lpStr2 = (LPSTR)szToFind;
 	DWORD tSize1, tSize2;
-
-	if (HcStringIsBad(lpStr1) || HcStringIsBad(lpStr2))
-	{
-		return NULL;
-	}
+	CHAR LastChar = ANSI_NULL;
 
 	if (CaseInsensitive)
 	{
@@ -503,18 +542,21 @@ HcStringWithinStringA(LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
 	}
 
 	for (tLen = HcStringSizeA(lpStr2);
-		*(lpStr1 + tIndex) != UNICODE_NULL && !HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen);
+		*(lpStr1 + tIndex) != ANSI_NULL && !HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen);
 		tIndex++);
 
-	if (*(lpStr1 + tIndex) == UNICODE_NULL)
-	{
-		return NULL;
-	}
+
+	LastChar = *(lpStr1 + tIndex);
 
 	if (CaseInsensitive)
 	{
 		HcFree(lpStr1);
 		HcFree(lpStr2);
+	}
+
+	if (LastChar == ANSI_NULL)
+	{
+		return NULL;
 	}
 
 	return (LPSTR)(szStr + tIndex);
@@ -529,11 +571,7 @@ HcStringWithinStringW(LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
 	DWORD tLen;
 	LPWSTR lpStr1 = (LPWSTR)szStr, lpStr2 = (LPWSTR)szToFind;
 	DWORD tSize1, tSize2;
-
-	if (HcStringIsBad(lpStr1) || HcStringIsBad(lpStr2))
-	{
-		return NULL;
-	}
+	WCHAR LastChar = UNICODE_NULL;
 
 	if (CaseInsensitive)
 	{
@@ -555,15 +593,17 @@ HcStringWithinStringW(LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
 		*(lpStr1 + tIndex) != UNICODE_NULL && !HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen);
 		tIndex++);
 
-	if (*(lpStr1 + tIndex) == UNICODE_NULL)
-	{
-		return NULL;
-	}
+	LastChar = *(lpStr1 + tIndex);
 
 	if (CaseInsensitive)
 	{
 		HcFree(lpStr1);
 		HcFree(lpStr2);
+	}
+
+	if (LastChar == UNICODE_NULL)
+	{
+		return NULL;
 	}
 
 	return ((LPWSTR)(szStr + tIndex));
@@ -585,6 +625,23 @@ HcStringContainsW(LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInsensitive)
 	return HcStringWithinStringW(lpString1, lpString2, CaseInsensitive) != NULL;
 }
 
+#define MB_LEN_MAX 4
+
+size_t
+__mbstowcs(register wchar_t *pwcs, register const char *s, int n)
+{
+	register int i = n;
+	
+	while (--i >= 0) 
+	{
+		if (!(*pwcs++ = *s++))
+		{
+			return n - i - 1;
+		}
+	}
+    return n - i;
+}
+
 HC_EXTERN_API
 BOOLEAN
 HCAPI
@@ -592,18 +649,24 @@ HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
 	LPWSTR lpStringOut,
 	DWORD Size)
 {
-	if (!MultiByteToWideChar(CP_UTF8,
-		0,
-		lpStringToConvert,
-		-1,
-		lpStringOut, 
-		Size + sizeof(UNICODE_NULL)))
-	{
-		return FALSE;
-	}
-
+	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, Size + 1 /* null */);
 	HcStringTerminateW(lpStringOut, Size);
 	return TRUE;
+}
+
+size_t
+__wcstombs(register char *s, register const wchar_t *pwcs, int n)
+{
+	register int i = n;
+	
+	while (--i >= 0) 
+	{
+		if (!(*s++ = *pwcs++))
+		{
+			break;
+		}
+	}
+	return n - i - 1;
 }
 
 HC_EXTERN_API
@@ -613,21 +676,9 @@ HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 	LPSTR lpStringOut,
 	DWORD Size)
 {
-	/* Do the convert. */
-	if (!WideCharToMultiByte(CP_UTF8,
-		0,
-		lpStringToConvert,
-		-1,
-		lpStringOut,
-		Size + sizeof(ANSI_NULL),
-		NULL,
-		NULL))
-	{
-		return FALSE;
-	}
-
+	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, Size + sizeof(ANSI_NULL));
 	HcStringTerminateA(lpStringOut, Size);
-	return TRUE;
+	return retn > 0;
 }
 
 HC_EXTERN_API
@@ -713,7 +764,7 @@ HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, DWORD dwSize)
 	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
 
-	HcStringTerminateA(szOut, Size);
+	HcStringTerminateA(szOut, Size / sizeof(CHAR));
 	return TRUE;
 }
 
@@ -739,7 +790,7 @@ HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, DWORD tSize)
 	// Do the copy.
 	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
-	HcStringTerminateW(szOut, Size);
+	HcStringTerminateW(szOut, Size / sizeof(WCHAR));
 
 	return TRUE;
 }
