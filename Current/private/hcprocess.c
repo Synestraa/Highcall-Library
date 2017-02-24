@@ -1624,7 +1624,7 @@ HcProcessGetCommandLineA(
 	if (bAlloc)
 	{
 		*lpszCommandline = HcStringAllocA(tRetnLength);
-		HcStringCopyW(*lpszCommandline, lpCmd, tRetnLength);
+		HcStringCopyConvertWtoA(lpCmd, *lpszCommandline, tRetnLength);
 	}
 
 	HcFree(lpCmd);
@@ -1742,16 +1742,16 @@ HCAPI
 HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR szDirectory)
 {
 	LPWSTR lpCopy = HcStringAllocW(MAX_PATH);
-	DWORD dirSize = 0;
+	DWORD dwCount;
 
-	dirSize = HcProcessGetCurrentDirectoryW(hProcess, lpCopy);
-	if (!dirSize)
+	dwCount = HcProcessGetCurrentDirectoryW(hProcess, lpCopy);
+	if (!dwCount)
 	{
 		HcFree(lpCopy);
 		return FALSE;
 	}
 
-	if (!HcStringCopyConvertWtoA(lpCopy, szDirectory, HcStringUnicodeLengthToAnsi(dirSize) + sizeof(ANSI_NULL)))
+	if (!HcStringCopyConvertWtoA(lpCopy, szDirectory, dwCount))
 	{
 		HcFree(lpCopy);
 		return FALSE;

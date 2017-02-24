@@ -650,7 +650,7 @@ HcStringCopyConvertAtoW(LPCSTR lpStringToConvert,
 	DWORD dwStringCount)
 {
 	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, dwStringCount);
-	TSTR_W(lpStringOut, dwStringCount);
+	TERMINATE_W(lpStringOut, dwStringCount);
 	return TRUE;
 }
 
@@ -677,7 +677,7 @@ HcStringCopyConvertWtoA(LPCWSTR lpStringToConvert,
 	DWORD dwStringCount)
 {
 	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, dwStringCount);
-	TSTR_A(lpStringOut, dwStringCount);
+	TERMINATE_A(lpStringOut, dwStringCount);
 	return retn > 0;
 }
 
@@ -748,16 +748,10 @@ HcStringCopyA(IN LPSTR szOut, LPCSTR szcIn, DWORD dwSize)
 		Size = HcStringSizeA(szOut);
 		if (!Size)
 		{
-			//
-			// Invalid pointer.
-			//
 			return FALSE;
 		}
 	}
 
-	//
-	// Do the copy.
-	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
 
 	TSTR_A(szOut, Size / sizeof(CHAR));
@@ -775,16 +769,10 @@ HcStringCopyW(IN LPWSTR szOut, LPCWSTR szcIn, DWORD tSize)
 		Size = HcStringSizeW(szOut);
 		if (!Size)
 		{
-			//
-			// Invalid pointer.
-			//
 			return FALSE;
 		}
 	}
 
-	//
-	// Do the copy.
-	//
 	HcInternalCopy(szOut, (PVOID)szcIn, Size);
 	TSTR_W(szOut, Size / sizeof(WCHAR));
 
