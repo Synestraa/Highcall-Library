@@ -508,10 +508,10 @@ PVOID
 HCAPI
 HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 {
-	PVOID Recreated = NULL;
-	PBYTE Original = NULL;
-	DWORD SizeOfFunction = 0;
-	DWORD dwRequiredSize = 0;
+	PVOID Recreated;
+	PBYTE Original;
+	DWORD SizeOfFunction;
+	DWORD dwRequiredSize;
 
 	if (!lpBaseAddress)
 	{
@@ -582,8 +582,8 @@ HStatus
 HCAPI
 HcHookDetour(PDetourContext Context)
 {
-	DWORD ContinuedJumpSize = 0;
-	DWORD DetourMethodSize = 0;
+	DWORD ContinuedJumpSize;
+	DWORD DetourMethodSize;
 	HStatus Status = HOOK_NO_ERR;
 
 	if (!Context->lpSource)
@@ -742,8 +742,8 @@ HStatus
 HCAPI
 HcHookDetourContextRestore(PDetourContext Context)
 {
-	DWORD dwProtection = 0;
-	SIZE_T NumberofBytesToProtect = 0;
+	DWORD dwProtection = PAGE_EXECUTE;
+	SIZE_T NumberofBytesToProtect;
 	PVOID Base = NULL;
 
 	if (!Context->lpSource)

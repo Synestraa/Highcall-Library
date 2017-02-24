@@ -1,56 +1,15 @@
 #include "../public/hcinject.h"
-
-//
-// For HcObjectWait
-//
 #include "../public/hcobject.h"
-
-#pragma comment(lib, "user32.lib")
-
-//
-// For files
-//
 #include "../public/hcfile.h"
-
-//
-// For process interaction
-//
 #include "../public/hcprocess.h"
-
-//
-// For image file parsing
-//
 #include "../public/hcpe.h"
-
-//
-// For HcModuleProcedureAddress()
-//
 #include "../public/hcmodule.h"
-
-//
-// For HcGlobal
-//
 #include "../public/hcglobal.h"
-
-//
-// For HcVirtualAllocEx
-//
 #include "../public/hcvirtual.h"
-
-//
-// For string stuff
-// 
 #include "../public/hcstring.h"
-
-//
-// For HcClose
-//
-#include "sys/hcsyscall.h"
-
-//
-// For errors
-//
 #include "../public/hcerror.h"
+
+#include "sys/hcsyscall.h"
 
 //
 // Typedef for LoadLibraryA, used in obsolete struct HC_MANUAL_MAP

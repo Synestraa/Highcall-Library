@@ -103,18 +103,21 @@ HcSysInitializeNativeSystem()
 	ULONG_PTR dwFileOffset = 0;
 	LPBYTE VirtualAddress = 0;
 	LPWSTR lpModulePath = HcStringAllocW(MAX_PATH);
-	PIMAGE_EXPORT_DIRECTORY pExports = NULL;
-	PDWORD pExportNames = NULL;
-	PDWORD pExportFunctions = NULL;
-	PWORD pExportOrdinals = NULL;
-	LPSTR lpCurrentFunction = NULL;
-	PIMAGE_NT_HEADERS pHeaderNT = NULL;
+	PIMAGE_EXPORT_DIRECTORY pExports;
+	PDWORD pExportNames;
+	PDWORD pExportFunctions;
+	PWORD pExportOrdinals;
+	LPSTR lpCurrentFunction;
+	PIMAGE_NT_HEADERS pHeaderNT;
 	LPBYTE RelativeVirtualAddress = 0;
 	LPBYTE lpModule = (LPBYTE) HcGlobal.HandleNtdll;
 	HMODULE hModule = HcGlobal.HandleNtdll;
 	SIZE_T FileSize;
 	FILE_STANDARD_INFORMATION FileStandard;
 	IO_STATUS_BLOCK IoStatusBlock;
+
+	ZERO(&IoStatusBlock);
+	ZERO(&FileStandard);
 
 	pHeaderNT = HcPEGetNtHeader(hModule);
 	if (!pHeaderNT || !lpModulePath)
@@ -130,7 +133,6 @@ HcSysInitializeNativeSystem()
 
 	wchar_t path[] = L"C:/Windows/System32/ntdll.dll";
 	HcStringCopyW(lpModulePath, path, sizeof(path));
-
 
 	/* Open it up */
 	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
