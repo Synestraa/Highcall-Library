@@ -1,31 +1,9 @@
-/*++
-
-Module Name:
-
-hcinternal.c
-
-Abstract:
-
-This module implements internal memory handling functions. i.e. HcInternalCopy, memmove, HcInternalSet... as well as other functions used in gamehacking.
-
-Author:
-
-Synestra 9/11/2016
-
-Revision History:
-
-Synestra 10/15/2016
-
---*/
-
-#include "../public/hcinternal.h"
-#include "../public/hcstring.h"
-#include "../public/hcvirtual.h"
+#include <highcall.h>
 
 //
 // Used (modified) disassembler engine: https://github.com/gdabah/distorm
 //
-#include "distorm/include/distorm.h"
+#include "../distorm/include/distorm.h"
 
 HC_EXTERN_API 
 BOOLEAN

@@ -8,14 +8,13 @@ Copyright (C) 2003-2016 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
+#include <highcall.h>
 
 #include "config.h"
 #include "operands.h"
 #include "x86defs.h"
 #include "insts.h"
 #include "../include/mnemonics.h"
-
-#include "../../../public/hcdef.h"
 
 /* Maps a register to its register-class mask. */
 uint32_t _REGISTERTORCLASS[] = /* Based on _RegisterType enumeration! */

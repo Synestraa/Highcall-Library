@@ -1,7 +1,7 @@
 #ifndef HC_SYSCALL_H
 #define HC_SYSCALL_H
 
-#include "../../public/hcdef.h"
+#include "../../public/base.h"
 
 //
 // SYS_INDEX invalid code

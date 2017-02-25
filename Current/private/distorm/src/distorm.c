@@ -9,6 +9,7 @@ Copyright (C) 2003-2016 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
+#include <highcall.h>
 
 #include "../include/distorm.h"
 #include "config.h"
@@ -18,7 +19,6 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "wstring.h"
 #include "../include/mnemonics.h"
 
-#include "../../../public/hcinternal.h"
 
 /* C DLL EXPORTS */
 #ifdef SUPPORT_64BIT_OFFSET

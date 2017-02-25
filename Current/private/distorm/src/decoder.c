@@ -8,6 +8,7 @@ Copyright (C) 2003-2016 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
+#include <highcall.h>
 
 #include "decoder.h"
 #include "instructions.h"
@@ -17,8 +18,6 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "operands.h"
 #include "insts.h"
 #include "../include/mnemonics.h"
-
-#include "../../../public/hcinternal.h" // HcInternalSet
 
 /* Instruction Prefixes - Opcode - ModR/M - SIB - Displacement - Immediate */
 

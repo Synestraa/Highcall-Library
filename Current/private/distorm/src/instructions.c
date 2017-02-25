@@ -8,6 +8,7 @@ Copyright (C) 2003-2016 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
+#include <highcall.h>
 
 #include "instructions.h"
 
@@ -15,8 +16,6 @@ This library is licensed under the BSD license. See the file COPYING.
 #include "prefix.h"
 #include "x86defs.h"
 #include "../include/mnemonics.h"
-
-#include "../../../public/hcdef.h"
 
 /* Helper macros to extract the type or index from an inst-node value. */
 #define INST_NODE_INDEX(n) ((n) & 0x1fff)

@@ -7,48 +7,6 @@
     <ClCompile Include="private\distorm\src\distorm.c">
       <Filter>private\distorm</Filter>
     </ClCompile>
-    <ClCompile Include="private\hcfile.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcerror.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcconstruct.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hchook.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcinject.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcinternal.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcmodule.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcobject.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcpe.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcprocess.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcstring.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hctoken.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcvirtual.c">
-      <Filter>private</Filter>
-    </ClCompile>
-    <ClCompile Include="private\hcvolume.c">
-      <Filter>private</Filter>
-    </ClCompile>
     <ClCompile Include="private\distorm\src\wstring.c">
       <Filter>private\distorm</Filter>
     </ClCompile>
@@ -70,13 +28,56 @@
     <ClCompile Include="private\distorm\src\instructions.c">
       <Filter>private\distorm</Filter>
     </ClCompile>
-    <ClCompile Include="private\sys\hcsyscall.c">
-      <Filter>private\sys</Filter>
-    </ClCompile>
     <ClCompile Include="Build\Include\highcall.c">
       <Filter>include</Filter>
     </ClCompile>
-    <ClCompile Include="private\hccommon.c" />
+    <ClCompile Include="private\sys\syscall.c">
+      <Filter>private\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\common.c" />
+    <ClCompile Include="private\kernel\construct.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\error.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\file.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\hook.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\inject.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\internal.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\module.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\object.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\path.c" />
+    <ClCompile Include="private\kernel\pexec.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\process.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\string.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\token.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\virtual.c">
+      <Filter>private</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\volume.c">
+      <Filter>private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -87,51 +88,6 @@
     </ClInclude>
     <ClInclude Include="private\distorm\include\distorm.h">
       <Filter>private\distorm</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcdef.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcerror.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcfile.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcglobal.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hchook.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcinject.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcinternal.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcmodule.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcobject.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcpe.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcprocess.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcstring.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hctoken.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcvirtual.h">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="public\hcvolume.h">
-      <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="private\distorm\src\x86defs.h">
       <Filter>private\distorm</Filter>
@@ -169,16 +125,14 @@
     <ClInclude Include="public\native.h">
       <Filter>public</Filter>
     </ClInclude>
-    <ClInclude Include="private\sys\hcsyscall.h">
-      <Filter>private\sys</Filter>
-    </ClInclude>
     <ClInclude Include="Build\Include\highcall.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="public\hccommon.h">
-      <Filter>public</Filter>
-    </ClInclude>
     <ClInclude Include="public\ntuser.h" />
+    <ClInclude Include="public\base.h" />
+    <ClInclude Include="private\sys\syscall.h">
+      <Filter>private\sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="private\sys\asm\AdjustPrivilegesToken.asm">

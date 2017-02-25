@@ -1,9 +1,6 @@
-#include "../public/hccommon.h"
-#include "../public/hcobject.h"
-#include "../public/hcerror.h"
-#include "../public/hcinternal.h"
+#include <highcall.h>
 
-#include "sys/hcsyscall.h"
+#include "../sys/syscall.h"
 
 #define WAIT_IO_COMPLETION 0xC0
 

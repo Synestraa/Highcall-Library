@@ -1,7 +1,4 @@
-#include "../public/hcdef.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcprocess.h"
-#include "../public/hcstring.h"
+#include <highcall.h>
 
 PHC_MODULE_INFORMATIONW HCAPI HcInitializeModuleInformationW(DWORD tNameSize, DWORD tPathSize)
 {

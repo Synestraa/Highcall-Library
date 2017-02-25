@@ -1,28 +1,5 @@
-/*++
-
-Module Name:
-
-hctoken.c
-
-Abstract:
-
-This module implements windows privilege handlers.
-
-Author:
-
-Synestra 9/11/2016
-
-Revision History:
-
-Synestra 10/15/2016
-
---*/
-
-#include "sys/hcsyscall.h"
-
-#include "../public/hctoken.h"
-#include "../public/hcstring.h"
-#include "../public/hcvirtual.h"
+#include <highcall.h>
+#include "../sys/syscall.h"
 
 typedef struct
 {

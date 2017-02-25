@@ -1,20 +1,7 @@
-/*
-	@File: hchook.c
-	@Purpose: Userspace function detouring, detour reconstruction, detour assembly code relocation. 
-		As of @version 9/11/2016 it provides a stable "midfunction" detour with relocation fixes, allowing much more stable and secure interceptions.
+#include <highcall.h>
 
-	@Author: Synestraa
-	@version 9/11/2016
-*/
-
-#include "sys/hcsyscall.h"
-#include "distorm/include/distorm.h"
-
-#include "../public/hchook.h"
-#include "../public/hcfile.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcstring.h"
-#include "../public/hcerror.h"
+#include "../sys/syscall.h"
+#include "../distorm/include/distorm.h"
 
 #define MAX_INSTRUCTIONS 0x100
 #define OPCODE_INSTRUCTION_NOP (0x90)

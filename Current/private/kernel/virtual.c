@@ -1,29 +1,7 @@
-/*++
+#include <highcall.h>
 
-Module Name:
-
-hcvirtual.c
-
-Abstract:
-
-This module implements virtual memory handling functions from kernel32.dll
-
-Author:
-
-Synestra 7/9/2016, information was gathered from various sources.
-
-Revision History:
-
-Synestra 10/10/2016 revised HcAlloc and HcFree.
-
---*/
-
-#include "sys/hcsyscall.h"
-
-#include "../public/hcvirtual.h"
-#include "../public/hcerror.h"
-#include "../public/hcinternal.h"
-#include "../public/imports.h"
+#include "../sys/syscall.h"
+#include "../../public/imports.h"
 
 //
 // Unimplemented, in progress for a later replacement of malloc and free.

@@ -1,34 +1,7 @@
-/*++
+#include <highcall.h>
 
-Module Name:
-
-hcprocess.c
-
-Abstract:
-
-This module implements windows NT/WIN32 usermode to kernel "process" information handlers, declared in hcprocess.h.
-
-Author:
-
-Synestra 9/11/2016
-
-Revision History:
-
-Synestra 10/15/2016
-
---*/
-
-#include "sys/hcsyscall.h"
-
-#include "../public/hcprocess.h"
-#include "../public/imports.h"
-#include "../public/hcfile.h"
-#include "../public/hcpe.h"
-#include "../public/hctoken.h"
-#include "../public/hcobject.h"
-#include "../public/hcerror.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcstring.h"
+#include "../../public/imports.h"
+#include "../sys/syscall.h"
 
 HC_EXTERN_API
 DWORD
@@ -1197,61 +1170,6 @@ HcProcessEnumByNameW(CONST LPCWSTR lpProcessName,
 
 	HcFree(Buffer);
 	return FALSE;
-}
-
-SIZE_T
-WINAPI
-HcWin32GetModuleFileName(CONST HANDLE hProcess,
-	CONST LPVOID lpv,
-	LPWSTR lpFilename,
-	CONST DWORD nSize)
-{
-	// @defineme
-	SIZE_T tFileNameLength = 0;
-	SIZE_T tOutFileNameSize = 0;
-	NTSTATUS Status;
-
-	struct
-	{
-		MEMORY_SECTION_NAME memSection;
-		WCHAR CharBuffer[MAX_PATH];
-	} SectionName;
-
-	/* If no buffer, no need to keep going on */
-	if (nSize == 0)
-	{
-		HcErrorSetNtStatus(STATUS_INSUFFICIENT_RESOURCES);
-		return 0;
-	}
-
-	/* Query section name */
-	Status = NtQueryVirtualMemory(hProcess, lpv, MemoryMappedFilenameInformation,
-		&SectionName, sizeof(SectionName), &tOutFileNameSize);
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcErrorSetNtStatus(Status);
-		return 0;
-	}
-
-	/* Prepare to copy file name */
-	tFileNameLength = tOutFileNameSize = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
-	if (tOutFileNameSize + 1 > nSize)
-	{
-		tFileNameLength = nSize - 1;
-		tOutFileNameSize = nSize;
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-	}
-	else
-	{
-		HcErrorSetNtStatus(STATUS_SUCCESS);
-	}
-
-	/* Copy, zero and return */
-	HcInternalCopy(lpFilename, SectionName.memSection.SectionFileName.Buffer, tFileNameLength * sizeof(WCHAR));
-	lpFilename[tFileNameLength] = 0;
-
-	return tOutFileNameSize;
 }
 
 HC_EXTERN_API

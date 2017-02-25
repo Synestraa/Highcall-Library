@@ -1,12 +1,7 @@
-#include "../public/hcvolume.h"
-#include "../public/hcerror.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcstring.h"
-#include "../public/hcobject.h"
-#include "../public/hcfile.h"
-#include "../public/imports.h"
+#include <highcall.h>
 
-#include "sys/hcsyscall.h"
+#include "../sys/syscall.h"
+#include "../../public/imports.h"
 
 static
 HANDLE

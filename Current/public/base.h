@@ -1,8 +1,13 @@
-#ifndef HC_DEFINE_H
-#define HC_DEFINE_H
+#pragma once
 
-#include "../public/native.h"
+#pragma region General Includes
+#include "ntuser.h" /* contains native.h, wintype.h */
 
+#include <winerror.h> /* for DOS error codes */
+#include <minwinbase.h> /* definitions */
+#pragma endregion
+
+#pragma region General Usage Definitions
 //
 // Define HIGHCALL_DYNAMIC for .dll usage.
 //
@@ -34,6 +39,9 @@ typedef long SYS_INDEX;
 #define INFINITE 0xFFFFFFFF  // Infinite timeout
 #endif
 
+//
+// dll linkage
+//
 #ifdef HIGHCALL_DYNAMIC
 
 #ifdef __cplusplus
@@ -43,11 +51,12 @@ typedef long SYS_INDEX;
 #endif // CPP
 
 #else
+#define HC_EXTERN_API /* no linkage */
+#endif
 
-#define HC_EXTERN_API
-
-#endif // DYNAMIC LIBRARY
-
+//
+// .asm global fix, e
+//
 #ifdef __cplusplus
 #define HC_GLOBAL extern "C"
 #else
@@ -62,4 +71,15 @@ typedef long SYS_INDEX;
 #define Out
 #endif
 
-#endif
+//
+// Windows version defines for initialization routines.
+//
+#define WINDOWS_7				0061
+#define WINDOWS_8				0062
+#define WINDOWS_8_1				0063
+#define WINDOWS_10_1507			0100
+#define WINDOWS_10_1511			0101
+#define WINDOWS_10_1607			0102
+#define WINDOWS_NOT_SUPPORTED	0000
+#define WINDOWS_NOT_DEFINED	   -0001
+#pragma endregion

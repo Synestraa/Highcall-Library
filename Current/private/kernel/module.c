@@ -1,11 +1,24 @@
-// Requires documentation
+#include <highcall.h>
 
-#include "../public/hcmodule.h"
-#include "../public/hcstring.h"
-#include "../public/imports.h"
-#include "../public/hcpe.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcerror.h"
+#include "../../public/imports.h"
+
+HC_EXTERN_API 
+DWORD 
+HCAPI 
+HcModuleFileNameA(HANDLE hModule, LPSTR lpModuleFileName)
+{
+	LPWSTR lpTemp = HcStringAllocW(MAX_PATH);
+	DWORD Length;
+
+	Length = HcModuleFileNameW(hModule, lpTemp);
+	if (Length > 0)
+	{
+		HcStringCopyConvertWtoA(lpTemp, lpModuleFileName, Length);
+	}
+
+	HcFree(lpTemp);
+	return Length;
+}
 
 HC_EXTERN_API
 DWORD
@@ -16,7 +29,6 @@ HcModuleFileNameW(HANDLE hModule, LPWSTR lpModuleFileName)
 	PLDR_DATA_TABLE_ENTRY Module;
 	ULONG Length = 0;
 	ULONG Cookie = 0;
-	PPEB Peb;
 
 	if (!hModule)
 	{
@@ -220,7 +232,7 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 		}
 	}
 
-	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 	return hReturn;
 }
 
@@ -271,7 +283,7 @@ HcModuleHide(CONST IN HMODULE hModule)
 		}
 	}
 
-	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 	return bReturn;
 }
 

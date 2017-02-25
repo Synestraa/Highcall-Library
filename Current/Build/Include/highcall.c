@@ -9,7 +9,7 @@
 #include "highcall.h"
 
 #include "../../public/imports.h"
-#include "../../private/sys/hcsyscall.h"
+#include "../../private/sys/syscall.h"
 
 HcGlobalEnv HcGlobal;
 

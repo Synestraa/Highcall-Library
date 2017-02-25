@@ -1,6 +1,4 @@
-// Requires documentation
-
-#include "../public/hcpe.h"
+#include <highcall.h>
 
 HC_EXTERN_API
 BOOLEAN

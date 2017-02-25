@@ -1,15 +1,4 @@
-/*
-	@File: hcerror.c
-	@Purpose: Keeping track of errors occured throughout highcall functions.
-			The functions behave exactly like windows SetLastError, GetLastError.
-
-	@Author: Synestraa
-	@version 9/11/2016
-*/
-
-#include "../public/hcerror.h"
-#include "../public/hcstring.h"
-#include "../public/hcvirtual.h"
+#include <highcall.h>
 
 struct error_table
 {

@@ -1,18 +1,5 @@
-/*
-	@File: hcobject.c
-	@Purpose: Windows object handling.
-
-	@Author: Synestraa
-	@version 9/10/2016
-*/
-
-#include "sys/hcsyscall.h"
-
-#include "../public/hcobject.h"
-#include "../public/hcdef.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcerror.h"
-#include "../public/hcstring.h"
+#include <highcall.h>
+#include "../sys/syscall.h"
 
 #define STD_INPUT_HANDLE    ((DWORD)-10)
 #define STD_OUTPUT_HANDLE   ((DWORD)-11)

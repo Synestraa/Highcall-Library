@@ -1,31 +1,7 @@
-/*++
+#include <highcall.h>
 
-Module Name:
-
-hcfile.c
-
-Abstract:
-
-This module implements custom file handling functions as we as reimplementations of kernel32.dll.
-
-Author:
-
-Synestra 9/11/2016, information was gathered from various sources.
-
-Revision History:
-
---*/
-
-#include "sys/hcsyscall.h"
-
-#include "../public/hcfile.h"
-#include "../public/hcmodule.h"
-#include "../public/hcpe.h"
-#include "../public/hcobject.h"
-#include "../public/hcerror.h"
-#include "../public/hcvirtual.h"
-#include "../public/imports.h"
-#include "../public/hcstring.h"
+#include "../sys/syscall.h"
+#include "../../public/imports.h"
 
 HC_EXTERN_API
 DWORD

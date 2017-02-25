@@ -1,30 +1,4 @@
-/*++
-
-Module Name:
-
-hcstring.c
-
-Abstract:
-
-Implements various string helper functions from hcstring.h module. Support should be kept for both Unicode (W affix) and Ansi (A affix)
-
-Author:
-
-Synestra 10/14/2016
-
-Revision History:
-
---*/
-
-//
-// For structure definitions
-//
-#include "../public/hcstring.h"
-
-//
-// For HcFree and HcAlloc
-//
-#include "../public/hcvirtual.h"
+#include <highcall.h>
 
 HC_EXTERN_API LPSTR HCAPI HcStringAllocA(DWORD tSize)
 {
@@ -64,7 +38,7 @@ HcStringSplitA(LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PDWORD
 	while (lpToken)
 	{
 		/* Duplicate the string and insert into return array. */
-		//lpStrArrayOut[*pdwCount] = _strdup(strtok_s(NULL, lpTerminatedDelim, &lpToken));
+		lpStrArrayOut[*pdwCount] = _strdup(strtok_s(NULL, lpTerminatedDelim, &lpToken));
 
 		*pdwCount += 1;
 	}

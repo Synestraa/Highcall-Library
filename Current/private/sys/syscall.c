@@ -1,14 +1,7 @@
-#include "hcsyscall.h"
+#include <highcall.h>
 
-#include "../../public/hcmodule.h"
-#include "../../public/hcfile.h"
-#include "../../public/hcglobal.h"
-#include "../../public/hcvirtual.h"
-#include "../../public/hcprocess.h"
+#include "syscall.h"
 #include "../../public/imports.h"
-#include "../../public/hcstring.h"
-#include "../../public/hcpe.h"
-#include "../../public/hcerror.h"
 
 #define NT_SYMBOL "Nt"
 #define SYSINDEX_ASSERT(x) \

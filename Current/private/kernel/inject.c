@@ -1,35 +1,10 @@
-#include "../public/hcinject.h"
-#include "../public/hcobject.h"
-#include "../public/hcfile.h"
-#include "../public/hcprocess.h"
-#include "../public/hcpe.h"
-#include "../public/hcmodule.h"
-#include "../public/hcglobal.h"
-#include "../public/hcvirtual.h"
-#include "../public/hcstring.h"
-#include "../public/hcerror.h"
+#include <highcall.h>
+#include "../sys/syscall.h"
 
-#include "sys/hcsyscall.h"
-
-//
-// Typedef for LoadLibraryA, used in obsolete struct HC_MANUAL_MAP
-//
 typedef HMODULE(WINAPI *pLoadLibraryA)(LPCSTR);
-
-//
-// Typedef for GetProcAddress, used in obsolete struct HC_MANUAL_MAP
-//
 typedef FARPROC(WINAPI *pGetProcAddress)(HMODULE, LPCSTR);
-
-//
-// Typedef for DLL_MAIN, used in obsolete struct HC_MANUAL_MAP
-//
 typedef BOOLEAN(WINAPI *PDLL_MAIN)(HMODULE, SIZE_T, LPVOID);
 
-//
-// This is an obsolete and likely removed struct, which contains information used internally
-// by HcProcessInjectModuleManual.
-//
 typedef struct _MANUAL_MAP
 {
 	LPVOID ImageBase;

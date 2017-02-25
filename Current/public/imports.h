@@ -1,12 +1,11 @@
 #ifndef HC_IMPORT_H
 #define HC_IMPORT_H
 
-#include "../public/hcdef.h"
-#pragma comment(lib, "ntdll.lib")
+#include "native.h"
+#pragma comment(lib, "ntdll.lib") /* link against ntdll for all these juicy rtl/nt/ldr functions */
 
-//
-// RTL Path Types
-//
+#define RtlGetProcessHeap() ((HANDLE)(NtCurrentPeb()->ProcessHeap))
+
 typedef enum _RTL_PATH_TYPE
 {
 	RtlPathTypeUnknown,
@@ -18,8 +17,6 @@ typedef enum _RTL_PATH_TYPE
 	RtlPathTypeLocalDevice,
 	RtlPathTypeRootLocalDevice,
 } RTL_PATH_TYPE;
-
-#define RtlGetProcessHeap() ((HANDLE)(NtCurrentPeb()->ProcessHeap))
 
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_AMBIGUOUS   (0x00000001)
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_UNC         (0x00000002)
@@ -96,6 +93,15 @@ NTSYSAPI NTSTATUS NTAPI LdrLockLoaderLock(IN ULONG Flags,
 
 NTSYSAPI NTSTATUS NTAPI LdrUnlockLoaderLock(IN ULONG Flags,
 	IN ULONG Cookie OPTIONAL);
+
+NTSYSAPI ULONG NTAPI RtlGetFullPathName_U(_In_ PCWSTR FileName,
+	_In_ ULONG 	Size,
+	_Out_z_bytecap_(Size) PWSTR Buffer,
+	_Out_opt_ PWSTR* ShortName);
+
+NTSYSAPI NTSTATUS NTAPI RtlQueryEnvironmentVariable_U(PWSTR Environment,
+	PUNICODE_STRING Name,
+	PUNICODE_STRING Value);
 
 /* NT FUNCTIONS */
 
