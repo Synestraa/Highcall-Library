@@ -89,8 +89,114 @@ ExtractSyscallIndex(LPBYTE lpByte)
 #endif
 }
 
+//
+// The purpose of this function is to update system call indicies based on a buffer received from reading ntdll.dll.
+//
+// lpModule is required to be the base of ntdll.dll!
+//
+static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
+{
+	PIMAGE_EXPORT_DIRECTORY pExports;
+	PDWORD pExportNames;
+	PDWORD pExportFunctions;
+	PWORD pExportOrdinals;
+	LPSTR lpCurrentFunction;
+	PIMAGE_NT_HEADERS pHeaderNT;
+	DWORD dwFileOffset = 0;
+	LPBYTE VirtualAddress = 0;
+	LPBYTE RelativeVirtualAddress = 0;
+
+	pHeaderNT = HcPEGetNtHeader((HMODULE)lpModule);
+	if (!pHeaderNT)
+	{
+		return FALSE;
+	}
+
+	pExports = HcPEGetExportDirectory(HcGlobal.HandleNtdll);
+	if (!pExports)
+	{
+		return FALSE;
+	}
+
+	/* Get the address containg null terminated export names, in ASCII */
+	pExportNames = (PDWORD)(pExports->AddressOfNames + lpModule);
+	pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + lpModule);
+	pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + lpModule);
+
+	/* List through functions */
+	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
+	{
+		lpCurrentFunction = (LPSTR)(pExportNames[i] + lpModule);
+		if (!lpCurrentFunction)
+		{
+			continue;
+		}
+
+		VirtualAddress = pExportFunctions[pExportOrdinals[i]] + lpModule;
+		if (VirtualAddress)
+		{
+			/* Calculate the relative offset */
+			RelativeVirtualAddress = (LPBYTE)(VirtualAddress - lpModule);
+
+			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+
+			PBYTE lpbFn = lpBuffer + dwFileOffset;
+			if (!IsSyscall(lpbFn))
+			{
+				continue;
+			}
+
+			DWORD dwIndex = ExtractSyscallIndex(lpbFn);
+
+			/* Syscall identification begin */
+
+			SYSINDEX_ASSERT(QueryInformationToken);
+			SYSINDEX_ASSERT(OpenProcessToken);
+			SYSINDEX_ASSERT(ResumeProcess);
+			SYSINDEX_ASSERT(SuspendProcess);
+			SYSINDEX_ASSERT(AllocateVirtualMemory);
+			SYSINDEX_ASSERT(FreeVirtualMemory);
+			SYSINDEX_ASSERT(ResumeThread);
+			SYSINDEX_ASSERT(QueryInformationThread);
+			SYSINDEX_ASSERT(CreateThread);
+			SYSINDEX_ASSERT(FlushInstructionCache);
+			SYSINDEX_ASSERT(OpenProcess);
+			SYSINDEX_ASSERT(ProtectVirtualMemory);
+			SYSINDEX_ASSERT(ReadVirtualMemory);
+			SYSINDEX_ASSERT(WriteVirtualMemory);
+			SYSINDEX_ASSERT(QueryInformationProcess);
+			SYSINDEX_ASSERT(QuerySystemInformation);
+			SYSINDEX_ASSERT(Close);
+			SYSINDEX_ASSERT(QueryVirtualMemory);
+			SYSINDEX_ASSERT(AdjustPrivilegesToken);
+			SYSINDEX_ASSERT(SetInformationThread);
+			SYSINDEX_ASSERT(OpenDirectoryObject);
+			SYSINDEX_ASSERT(CreateThreadEx);
+			SYSINDEX_ASSERT(WaitForSingleObject);
+			SYSINDEX_ASSERT(WaitForMultipleObjects);
+			SYSINDEX_ASSERT(LockVirtualMemory);
+			SYSINDEX_ASSERT(UnlockVirtualMemory);
+			SYSINDEX_ASSERT(CreateFile);
+			SYSINDEX_ASSERT(QueryInformationFile);
+			SYSINDEX_ASSERT(QueryVolumeInformationFile);
+			SYSINDEX_ASSERT(QueryObject);
+			SYSINDEX_ASSERT(DelayExecution);
+			SYSINDEX_ASSERT(WriteFile);
+			SYSINDEX_ASSERT(TerminateProcess);
+			SYSINDEX_ASSERT(DeviceIoControlFile);
+			SYSINDEX_ASSERT(CreateEvent);
+			SYSINDEX_ASSERT(DuplicateObject);
+			SYSINDEX_ASSERT(SetInformationFile);
+			SYSINDEX_ASSERT(ReadFile);
+
+			/* Syscwall identification end */
+		}
+	}
+
+	return TRUE;
+}
+
 /*
- *
  * This function should not be exported.
  * It's use is defined on a per session basis.
  * Use of highcall syscalls unpermitted due to undefined indicies.
@@ -103,16 +209,7 @@ HcSysInitializeNativeSystem()
 	NTSTATUS Status;
 	PBYTE lpBuffer;
 	HANDLE hFile;
-	ULONG_PTR dwFileOffset = 0;
-	LPBYTE VirtualAddress = 0;
-	LPWSTR lpModulePath = HcStringAllocW(MAX_PATH);
-	PIMAGE_EXPORT_DIRECTORY pExports;
-	PDWORD pExportNames;
-	PDWORD pExportFunctions;
-	PWORD pExportOrdinals;
-	LPSTR lpCurrentFunction;
-	PIMAGE_NT_HEADERS pHeaderNT;
-	LPBYTE RelativeVirtualAddress = 0;
+	LPWSTR lpModulePath;
 	LPBYTE lpModule = (LPBYTE) HcGlobal.HandleNtdll;
 	HMODULE hModule = HcGlobal.HandleNtdll;
 	DWORD dwFileSize;
@@ -127,17 +224,7 @@ HcSysInitializeNativeSystem()
 	ZERO(&IoStatusBlock);
 	ZERO(&FileStandard);
 
-	pHeaderNT = HcPEGetNtHeader(hModule);
-	if (!pHeaderNT || !lpModulePath)
-	{
-		return 0;
-	}
-
-	pExports = HcPEGetExportDirectory(HcGlobal.HandleNtdll);
-	if (!pExports)
-	{
-		return FALSE;
-	}
+	lpModulePath = HcStringAllocW(MAX_PATH);
 
 	wchar_t path[] = L"C:/Windows/System32/ntdll.dll";
 	HcStringCopyW(lpModulePath, path, sizeof(path));
@@ -148,6 +235,7 @@ HcSysInitializeNativeSystem()
 		NULL,
 		NULL))
 	{
+		HcFree(lpModulePath);
 		return FALSE;
 	}
 
@@ -178,6 +266,7 @@ HcSysInitializeNativeSystem()
 
 	if (!NT_SUCCESS(Status))
 	{
+		HcFree(lpModulePath);
 		return FALSE;
 	}
 
@@ -192,6 +281,7 @@ HcSysInitializeNativeSystem()
 
 	if (!NT_SUCCESS(Status))
 	{
+		HcFree(lpModulePath);
 		return FALSE;
 	}
 
@@ -239,76 +329,7 @@ HcSysInitializeNativeSystem()
 
 	NtClose(hFile);
 
-	/* Get the address containg null terminated export names, in ASCII */
-	pExportNames = (PDWORD)(pExports->AddressOfNames + lpModule);
-	pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + lpModule);
-	pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + lpModule);
-
-	/* List through functions */
-	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
-	{
-		lpCurrentFunction = (LPSTR)(pExportNames[i] + lpModule);
-		if (!lpCurrentFunction)
-		{
-			continue;
-		}
-
-		VirtualAddress = pExportFunctions[pExportOrdinals[i]] + lpModule;
-		if (VirtualAddress)
-		{
-			/* Calculate the relative offset */
-			RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
-
-			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
-
-			PBYTE lpbFn = lpBuffer + dwFileOffset;
-			if (!IsSyscall(lpbFn))
-			{
-				continue;
-			}
-
-			DWORD dwIndex = ExtractSyscallIndex(lpbFn);
-
-			SYSINDEX_ASSERT(QueryInformationToken);
-			SYSINDEX_ASSERT(OpenProcessToken);
-			SYSINDEX_ASSERT(ResumeProcess);
-			SYSINDEX_ASSERT(SuspendProcess);
-			SYSINDEX_ASSERT(AllocateVirtualMemory);
-			SYSINDEX_ASSERT(FreeVirtualMemory);
-			SYSINDEX_ASSERT(ResumeThread);
-			SYSINDEX_ASSERT(QueryInformationThread);
-			SYSINDEX_ASSERT(CreateThread);
-			SYSINDEX_ASSERT(FlushInstructionCache);
-			SYSINDEX_ASSERT(OpenProcess);
-			SYSINDEX_ASSERT(ProtectVirtualMemory);
-			SYSINDEX_ASSERT(ReadVirtualMemory);
-			SYSINDEX_ASSERT(WriteVirtualMemory);
-			SYSINDEX_ASSERT(QueryInformationProcess);
-			SYSINDEX_ASSERT(QuerySystemInformation);
-			SYSINDEX_ASSERT(Close);
-			SYSINDEX_ASSERT(QueryVirtualMemory);
-			SYSINDEX_ASSERT(AdjustPrivilegesToken);
-			SYSINDEX_ASSERT(SetInformationThread);
-			SYSINDEX_ASSERT(OpenDirectoryObject);
-			SYSINDEX_ASSERT(CreateThreadEx);
-			SYSINDEX_ASSERT(WaitForSingleObject);
-			SYSINDEX_ASSERT(WaitForMultipleObjects);
-			SYSINDEX_ASSERT(LockVirtualMemory);
-			SYSINDEX_ASSERT(UnlockVirtualMemory);
-			SYSINDEX_ASSERT(CreateFile);
-			SYSINDEX_ASSERT(QueryInformationFile);
-			SYSINDEX_ASSERT(QueryVolumeInformationFile);
-			SYSINDEX_ASSERT(QueryObject);
-			SYSINDEX_ASSERT(DelayExecution);
-			SYSINDEX_ASSERT(WriteFile);
-			SYSINDEX_ASSERT(TerminateProcess);
-			SYSINDEX_ASSERT(DeviceIoControlFile);
-			SYSINDEX_ASSERT(CreateEvent);
-			SYSINDEX_ASSERT(DuplicateObject);
-			SYSINDEX_ASSERT(SetInformationFile);
-			SYSINDEX_ASSERT(ReadFile);
-		}
-	}
+	update_syscall_list(lpBuffer, lpModule);
 
 	HcFree(lpBuffer);
 	return TRUE;

@@ -8,6 +8,63 @@
 #include "../public/hcerror.h"
 
 HC_EXTERN_API
+DWORD
+HCAPI
+HcModuleFileNameW(HANDLE hModule, LPWSTR lpModuleFileName)
+{
+	PLIST_ENTRY ModuleListHead, Entry;
+	PLDR_DATA_TABLE_ENTRY Module;
+	ULONG Length = 0;
+	ULONG Cookie = 0;
+	PPEB Peb;
+
+	if (!hModule)
+	{
+		hModule = (HANDLE)NtCurrentPeb()->ImageBaseAddress;
+		if (!hModule)
+		{
+			return 0;
+		}
+	}
+
+	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+
+	/* Traverse the module list */
+	ModuleListHead = &NtCurrentPeb()->LoaderData->InLoadOrderModuleList;
+	Entry = ModuleListHead->Flink;
+
+	while (Entry != ModuleListHead)
+	{
+		Module = CONTAINING_RECORD(Entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+
+		/* Check if this is the requested module */
+		if (Module->ModuleBase == hModule)
+		{
+			Length = Module->FullModuleName.Length / sizeof(WCHAR);
+
+			if (Module->FullModuleName.Buffer == NULL || Length == 0)
+			{
+				break;
+			}
+
+			/* Copy contents */
+			HcStringCopyW(lpModuleFileName, Module->FullModuleName.Buffer, Length);
+
+			/* Break out of the loop */
+			break;
+		}
+
+		/* Advance to the next entry */
+		Entry = Entry->Flink;
+	}
+
+	/* Release the loader lock */
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
+
+	return Length;
+}
+
+HC_EXTERN_API
 PBYTE
 HCAPI
 HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
@@ -136,12 +193,16 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
 	PLIST_ENTRY pListHead, pListEntry;
+	ULONG Cookie = 0;
+	HMODULE hReturn = NULL;
 
 	/* if there is no name specified, return base address of main module */
 	if (!lpModuleName)
 	{
 		return ((HMODULE)pPeb->ImageBaseAddress);
 	}
+
+	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
 
 	/* Get the module list in load order */
 	pListHead = &(pPeb->LoaderData->InMemoryOrderModuleList);
@@ -154,11 +215,13 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 		/* Important note is that this is strict to the entire name */
 		if (HcStringEqualW(lpModuleName, pLdrDataTableEntry->FullModuleName.Buffer, TRUE))
 		{
-			return (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
+			hReturn = (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
+			break;
 		}
 	}
 
-	return 0;
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+	return hReturn;
 }
 
 #define RemoveEntryList(x) (x).Blink->Flink = (x).Flink; \
@@ -172,6 +235,8 @@ HcModuleHide(CONST IN HMODULE hModule)
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
 	PLIST_ENTRY pListHead, pListEntry;
+	BOOLEAN bReturn = FALSE;
+	ULONG Cookie = 0;
 
 	/* if there is no name specified, return base address of main module */
 	if (!hModule)
@@ -179,6 +244,8 @@ HcModuleHide(CONST IN HMODULE hModule)
 		/* we shouldn't unlink ourselves imo */
 		return FALSE;
 	}
+
+	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
 
 	/* Get the module list in load order */
 	pListHead = &(pPeb->LoaderData->InInitializationOrderModuleList);
@@ -199,11 +266,13 @@ HcModuleHide(CONST IN HMODULE hModule)
 			RemoveEntryList(pLdrDataTableEntry->InLoadOrderLinks);
 			RemoveEntryList(pLdrDataTableEntry->HashLinks);
 
-			return TRUE;
+			bReturn = TRUE;
+			break;
 		}
 	}
 
-	return FALSE;
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+	return bReturn;
 }
 
 

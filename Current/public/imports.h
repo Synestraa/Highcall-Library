@@ -26,6 +26,8 @@ typedef enum _RTL_PATH_TYPE
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_DRIVE       (0x00000003)
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_ALREADY_DOS (0x00000004)
 
+/* LDR AND RTL FUNCTIONS */
+
 NTSYSAPI
 NTSTATUS
 NTAPI RtlNtPathNameToDosPathName(
@@ -56,11 +58,11 @@ NTSYSAPI NTSTATUS NTAPI LdrLoadDll(
 	IN PUNICODE_STRING ModuleFileName,
 	OUT PHANDLE        ModuleHandle);
 
-NTSYSAPI VOID NTAPI RtlAcquirePebLock (VOID);
+NTSYSAPI VOID NTAPI RtlAcquirePebLock(VOID);
 NTSYSAPI VOID NTAPI RtlReleasePebLock(VOID);
 
-NTSYSAPI NTSTATUS NTAPI RtlLeaveCriticalSection(_In_ PRTL_CRITICAL_SECTION 	CriticalSection);
-NTSYSAPI NTSTATUS NTAPI RtlEnterCriticalSection(_In_ PRTL_CRITICAL_SECTION 	CriticalSection);
+NTSYSAPI NTSTATUS NTAPI RtlLeaveCriticalSection(IN PRTL_CRITICAL_SECTION CriticalSection);
+NTSYSAPI NTSTATUS NTAPI RtlEnterCriticalSection(IN PRTL_CRITICAL_SECTION CriticalSection);
 
 NTSYSAPI BOOLEAN NTAPI RtlDosPathNameToNtPathName_U(
 	_In_opt_z_ PCWSTR 	DosPathName,
@@ -82,6 +84,21 @@ NTSYSAPI BOOLEAN NTAPI RtlFreeHeap(IN PVOID HeapHandle,
 	IN ULONG 	Flags,
 	IN PVOID 	HeapBase);
 
+//
+// LdrLockLoaderLock Flags
+//
+#define LDR_LOCK_LOADER_LOCK_FLAG_RAISE_ON_ERRORS   0x00000001
+#define LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY          0x00000002
+
+NTSYSAPI NTSTATUS NTAPI LdrLockLoaderLock(IN ULONG Flags,
+	OUT PULONG Disposition OPTIONAL,
+	OUT PULONG_PTR Cookie OPTIONAL);
+
+NTSYSAPI NTSTATUS NTAPI LdrUnlockLoaderLock(IN ULONG Flags,
+	IN ULONG Cookie OPTIONAL);
+
+/* NT FUNCTIONS */
+
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(
 	IN  HANDLE                 FileHandle,
 	OUT PIO_STATUS_BLOCK       IoStatusBlock,
@@ -89,7 +106,6 @@ NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(
 	IN  ULONG                  Length,
 	IN  FILE_INFORMATION_CLASS FileInformationClass
 );
-
 
 NTSYSAPI NTSTATUS NTAPI NtWaitForSingleObject(IN HANDLE hObject,
 	IN BOOLEAN bAlertable,
