@@ -34,48 +34,52 @@
     <ClCompile Include="private\sys\syscall.c">
       <Filter>private\sys</Filter>
     </ClCompile>
-    <ClCompile Include="private\kernel\common.c" />
     <ClCompile Include="private\kernel\construct.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\error.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\file.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\hook.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\inject.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\internal.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\module.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\object.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
-    <ClCompile Include="private\kernel\path.c" />
     <ClCompile Include="private\kernel\pexec.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\process.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\string.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\token.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\virtual.c">
-      <Filter>private</Filter>
+      <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\kernel\volume.c">
+      <Filter>private\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\path.c">
+      <Filter>private\sys\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="private\kernel\common.c">
       <Filter>private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,10 +132,14 @@
     <ClInclude Include="Build\Include\highcall.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="public\ntuser.h" />
-    <ClInclude Include="public\base.h" />
     <ClInclude Include="private\sys\syscall.h">
       <Filter>private\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="public\base.h">
+      <Filter>private\sys\asm</Filter>
+    </ClInclude>
+    <ClInclude Include="public\ntuser.h">
+      <Filter>private\sys\asm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -228,424 +236,1260 @@
     <MASM Include="private\sys\asm\DuplicateObject.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
-    <MASM Include="private\sys\asm\DelayExecution.asm" />
-    <MASM Include="private\sys\asm\YieldExecution.asm" />
-    <MASM Include="private\sys\asm\AcceptConnectPort.asm" />
-    <MASM Include="private\sys\asm\AccessCheck.asm" />
-    <MASM Include="private\sys\asm\AccessCheckAndAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\AccessCheckByType.asm" />
-    <MASM Include="private\sys\asm\AccessCheckByTypeAndAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\AccessCheckByTypeResultList.asm" />
-    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarmByHandle.asm" />
-    <MASM Include="private\sys\asm\AddAtom.asm" />
-    <MASM Include="private\sys\asm\AddAtomEx.asm" />
-    <MASM Include="private\sys\asm\AddBootEntry.asm" />
-    <MASM Include="private\sys\asm\AddDriverEntry.asm" />
-    <MASM Include="private\sys\asm\AdjustGroupsToken.asm" />
-    <MASM Include="private\sys\asm\AdjustTokenClaimsAndDeviceGroups.asm" />
-    <MASM Include="private\sys\asm\AlertResumeThread.asm" />
-    <MASM Include="private\sys\asm\AlertThread.asm" />
-    <MASM Include="private\sys\asm\AlertThreadByThreadId.asm" />
-    <MASM Include="private\sys\asm\AllocateLocallyUniqueId.asm" />
-    <MASM Include="private\sys\asm\AllocateReserveObject.asm" />
-    <MASM Include="private\sys\asm\AllocateUserPhysicalPages.asm" />
-    <MASM Include="private\sys\asm\AllocateUuids.asm" />
-    <MASM Include="private\sys\asm\AlpcAcceptConnectPort.asm" />
-    <MASM Include="private\sys\asm\AlpcCancelMessage.asm" />
-    <MASM Include="private\sys\asm\AlpcConnectPort.asm" />
-    <MASM Include="private\sys\asm\AlpcConnectPortEx.asm" />
-    <MASM Include="private\sys\asm\AlpcCreatePort.asm" />
-    <MASM Include="private\sys\asm\AlpcCreatePortSection.asm" />
-    <MASM Include="private\sys\asm\AlpcCreateResourceReserve.asm" />
-    <MASM Include="private\sys\asm\AlpcCreateSectionView.asm" />
-    <MASM Include="private\sys\asm\AlpcCreateSecurityContext.asm" />
-    <MASM Include="private\sys\asm\AlpcDeletePortSection.asm" />
-    <MASM Include="private\sys\asm\AlpcDeleteResourceReserve.asm" />
-    <MASM Include="private\sys\asm\AlpcDeleteSectionView.asm" />
-    <MASM Include="private\sys\asm\AlpcDeleteSecurityContext.asm" />
-    <MASM Include="private\sys\asm\AlpcDisconnectPort.asm" />
-    <MASM Include="private\sys\asm\AlpcImpersonateClientContainerOfPort.asm" />
-    <MASM Include="private\sys\asm\AlpcImpersonateClientOfPort.asm" />
-    <MASM Include="private\sys\asm\AlpcOpenSenderProcess.asm" />
-    <MASM Include="private\sys\asm\AlpcOpenSenderThread.asm" />
-    <MASM Include="private\sys\asm\AlpcQueryInformation.asm" />
-    <MASM Include="private\sys\asm\AlpcQueryInformationMessage.asm" />
-    <MASM Include="private\sys\asm\AlpcRevokeSecurityContext.asm" />
-    <MASM Include="private\sys\asm\AlpcSendWaitReceivePort.asm" />
-    <MASM Include="private\sys\asm\AlpcSetInformation.asm" />
-    <MASM Include="private\sys\asm\ApphelpCacheControl.asm" />
-    <MASM Include="private\sys\asm\AreMappedFilesTheSame.asm" />
-    <MASM Include="private\sys\asm\AssignProcessToJobObject.asm" />
-    <MASM Include="private\sys\asm\AssociateWaitCompletionPacket.asm" />
-    <MASM Include="private\sys\asm\CallbackReturn.asm" />
-    <MASM Include="private\sys\asm\CancelIoFile.asm" />
-    <MASM Include="private\sys\asm\CancelIoFileEx.asm" />
-    <MASM Include="private\sys\asm\CancelSynchronousIoFile.asm" />
-    <MASM Include="private\sys\asm\CancelTimer.asm" />
-    <MASM Include="private\sys\asm\CancelTimer2.asm" />
-    <MASM Include="private\sys\asm\CancelWaitCompletionPacket.asm" />
-    <MASM Include="private\sys\asm\ClearEvent.asm" />
-    <MASM Include="private\sys\asm\CloseObjectAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\CommitComplete.asm" />
-    <MASM Include="private\sys\asm\CommitEnlistment.asm" />
-    <MASM Include="private\sys\asm\CommitRegistryTransaction.asm" />
-    <MASM Include="private\sys\asm\CommitTransaction.asm" />
-    <MASM Include="private\sys\asm\CompactKeys.asm" />
-    <MASM Include="private\sys\asm\CompareObjects.asm" />
-    <MASM Include="private\sys\asm\CompareTokens.asm" />
-    <MASM Include="private\sys\asm\CompleteConnectPort.asm" />
-    <MASM Include="private\sys\asm\CompressKey.asm" />
-    <MASM Include="private\sys\asm\ConnectPort.asm" />
-    <MASM Include="private\sys\asm\Continue.asm" />
-    <MASM Include="private\sys\asm\CreateDebugObject.asm" />
-    <MASM Include="private\sys\asm\CreateDirectoryObject.asm" />
-    <MASM Include="private\sys\asm\CreateDirectoryObjectEx.asm" />
-    <MASM Include="private\sys\asm\CreateEnclave.asm" />
-    <MASM Include="private\sys\asm\CreateEnlistment.asm" />
-    <MASM Include="private\sys\asm\CreateEvent.asm" />
-    <MASM Include="private\sys\asm\CreateEventPair.asm" />
-    <MASM Include="private\sys\asm\CreateIoCompletion.asm" />
-    <MASM Include="private\sys\asm\CreateIRTimer.asm" />
-    <MASM Include="private\sys\asm\CreateJobObject.asm" />
-    <MASM Include="private\sys\asm\CreateJobSet.asm" />
-    <MASM Include="private\sys\asm\CreateKey.asm" />
-    <MASM Include="private\sys\asm\CreateKeyedEvent.asm" />
-    <MASM Include="private\sys\asm\CreateKeyTransacted.asm" />
-    <MASM Include="private\sys\asm\CreateLowBoxToken.asm" />
-    <MASM Include="private\sys\asm\CreateMailslotFile.asm" />
-    <MASM Include="private\sys\asm\CreateMutant.asm" />
-    <MASM Include="private\sys\asm\CreateNamedPipeFile.asm" />
-    <MASM Include="private\sys\asm\CreatePagingFile.asm" />
-    <MASM Include="private\sys\asm\CreatePartition.asm" />
-    <MASM Include="private\sys\asm\CreatePort.asm" />
-    <MASM Include="private\sys\asm\CreatePrivateNamespace.asm" />
-    <MASM Include="private\sys\asm\CreateProcess.asm" />
-    <MASM Include="private\sys\asm\CreateProcessEx.asm" />
-    <MASM Include="private\sys\asm\CreateProfile.asm" />
-    <MASM Include="private\sys\asm\CreateProfileEx.asm" />
-    <MASM Include="private\sys\asm\CreateRegistryTransaction.asm" />
-    <MASM Include="private\sys\asm\CreateResourceManager.asm" />
-    <MASM Include="private\sys\asm\CreateSection.asm" />
-    <MASM Include="private\sys\asm\CreateSemaphore.asm" />
-    <MASM Include="private\sys\asm\CreateSymbolicLinkObject.asm" />
-    <MASM Include="private\sys\asm\CreateTimer.asm" />
-    <MASM Include="private\sys\asm\CreateTimer2.asm" />
-    <MASM Include="private\sys\asm\CreateToken.asm" />
-    <MASM Include="private\sys\asm\CreateTokenEx.asm" />
-    <MASM Include="private\sys\asm\CreateTransaction.asm" />
-    <MASM Include="private\sys\asm\CreateTransactionManager.asm" />
-    <MASM Include="private\sys\asm\CreateUserProcess.asm" />
-    <MASM Include="private\sys\asm\CreateWaitablePort.asm" />
-    <MASM Include="private\sys\asm\CreateWaitCompletionPacket.asm" />
-    <MASM Include="private\sys\asm\CreateWnfStateName.asm" />
-    <MASM Include="private\sys\asm\CreateWorkerFactory.asm" />
-    <MASM Include="private\sys\asm\DebugActiveProcess.asm" />
-    <MASM Include="private\sys\asm\DebugContinue.asm" />
-    <MASM Include="private\sys\asm\DeleteAtom.asm" />
-    <MASM Include="private\sys\asm\DeleteBootEntry.asm" />
-    <MASM Include="private\sys\asm\DeleteDriverEntry.asm" />
-    <MASM Include="private\sys\asm\DeleteFile.asm" />
-    <MASM Include="private\sys\asm\DeleteKey.asm" />
-    <MASM Include="private\sys\asm\DeleteObjectAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\DeletePrivateNamespace.asm" />
-    <MASM Include="private\sys\asm\DeleteValueKey.asm" />
-    <MASM Include="private\sys\asm\DeleteWnfStateData.asm" />
-    <MASM Include="private\sys\asm\DeleteWnfStateName.asm" />
-    <MASM Include="private\sys\asm\DeviceIoControlFile.asm" />
-    <MASM Include="private\sys\asm\DisableLastKnownGood.asm" />
-    <MASM Include="private\sys\asm\DisplayString.asm" />
-    <MASM Include="private\sys\asm\DrawText.asm" />
-    <MASM Include="private\sys\asm\DuplicateToken.asm" />
-    <MASM Include="private\sys\asm\EnableLastKnownGood.asm" />
-    <MASM Include="private\sys\asm\EnumerateBootEntries.asm" />
-    <MASM Include="private\sys\asm\EnumerateDriverEntries.asm" />
-    <MASM Include="private\sys\asm\EnumerateKey.asm" />
-    <MASM Include="private\sys\asm\EnumerateSystemEnvironmentValuesEx.asm" />
-    <MASM Include="private\sys\asm\EnumerateTransactionObject.asm" />
-    <MASM Include="private\sys\asm\EnumerateValueKey.asm" />
-    <MASM Include="private\sys\asm\ExtendSection.asm" />
-    <MASM Include="private\sys\asm\FilterBootOption.asm" />
-    <MASM Include="private\sys\asm\FilterToken.asm" />
-    <MASM Include="private\sys\asm\FilterTokenEx.asm" />
-    <MASM Include="private\sys\asm\FindAtom.asm" />
-    <MASM Include="private\sys\asm\FlushBuffersFile.asm" />
-    <MASM Include="private\sys\asm\FlushBuffersFileEx.asm" />
-    <MASM Include="private\sys\asm\FlushInstallUILanguage.asm" />
-    <MASM Include="private\sys\asm\FlushKey.asm" />
-    <MASM Include="private\sys\asm\FlushProcessWriteBuffers.asm" />
-    <MASM Include="private\sys\asm\FlushVirtualMemory.asm" />
-    <MASM Include="private\sys\asm\FlushWriteBuffer.asm" />
-    <MASM Include="private\sys\asm\FreeUserPhysicalPages.asm" />
-    <MASM Include="private\sys\asm\FreezeRegistry.asm" />
-    <MASM Include="private\sys\asm\FreezeTransactions.asm" />
-    <MASM Include="private\sys\asm\FsControlFile.asm" />
-    <MASM Include="private\sys\asm\GetCachedSigningLevel.asm" />
-    <MASM Include="private\sys\asm\GetCompleteWnfStateSubscription.asm" />
-    <MASM Include="private\sys\asm\GetContextThread.asm" />
-    <MASM Include="private\sys\asm\GetCurrentProcessorNumber.asm" />
-    <MASM Include="private\sys\asm\GetCurrentProcessorNumberEx.asm" />
-    <MASM Include="private\sys\asm\GetDevicePowerState.asm" />
-    <MASM Include="private\sys\asm\GetMUIRegistryInfo.asm" />
-    <MASM Include="private\sys\asm\GetNextProcess.asm" />
-    <MASM Include="private\sys\asm\GetNextThread.asm" />
-    <MASM Include="private\sys\asm\GetNlsSectionPtr.asm" />
-    <MASM Include="private\sys\asm\GetNotificationResourceManager.asm" />
-    <MASM Include="private\sys\asm\GetWriteWatch.asm" />
-    <MASM Include="private\sys\asm\ImpersonateAnonymousToken.asm" />
-    <MASM Include="private\sys\asm\ImpersonateClientOfPort.asm" />
-    <MASM Include="private\sys\asm\ImpersonateThread.asm" />
-    <MASM Include="private\sys\asm\InitializeEnclave.asm" />
-    <MASM Include="private\sys\asm\InitializeNlsFiles.asm" />
-    <MASM Include="private\sys\asm\InitializeRegistry.asm" />
-    <MASM Include="private\sys\asm\InitiatePowerAction.asm" />
-    <MASM Include="private\sys\asm\IsProcessInJob.asm" />
-    <MASM Include="private\sys\asm\IsSystemResumeAutomatic.asm" />
-    <MASM Include="private\sys\asm\IsUILanguageComitted.asm" />
-    <MASM Include="private\sys\asm\ListenPort.asm" />
-    <MASM Include="private\sys\asm\LoadDriver.asm" />
-    <MASM Include="private\sys\asm\LoadEnclaveData.asm" />
-    <MASM Include="private\sys\asm\LoadKey.asm" />
-    <MASM Include="private\sys\asm\LoadKey2.asm" />
-    <MASM Include="private\sys\asm\LoadKeyEx.asm" />
-    <MASM Include="private\sys\asm\LockFile.asm" />
-    <MASM Include="private\sys\asm\LockProductActivationKeys.asm" />
-    <MASM Include="private\sys\asm\LockRegistryKey.asm" />
-    <MASM Include="private\sys\asm\MakePermanentObject.asm" />
-    <MASM Include="private\sys\asm\MakeTemporaryObject.asm" />
-    <MASM Include="private\sys\asm\ManagePartition.asm" />
-    <MASM Include="private\sys\asm\MapCMFModule.asm" />
-    <MASM Include="private\sys\asm\MapUserPhysicalPages.asm" />
-    <MASM Include="private\sys\asm\MapUserPhysicalPagesScatter.asm" />
-    <MASM Include="private\sys\asm\MapViewOfSection.asm" />
-    <MASM Include="private\sys\asm\ModifyBootEntry.asm" />
-    <MASM Include="private\sys\asm\ModifyDriverEntry.asm" />
-    <MASM Include="private\sys\asm\NotifyChangeDirectoryFile.asm" />
-    <MASM Include="private\sys\asm\NotifyChangeKey.asm" />
-    <MASM Include="private\sys\asm\NotifyChangeMultipleKeys.asm" />
-    <MASM Include="private\sys\asm\NotifyChangeSession.asm" />
-    <MASM Include="private\sys\asm\OpenEnlistment.asm" />
-    <MASM Include="private\sys\asm\OpenEvent.asm" />
-    <MASM Include="private\sys\asm\OpenEventPair.asm" />
-    <MASM Include="private\sys\asm\OpenFile.asm" />
-    <MASM Include="private\sys\asm\OpenIoCompletion.asm" />
-    <MASM Include="private\sys\asm\OpenJobObject.asm" />
-    <MASM Include="private\sys\asm\OpenKey.asm" />
-    <MASM Include="private\sys\asm\OpenKeyedEvent.asm" />
-    <MASM Include="private\sys\asm\OpenKeyEx.asm" />
-    <MASM Include="private\sys\asm\OpenKeyTransacted.asm" />
-    <MASM Include="private\sys\asm\OpenKeyTransactedEx.asm" />
-    <MASM Include="private\sys\asm\OpenMutant.asm" />
-    <MASM Include="private\sys\asm\OpenObjectAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\OpenPartition.asm" />
-    <MASM Include="private\sys\asm\OpenPrivateNamespace.asm" />
-    <MASM Include="private\sys\asm\OpenProcessTokenEx.asm" />
-    <MASM Include="private\sys\asm\OpenRegistryTransaction.asm" />
-    <MASM Include="private\sys\asm\OpenResourceManager.asm" />
-    <MASM Include="private\sys\asm\OpenSection.asm" />
-    <MASM Include="private\sys\asm\OpenSemaphore.asm" />
-    <MASM Include="private\sys\asm\OpenSession.asm" />
-    <MASM Include="private\sys\asm\OpenSymbolicLinkObject.asm" />
-    <MASM Include="private\sys\asm\OpenThread.asm" />
-    <MASM Include="private\sys\asm\OpenThreadToken.asm" />
-    <MASM Include="private\sys\asm\OpenThreadTokenEx.asm" />
-    <MASM Include="private\sys\asm\OpenTimer.asm" />
-    <MASM Include="private\sys\asm\OpenTransaction.asm" />
-    <MASM Include="private\sys\asm\OpenTransactionManager.asm" />
-    <MASM Include="private\sys\asm\PlugPlayControl.asm" />
-    <MASM Include="private\sys\asm\PowerInformation.asm" />
-    <MASM Include="private\sys\asm\PrepareComplete.asm" />
-    <MASM Include="private\sys\asm\PrepareEnlistment.asm" />
-    <MASM Include="private\sys\asm\PrePrepareComplete.asm" />
-    <MASM Include="private\sys\asm\PrePrepareEnlistment.asm" />
-    <MASM Include="private\sys\asm\PrivilegeCheck.asm" />
-    <MASM Include="private\sys\asm\PrivilegedServiceAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\PrivilegeObjectAuditAlarm.asm" />
-    <MASM Include="private\sys\asm\PropagationComplete.asm" />
-    <MASM Include="private\sys\asm\PropagationFailed.asm" />
-    <MASM Include="private\sys\asm\PulseEvent.asm" />
-    <MASM Include="private\sys\asm\QueryAttributesFile.asm" />
-    <MASM Include="private\sys\asm\QueryBootEntryOrder.asm" />
-    <MASM Include="private\sys\asm\QueryBootOptions.asm" />
-    <MASM Include="private\sys\asm\QueryDebugFilterState.asm" />
-    <MASM Include="private\sys\asm\QueryDefaultLocale.asm" />
-    <MASM Include="private\sys\asm\QueryDefaultUILanguage.asm" />
-    <MASM Include="private\sys\asm\QueryDirectoryFile.asm" />
-    <MASM Include="private\sys\asm\QueryDirectoryObject.asm" />
-    <MASM Include="private\sys\asm\QueryDriverEntryOrder.asm" />
-    <MASM Include="private\sys\asm\QueryEaFile.asm" />
-    <MASM Include="private\sys\asm\QueryEvent.asm" />
-    <MASM Include="private\sys\asm\QueryFullAttributesFile.asm" />
-    <MASM Include="private\sys\asm\QueryInformationAtom.asm" />
-    <MASM Include="private\sys\asm\QueryInformationEnlistment.asm" />
-    <MASM Include="private\sys\asm\QueryInformationJobObject.asm" />
-    <MASM Include="private\sys\asm\QueryInformationPort.asm" />
-    <MASM Include="private\sys\asm\QueryInformationResourceManager.asm" />
-    <MASM Include="private\sys\asm\QueryInformationTransaction.asm" />
-    <MASM Include="private\sys\asm\QueryInformationTransactionManager.asm" />
-    <MASM Include="private\sys\asm\QueryInformationWorkerFactory.asm" />
-    <MASM Include="private\sys\asm\QueryInstallUILanguage.asm" />
-    <MASM Include="private\sys\asm\QueryIntervalProfile.asm" />
-    <MASM Include="private\sys\asm\QueryIoCompletion.asm" />
-    <MASM Include="private\sys\asm\QueryKey.asm" />
-    <MASM Include="private\sys\asm\QueryLicenseValue.asm" />
-    <MASM Include="private\sys\asm\QueryMultipleValueKey.asm" />
-    <MASM Include="private\sys\asm\QueryOpenSubKeys.asm" />
-    <MASM Include="private\sys\asm\QueryOpenSubKeysEx.asm" />
-    <MASM Include="private\sys\asm\QueryPerformanceCounter.asm" />
-    <MASM Include="private\sys\asm\QueryPortInformationProcess.asm" />
-    <MASM Include="private\sys\asm\QueryQuotaInformationFile.asm" />
-    <MASM Include="private\sys\asm\QuerySection.asm" />
-    <MASM Include="private\sys\asm\QuerySecurityAttributesToken.asm" />
-    <MASM Include="private\sys\asm\QuerySecurityObject.asm" />
-    <MASM Include="private\sys\asm\QuerySecurityPolicy.asm" />
-    <MASM Include="private\sys\asm\QuerySemaphore.asm" />
-    <MASM Include="private\sys\asm\QuerySymbolicLinkObject.asm" />
-    <MASM Include="private\sys\asm\QuerySystemEnvironmentValue.asm" />
-    <MASM Include="private\sys\asm\QuerySystemEnvironmentValueEx.asm" />
-    <MASM Include="private\sys\asm\QuerySystemInformationEx.asm" />
-    <MASM Include="private\sys\asm\QuerySystemTime.asm" />
-    <MASM Include="private\sys\asm\QueryTimer.asm" />
-    <MASM Include="private\sys\asm\QueryTimerResolution.asm" />
-    <MASM Include="private\sys\asm\QueryValueKey.asm" />
-    <MASM Include="private\sys\asm\QueryWnfStateData.asm" />
-    <MASM Include="private\sys\asm\QueryWnfStateNameInformation.asm" />
-    <MASM Include="private\sys\asm\QueueApcThread.asm" />
-    <MASM Include="private\sys\asm\QueueApcThreadEx.asm" />
-    <MASM Include="private\sys\asm\RaiseException.asm" />
-    <MASM Include="private\sys\asm\RaiseHardError.asm" />
-    <MASM Include="private\sys\asm\ReadFile.asm" />
-    <MASM Include="private\sys\asm\ReadFileScatter.asm" />
-    <MASM Include="private\sys\asm\ReadOnlyEnlistment.asm" />
-    <MASM Include="private\sys\asm\ReadRequestData.asm" />
-    <MASM Include="private\sys\asm\RecoverEnlistment.asm" />
-    <MASM Include="private\sys\asm\RecoverResourceManager.asm" />
-    <MASM Include="private\sys\asm\RecoverTransactionManager.asm" />
-    <MASM Include="private\sys\asm\RegisterProtocolAddressInformation.asm" />
-    <MASM Include="private\sys\asm\RegisterThreadTerminatePort.asm" />
-    <MASM Include="private\sys\asm\ReleaseKeyedEvent.asm" />
-    <MASM Include="private\sys\asm\ReleaseMutant.asm" />
-    <MASM Include="private\sys\asm\ReleaseSemaphore.asm" />
-    <MASM Include="private\sys\asm\ReleaseWorkerFactoryWorker.asm" />
-    <MASM Include="private\sys\asm\RemoveIoCompletion.asm" />
-    <MASM Include="private\sys\asm\RemoveIoCompletionEx.asm" />
-    <MASM Include="private\sys\asm\RemoveProcessDebug.asm" />
-    <MASM Include="private\sys\asm\RenameKey.asm" />
-    <MASM Include="private\sys\asm\RenameTransactionManager.asm" />
-    <MASM Include="private\sys\asm\ReplaceKey.asm" />
-    <MASM Include="private\sys\asm\ReplacePartitionUnit.asm" />
-    <MASM Include="private\sys\asm\ReplyPort.asm" />
-    <MASM Include="private\sys\asm\ReplyWaitReceivePort.asm" />
-    <MASM Include="private\sys\asm\ReplyWaitReceivePortEx.asm" />
-    <MASM Include="private\sys\asm\ReplyWaitReplyPort.asm" />
-    <MASM Include="private\sys\asm\RequestPort.asm" />
-    <MASM Include="private\sys\asm\RequestWaitReplyPort.asm" />
-    <MASM Include="private\sys\asm\ResetEvent.asm" />
-    <MASM Include="private\sys\asm\ResetWriteWatch.asm" />
-    <MASM Include="private\sys\asm\RestoreKey.asm" />
-    <MASM Include="private\sys\asm\RevertContainerImpersonation.asm" />
-    <MASM Include="private\sys\asm\RollbackComplete.asm" />
-    <MASM Include="private\sys\asm\RollbackEnlistment.asm" />
-    <MASM Include="private\sys\asm\RollbackRegistryTransaction.asm" />
-    <MASM Include="private\sys\asm\RollbackTransaction.asm" />
-    <MASM Include="private\sys\asm\RollforwardTransactionManager.asm" />
-    <MASM Include="private\sys\asm\SaveKey.asm" />
-    <MASM Include="private\sys\asm\SaveKeyEx.asm" />
-    <MASM Include="private\sys\asm\SaveMergedKeys.asm" />
-    <MASM Include="private\sys\asm\SecureConnectPort.asm" />
-    <MASM Include="private\sys\asm\SerializeBoot.asm" />
-    <MASM Include="private\sys\asm\SetBootEntryOrder.asm" />
-    <MASM Include="private\sys\asm\SetBootOptions.asm" />
-    <MASM Include="private\sys\asm\SetCachedSigningLevel.asm" />
-    <MASM Include="private\sys\asm\SetCachedSigningLevel2.asm" />
-    <MASM Include="private\sys\asm\SetContextThread.asm" />
-    <MASM Include="private\sys\asm\SetDebugFilterState.asm" />
-    <MASM Include="private\sys\asm\SetDefaultHardErrorPort.asm" />
-    <MASM Include="private\sys\asm\SetDefaultLocale.asm" />
-    <MASM Include="private\sys\asm\SetDefaultUILanguage.asm" />
-    <MASM Include="private\sys\asm\SetDriverEntryOrder.asm" />
-    <MASM Include="private\sys\asm\SetEaFile.asm" />
-    <MASM Include="private\sys\asm\SetEvent.asm" />
-    <MASM Include="private\sys\asm\SetEventBoostPriority.asm" />
-    <MASM Include="private\sys\asm\SetHighEventPair.asm" />
-    <MASM Include="private\sys\asm\SetHighWaitLowEventPair.asm" />
-    <MASM Include="private\sys\asm\SetInformationDebugObject.asm" />
-    <MASM Include="private\sys\asm\SetInformationEnlistment.asm" />
-    <MASM Include="private\sys\asm\SetInformationFile.asm" />
-    <MASM Include="private\sys\asm\SetInformationJobObject.asm" />
-    <MASM Include="private\sys\asm\SetInformationKey.asm" />
-    <MASM Include="private\sys\asm\SetInformationObject.asm" />
-    <MASM Include="private\sys\asm\SetInformationProcess.asm" />
-    <MASM Include="private\sys\asm\SetInformationResourceManager.asm" />
-    <MASM Include="private\sys\asm\SetInformationSymbolicLink.asm" />
-    <MASM Include="private\sys\asm\SetInformationToken.asm" />
-    <MASM Include="private\sys\asm\SetInformationTransaction.asm" />
-    <MASM Include="private\sys\asm\SetInformationTransactionManager.asm" />
-    <MASM Include="private\sys\asm\SetInformationVirtualMemory.asm" />
-    <MASM Include="private\sys\asm\SetInformationWorkerFactory.asm" />
-    <MASM Include="private\sys\asm\SetIntervalProfile.asm" />
-    <MASM Include="private\sys\asm\SetIoCompletion.asm" />
-    <MASM Include="private\sys\asm\SetIoCompletionEx.asm" />
-    <MASM Include="private\sys\asm\SetIRTimer.asm" />
-    <MASM Include="private\sys\asm\SetLdtEntries.asm" />
-    <MASM Include="private\sys\asm\SetLowEventPair.asm" />
-    <MASM Include="private\sys\asm\SetLowWaitHighEventPair.asm" />
-    <MASM Include="private\sys\asm\SetQuotaInformationFile.asm" />
-    <MASM Include="private\sys\asm\SetSecurityObject.asm" />
-    <MASM Include="private\sys\asm\SetSystemEnvironmentValue.asm" />
-    <MASM Include="private\sys\asm\SetSystemEnvironmentValueEx.asm" />
-    <MASM Include="private\sys\asm\SetSystemInformation.asm" />
-    <MASM Include="private\sys\asm\SetSystemPowerState.asm" />
-    <MASM Include="private\sys\asm\SetSystemTime.asm" />
-    <MASM Include="private\sys\asm\SetThreadExecutionState.asm" />
-    <MASM Include="private\sys\asm\SetTimer.asm" />
-    <MASM Include="private\sys\asm\SetTimer2.asm" />
-    <MASM Include="private\sys\asm\SetTimerEx.asm" />
-    <MASM Include="private\sys\asm\SetTimerResolution.asm" />
-    <MASM Include="private\sys\asm\SetUuidSeed.asm" />
-    <MASM Include="private\sys\asm\SetValueKey.asm" />
-    <MASM Include="private\sys\asm\SetVolumeInformationFile.asm" />
-    <MASM Include="private\sys\asm\SetWnfProcessNotificationEvent.asm" />
-    <MASM Include="private\sys\asm\ShutdownSystem.asm" />
-    <MASM Include="private\sys\asm\ShutdownWorkerFactory.asm" />
-    <MASM Include="private\sys\asm\SignalAndWaitForSingleObject.asm" />
-    <MASM Include="private\sys\asm\SinglePhaseReject.asm" />
-    <MASM Include="private\sys\asm\StartProfile.asm" />
-    <MASM Include="private\sys\asm\StopProfile.asm" />
-    <MASM Include="private\sys\asm\SubscribeWnfStateChange.asm" />
-    <MASM Include="private\sys\asm\SuspendThread.asm" />
-    <MASM Include="private\sys\asm\SystemDebugControl.asm" />
-    <MASM Include="private\sys\asm\TerminateJobObject.asm" />
-    <MASM Include="private\sys\asm\TerminateProcess.asm" />
-    <MASM Include="private\sys\asm\TerminateThread.asm" />
-    <MASM Include="private\sys\asm\TestAlert.asm" />
-    <MASM Include="private\sys\asm\ThawRegistry.asm" />
-    <MASM Include="private\sys\asm\ThawTransactions.asm" />
-    <MASM Include="private\sys\asm\TraceControl.asm" />
-    <MASM Include="private\sys\asm\TraceEvent.asm" />
-    <MASM Include="private\sys\asm\TranslateFilePath.asm" />
-    <MASM Include="private\sys\asm\UmsThreadYield.asm" />
-    <MASM Include="private\sys\asm\UnloadDriver.asm" />
-    <MASM Include="private\sys\asm\UnloadKey.asm" />
-    <MASM Include="private\sys\asm\UnloadKey2.asm" />
-    <MASM Include="private\sys\asm\UnloadKeyEx.asm" />
-    <MASM Include="private\sys\asm\UnlockFile.asm" />
-    <MASM Include="private\sys\asm\UnmapViewOfSection.asm" />
-    <MASM Include="private\sys\asm\UnmapViewOfSectionEx.asm" />
-    <MASM Include="private\sys\asm\UnsubscribeWnfStateChange.asm" />
-    <MASM Include="private\sys\asm\UpdateWnfStateData.asm" />
-    <MASM Include="private\sys\asm\VdmControl.asm" />
-    <MASM Include="private\sys\asm\WaitForAlertByThreadId.asm" />
-    <MASM Include="private\sys\asm\WaitForDebugEvent.asm" />
-    <MASM Include="private\sys\asm\WaitForKeyedEvent.asm" />
-    <MASM Include="private\sys\asm\WaitForMultipleObjects32.asm" />
-    <MASM Include="private\sys\asm\WaitForWorkViaWorkerFactory.asm" />
-    <MASM Include="private\sys\asm\WaitHighEventPair.asm" />
-    <MASM Include="private\sys\asm\WaitLowEventPair.asm" />
-    <MASM Include="private\sys\asm\WorkerFactoryWorkerReady.asm" />
-    <MASM Include="private\sys\asm\WriteFile.asm" />
-    <MASM Include="private\sys\asm\WriteFileGather.asm" />
-    <MASM Include="private\sys\asm\WriteRequestData.asm" />
+    <MASM Include="private\sys\asm\AcceptConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheck.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckAndAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckByType.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckByTypeAndAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckByTypeResultList.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarmByHandle.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AddAtom.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AddAtomEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AddBootEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AddDriverEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AdjustGroupsToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AdjustTokenClaimsAndDeviceGroups.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlertResumeThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlertThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlertThreadByThreadId.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AllocateLocallyUniqueId.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AllocateReserveObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AllocateUserPhysicalPages.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AllocateUuids.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcAcceptConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCancelMessage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcConnectPortEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCreatePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCreatePortSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCreateResourceReserve.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCreateSectionView.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcCreateSecurityContext.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcDeletePortSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcDeleteResourceReserve.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcDeleteSectionView.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcDeleteSecurityContext.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcDisconnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcImpersonateClientContainerOfPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcImpersonateClientOfPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcOpenSenderProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcOpenSenderThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcQueryInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcQueryInformationMessage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcRevokeSecurityContext.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcSendWaitReceivePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AlpcSetInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ApphelpCacheControl.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AreMappedFilesTheSame.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AssignProcessToJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\AssociateWaitCompletionPacket.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CallbackReturn.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelIoFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelIoFileEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelSynchronousIoFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelTimer2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CancelWaitCompletionPacket.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ClearEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CloseObjectAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CommitComplete.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CommitEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CommitRegistryTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CommitTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CompactKeys.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CompareObjects.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CompareTokens.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CompleteConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CompressKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\Continue.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateDebugObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateDirectoryObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateDirectoryObjectEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateEnclave.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateIoCompletion.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateIRTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateJobSet.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateKeyedEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateKeyTransacted.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateLowBoxToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateMailslotFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateMutant.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateNamedPipeFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreatePagingFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreatePartition.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreatePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreatePrivateNamespace.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateProcessEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateProfile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateProfileEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateRegistryTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateSemaphore.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateSymbolicLinkObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateTimer2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateTokenEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateUserProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateWaitablePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateWaitCompletionPacket.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateWnfStateName.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\CreateWorkerFactory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DebugActiveProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DebugContinue.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DelayExecution.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteAtom.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteBootEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteDriverEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteObjectAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeletePrivateNamespace.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteValueKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteWnfStateData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeleteWnfStateName.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DeviceIoControlFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DisableLastKnownGood.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DisplayString.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DrawText.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\DuplicateToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnableLastKnownGood.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateBootEntries.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateDriverEntries.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateSystemEnvironmentValuesEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateTransactionObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\EnumerateValueKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ExtendSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FilterBootOption.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FilterToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FilterTokenEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FindAtom.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushBuffersFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushBuffersFileEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushInstallUILanguage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushProcessWriteBuffers.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FlushWriteBuffer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FreeUserPhysicalPages.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FreezeRegistry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FreezeTransactions.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\FsControlFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetCachedSigningLevel.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetCompleteWnfStateSubscription.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetContextThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetCurrentProcessorNumber.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetCurrentProcessorNumberEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetDevicePowerState.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetMUIRegistryInfo.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetNextProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetNextThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetNlsSectionPtr.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetNotificationResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\GetWriteWatch.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ImpersonateAnonymousToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ImpersonateClientOfPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ImpersonateThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\InitializeEnclave.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\InitializeNlsFiles.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\InitializeRegistry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\InitiatePowerAction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\IsProcessInJob.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\IsSystemResumeAutomatic.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\IsUILanguageComitted.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ListenPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LoadDriver.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LoadEnclaveData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LoadKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LoadKey2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LoadKeyEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LockFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LockProductActivationKeys.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\LockRegistryKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MakePermanentObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MakeTemporaryObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ManagePartition.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MapCMFModule.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MapUserPhysicalPages.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MapUserPhysicalPagesScatter.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\MapViewOfSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ModifyBootEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ModifyDriverEntry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\NotifyChangeDirectoryFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\NotifyChangeKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\NotifyChangeMultipleKeys.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\NotifyChangeSession.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenIoCompletion.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenKeyedEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenKeyEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenKeyTransacted.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenKeyTransactedEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenMutant.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenObjectAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenPartition.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenPrivateNamespace.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenProcessTokenEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenRegistryTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenSemaphore.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenSession.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenSymbolicLinkObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenThreadToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenThreadTokenEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\OpenTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PlugPlayControl.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PowerInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrepareComplete.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrepareEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrePrepareComplete.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrePrepareEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrivilegeCheck.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrivilegedServiceAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PrivilegeObjectAuditAlarm.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PropagationComplete.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PropagationFailed.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\PulseEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryAttributesFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryBootEntryOrder.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryBootOptions.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDebugFilterState.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDefaultLocale.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDefaultUILanguage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDirectoryFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDirectoryObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryDriverEntryOrder.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryEaFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryFullAttributesFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationAtom.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInformationWorkerFactory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryInstallUILanguage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryIntervalProfile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryIoCompletion.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryLicenseValue.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryMultipleValueKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryOpenSubKeys.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryOpenSubKeysEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryPerformanceCounter.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryPortInformationProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryQuotaInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySecurityAttributesToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySecurityObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySecurityPolicy.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySemaphore.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySymbolicLinkObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySystemEnvironmentValue.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySystemEnvironmentValueEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySystemInformationEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QuerySystemTime.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryTimerResolution.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryValueKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryWnfStateData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueryWnfStateNameInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueueApcThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\QueueApcThreadEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RaiseException.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RaiseHardError.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReadFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReadFileScatter.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReadOnlyEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReadRequestData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RecoverEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RecoverResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RecoverTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RegisterProtocolAddressInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RegisterThreadTerminatePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReleaseKeyedEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReleaseMutant.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReleaseSemaphore.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReleaseWorkerFactoryWorker.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RemoveIoCompletion.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RemoveIoCompletionEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RemoveProcessDebug.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RenameKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RenameTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplaceKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplacePartitionUnit.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplyPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplyWaitReceivePort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplyWaitReceivePortEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ReplyWaitReplyPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RequestPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RequestWaitReplyPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ResetEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ResetWriteWatch.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RestoreKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RevertContainerImpersonation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RollbackComplete.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RollbackEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RollbackRegistryTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RollbackTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\RollforwardTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SaveKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SaveKeyEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SaveMergedKeys.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SecureConnectPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SerializeBoot.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetBootEntryOrder.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetBootOptions.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetCachedSigningLevel.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetCachedSigningLevel2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetContextThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetDebugFilterState.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetDefaultHardErrorPort.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetDefaultLocale.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetDefaultUILanguage.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetDriverEntryOrder.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetEaFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetEventBoostPriority.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetHighEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetHighWaitLowEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationDebugObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationEnlistment.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationResourceManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationSymbolicLink.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationToken.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationTransaction.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationTransactionManager.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetInformationWorkerFactory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetIntervalProfile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetIoCompletion.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetIoCompletionEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetIRTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetLdtEntries.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetLowEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetLowWaitHighEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetQuotaInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSecurityObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSystemEnvironmentValue.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSystemEnvironmentValueEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSystemInformation.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSystemPowerState.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetSystemTime.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetThreadExecutionState.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetTimer.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetTimer2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetTimerEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetTimerResolution.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetUuidSeed.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetValueKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetVolumeInformationFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SetWnfProcessNotificationEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ShutdownSystem.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ShutdownWorkerFactory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SignalAndWaitForSingleObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SinglePhaseReject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\StartProfile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\StopProfile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SubscribeWnfStateChange.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SuspendThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\SystemDebugControl.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TerminateJobObject.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TerminateProcess.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TerminateThread.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TestAlert.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ThawRegistry.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\ThawTransactions.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TraceControl.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TraceEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\TranslateFilePath.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UmsThreadYield.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnloadDriver.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnloadKey.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnloadKey2.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnloadKeyEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnlockFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnmapViewOfSection.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnmapViewOfSectionEx.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UnsubscribeWnfStateChange.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\UpdateWnfStateData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\VdmControl.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForAlertByThreadId.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForDebugEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForKeyedEvent.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForMultipleObjects32.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitForWorkViaWorkerFactory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitHighEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WaitLowEventPair.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WorkerFactoryWorkerReady.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WriteFile.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WriteFileGather.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WriteRequestData.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\YieldExecution.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">
@@ -665,6 +1509,9 @@
     </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{8d76bb82-8eab-47eb-ba8c-8599b1a7aaf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private\kernel">
+      <UniqueIdentifier>{8043d00d-c86a-4972-9946-3d161d102ae7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -3,10 +3,7 @@
 #include "../sys/syscall.h"
 #include "../../public/imports.h"
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileRead(IN HANDLE hFile,
+DECL_EXTERN_API(DWORD, FileRead, IN HANDLE hFile,
 	IN LPVOID lpBuffer,
 	IN DWORD nNumberOfBytesToRead)
 {
@@ -60,10 +57,7 @@ HcFileRead(IN HANDLE hFile,
 	return dwNumberOfBytesRead;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileSetCurrent(HANDLE hFile,
+DECL_EXTERN_API(DWORD, FileSetCurrent, HANDLE hFile,
 	LONG lDistanceToMove,
 	DWORD dwMoveMethod)
 {
@@ -73,9 +67,9 @@ HcFileSetCurrent(HANDLE hFile,
 	IO_STATUS_BLOCK IoStatusBlock;
 	LARGE_INTEGER Distance;
 
-	HcInternalSet(&FilePosition, 0, sizeof(FilePosition));
-	HcInternalSet(&FileStandard, 0, sizeof(FileStandard));
-	HcInternalSet(&IoStatusBlock, 0, sizeof(IoStatusBlock));
+	ZERO(&FilePosition);
+	ZERO(&FileStandard);
+	ZERO(&IoStatusBlock);
 
 	Distance.QuadPart = lDistanceToMove;
 
@@ -161,10 +155,7 @@ HcFileSetCurrent(HANDLE hFile,
 	return FilePosition.CurrentByteOffset.u.LowPart;
 }
 
-HC_EXTERN_API
-HANDLE 
-HCAPI 
-HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
+DECL_EXTERN_API(HANDLE, FileOpenW, LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
 {
 	OBJECT_ATTRIBUTES ObjectAttributes;
 	IO_STATUS_BLOCK IoStatusBlock;
@@ -240,7 +231,7 @@ HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAcce
 		&IoStatusBlock,
 		NULL,
 		FileAttributes,
-		0,
+		FILE_SHARE_WRITE | FILE_SHARE_READ,
 		dwCreationDisposition,
 		Flags,
 		EaBuffer,
@@ -294,7 +285,7 @@ HcFileOpenW(LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAcce
 	return FileHandle;
 }
 
-HC_EXTERN_API HANDLE HCAPI HcFileOpenA(LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
+DECL_EXTERN_API(HANDLE, FileOpenA, LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess)
 {
 	LPWSTR lpConverted = HcStringConvertAtoW(lpFileName);
 	HANDLE hFile = HcFileOpenW(lpConverted, dwCreationDisposition, dwDesiredAccess);
@@ -303,10 +294,7 @@ HC_EXTERN_API HANDLE HCAPI HcFileOpenA(LPCSTR lpFileName, DWORD dwCreationDispos
 	return hFile;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcFileExistsA(LPCSTR lpFilePath)
+DECL_EXTERN_API(BOOLEAN, FileExistsA, LPCSTR lpFilePath)
 {
 	LPWSTR lpConverted = HcStringConvertAtoW(lpFilePath);
 	BOOLEAN bValue = HcFileExistsW(lpConverted);
@@ -315,10 +303,7 @@ HcFileExistsA(LPCSTR lpFilePath)
 	return bValue;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcFileExistsW(LPCWSTR lpFilePath)
+DECL_EXTERN_API(BOOLEAN, FileExistsW, LPCWSTR lpFilePath)
 {
 	return HcFileOpenW(
 		lpFilePath,
@@ -326,10 +311,7 @@ HcFileExistsW(LPCWSTR lpFilePath)
 		GENERIC_READ) != INVALID_HANDLE;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileSize(HANDLE hFile)
+DECL_EXTERN_API(DWORD, FileSize, HANDLE hFile)
 {
 	NTSTATUS Status;
 	IO_STATUS_BLOCK IoStatusBlock;
@@ -353,10 +335,7 @@ HcFileSize(HANDLE hFile)
 	return FileStandard.EndOfFile.u.LowPart;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileSizeA(LPCSTR lpPath)
+DECL_EXTERN_API(DWORD, FileSizeA, LPCSTR lpPath)
 {
 	LPWSTR lpConverted = HcStringConvertAtoW(lpPath);
 	DWORD dwSize = HcFileSizeW(lpConverted);
@@ -365,11 +344,7 @@ HcFileSizeA(LPCSTR lpPath)
 	return dwSize;
 }
 
-
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileSizeW(LPCWSTR lpPath)
+DECL_EXTERN_API(DWORD, FileSizeW, LPCWSTR lpPath)
 {
 	DWORD FileSize;
 	HANDLE hFile;
@@ -387,10 +362,7 @@ HcFileSizeW(LPCWSTR lpPath)
 	return FileSize; 
 }
 
-HC_EXTERN_API
-ULONG
-HCAPI
-HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
+DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, HMODULE hModule, LPCSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
 	LPBYTE RelativeVirtualAddress;
@@ -426,10 +398,7 @@ HcFileOffsetByExportNameA(HMODULE hModule, LPCSTR lpExportName)
 	return 0;
 }
 
-HC_EXTERN_API
-ULONG
-HCAPI
-HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
+DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
 	LPBYTE RelativeVirtualAddress;
@@ -465,10 +434,7 @@ HcFileOffsetByExportNameW(HMODULE hModule, LPCWSTR lpExportName)
 	return 0;
 }
 
-HC_EXTERN_API
-ULONG
-HCAPI
-HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
+DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, LPCVOID lpAddress)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
 	PBYTE RelativeVirtualAddress;
@@ -508,10 +474,7 @@ HcFileOffsetByVirtualAddress(LPCVOID lpAddress)
 }
 
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
+DECL_EXTERN_API(DWORD, FileReadModuleA, HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
 {
 	DWORD dwRead;
 	LPWSTR lpExportConverted = HcStringConvertAtoW(lpExportName);
@@ -522,10 +485,7 @@ HcFileReadModuleA(HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dw
 	return dwRead;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
+DECL_EXTERN_API(DWORD, FileReadModuleW, HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount)
 {
 	HANDLE hFile;
 	DWORD tBytesRead;
@@ -574,10 +534,7 @@ HcFileReadModuleW(HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD d
 	return tBytesRead;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
+DECL_EXTERN_API(DWORD, FileReadAddress, LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 {
 	DWORD dwFileOffset;
 	LPWSTR lpModulePath;
@@ -657,10 +614,7 @@ HcFileReadAddress(LPCVOID lpBaseAddress, PBYTE lpBufferOut, DWORD dwCountToRead)
 	return tBytesRead;
 }
 
-HC_EXTERN_API
-SIZE_T 
-HCAPI
-HcFileGetCurrentDirectoryW(LPWSTR buf)
+DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, LPWSTR lpBuffer)
 {
 	PUNICODE_STRING UsCurDir;
 	ULONG ULen;
@@ -675,16 +629,13 @@ HcFileGetCurrentDirectoryW(LPWSTR buf)
 		ULen--;
 	}
 
-	HcStringCopyW(buf, UsCurDir->Buffer, ULen);
+	HcStringCopyW(lpBuffer, UsCurDir->Buffer, ULen);
 
 	RtlReleasePebLock();
 	return ULen * sizeof(WCHAR);
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcFileWrite(IN HANDLE hFile,
+DECL_EXTERN_API(DWORD, FileWrite, IN HANDLE hFile,
 	IN LPCVOID lpBuffer,
 	IN DWORD nNumberOfBytesToWrite OPTIONAL)
 {

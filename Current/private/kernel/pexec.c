@@ -1,9 +1,6 @@
 #include <highcall.h>
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcPEIsValid(HMODULE lpModule)
+DECL_EXTERN_API(BOOLEAN, PEIsValid, HMODULE lpModule)
 {
 	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
 	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
@@ -11,10 +8,7 @@ HcPEIsValid(HMODULE lpModule)
 	return (pHeaderDOS != NULL && pHeaderNT != NULL);
 }
 
-HC_EXTERN_API
-PIMAGE_DOS_HEADER
-HCAPI
-HcPEGetDosHeader(HMODULE lpModule)
+DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE lpModule)
 {
 	PIMAGE_DOS_HEADER pHeaderDOS = (PIMAGE_DOS_HEADER)lpModule;
 	if (pHeaderDOS->e_magic != IMAGE_DOS_SIGNATURE)
@@ -25,10 +19,7 @@ HcPEGetDosHeader(HMODULE lpModule)
 	return pHeaderDOS;
 }
 
-HC_EXTERN_API
-PIMAGE_NT_HEADERS
-HCAPI
-HcPEGetNtHeader(HMODULE lpModule)
+DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, HMODULE lpModule)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
 	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
@@ -47,10 +38,7 @@ HcPEGetNtHeader(HMODULE lpModule)
 	return pHeaderNT;
 }
 
-HC_EXTERN_API
-PIMAGE_EXPORT_DIRECTORY
-HCAPI
-HcPEGetExportDirectory(HMODULE lpModule)
+DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, HMODULE lpModule)
 {
 	PIMAGE_EXPORT_DIRECTORY lpExportDirectory;
 	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
@@ -66,10 +54,7 @@ HcPEGetExportDirectory(HMODULE lpModule)
 	return lpExportDirectory;
 }
 
-HC_EXTERN_API
-ULONG
-HCAPI
-HcPEOffsetFromRVA(PIMAGE_NT_HEADERS pImageHeader, PBYTE RVA)
+DECL_EXTERN_API(ULONG, PEOffsetFromRVA, PIMAGE_NT_HEADERS pImageHeader, PBYTE RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
 	ULONG TruncatedRVA = (ULONG)(ULONG_PTR)RVA;

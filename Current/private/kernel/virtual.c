@@ -767,10 +767,7 @@ leave:;
 
 #endif
 
-HC_EXTERN_API
-LPVOID
-HCAPI
-HcVirtualAllocEx(IN HANDLE hProcess,
+DECL_EXTERN_API(LPVOID, VirtualAllocEx, IN HANDLE hProcess,
 	IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD flAllocationType,
@@ -798,13 +795,7 @@ HcVirtualAllocEx(IN HANDLE hProcess,
 	return lpAddress;
 }
 
-//
-// kernel32.dll VirtualAlloc
-//
-HC_EXTERN_API
-LPVOID
-HCAPI
-HcVirtualAlloc(IN LPVOID lpAddress,
+DECL_EXTERN_API(LPVOID, VirtualAlloc, IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD flAllocationType,
 	IN DWORD flProtect)
@@ -817,10 +808,7 @@ HcVirtualAlloc(IN LPVOID lpAddress,
 		flProtect);
 }
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualFreeEx(IN HANDLE hProcess,
+DECL_EXTERN_API(BOOL, VirtualFreeEx, IN HANDLE hProcess,
 	IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD dwFreeType)
@@ -853,10 +841,7 @@ HcVirtualFreeEx(IN HANDLE hProcess,
 }
 
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualFree(IN LPVOID lpAddress,
+DECL_EXTERN_API(BOOL, VirtualFree, IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD dwFreeType)
 {
@@ -867,10 +852,7 @@ HcVirtualFree(IN LPVOID lpAddress,
 		dwFreeType);
 }
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualProtect(IN LPVOID lpAddress,
+DECL_EXTERN_API(BOOL, VirtualProtect, IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD flNewProtect,
 	OUT PDWORD lpflOldProtect)
@@ -883,10 +865,7 @@ HcVirtualProtect(IN LPVOID lpAddress,
 		lpflOldProtect);
 }
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualProtectEx(IN HANDLE hProcess,
+DECL_EXTERN_API(BOOL, VirtualProtectEx, IN HANDLE hProcess,
 	IN LPVOID lpAddress,
 	IN SIZE_T dwSize,
 	IN DWORD flNewProtect,
@@ -912,10 +891,7 @@ HcVirtualProtectEx(IN HANDLE hProcess,
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualLock(IN LPVOID lpAddress,
+DECL_EXTERN_API(BOOL, VirtualLock, IN LPVOID lpAddress,
 	IN SIZE_T dwSize)
 {
 	NTSTATUS Status;
@@ -939,10 +915,7 @@ HcVirtualLock(IN LPVOID lpAddress,
 	return TRUE;
 }
 
-HC_EXTERN_API
-SIZE_T
-HCAPI
-HcVirtualQuery(IN LPCVOID lpAddress,
+DECL_EXTERN_API(SIZE_T, VirtualQuery, IN LPCVOID lpAddress,
 	OUT PMEMORY_BASIC_INFORMATION lpBuffer,
 	IN SIZE_T dwLength)
 {
@@ -953,10 +926,7 @@ HcVirtualQuery(IN LPCVOID lpAddress,
 		dwLength);
 }
 
-HC_EXTERN_API
-SIZE_T
-HCAPI
-HcVirtualQueryEx(IN HANDLE hProcess,
+DECL_EXTERN_API(SIZE_T, VirtualQueryEx, IN HANDLE hProcess,
 	IN LPCVOID lpAddress,
 	OUT PMEMORY_BASIC_INFORMATION lpBuffer,
 	IN SIZE_T dwLength)
@@ -982,11 +952,7 @@ HcVirtualQueryEx(IN HANDLE hProcess,
 	return ResultLength;
 }
 
-HC_EXTERN_API
-BOOL
-HCAPI
-HcVirtualUnlock(IN LPVOID lpAddress,
-	IN SIZE_T dwSize)
+DECL_EXTERN_API(BOOL, VirtualUnlock, IN LPVOID lpAddress, IN SIZE_T dwSize)
 {
 	NTSTATUS Status;
 	SIZE_T RegionSize = dwSize;
@@ -1009,18 +975,12 @@ HcVirtualUnlock(IN LPVOID lpAddress,
 	return TRUE;
 }
 
-HC_EXTERN_API
-PVOID
-HCAPI 
-HcAlloc(IN SIZE_T Size)
+DECL_EXTERN_API(PVOID, Alloc, IN SIZE_T Size)
 {
 	return RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
 }
 
-HC_EXTERN_API
-VOID 
-HCAPI 
-HcFree(IN LPVOID lpAddress)
+DECL_EXTERN_API(VOID, HcFree, IN LPVOID lpAddress)
 {
 	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
 }

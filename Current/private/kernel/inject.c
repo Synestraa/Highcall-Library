@@ -134,10 +134,7 @@ HcParameterVerifyInjectModuleManual(PVOID Buffer)
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
+DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath)
 {
 	MANUAL_MAP ManualInject;
 	PIMAGE_DOS_HEADER pHeaderDos;
@@ -369,10 +366,7 @@ HcInjectManualMapW(HANDLE hProcess, LPCWSTR szcPath)
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN 
-HCAPI 
-HcInjectRemoteThreadW(HANDLE hProcess, LPCWSTR szcPath)
+DECL_EXTERN_API(BOOLEAN , InjectRemoteThreadW, HANDLE hProcess, LPCWSTR szcPath)
 {
 	LPVOID PathToDll;
 	SIZE_T PathSize;

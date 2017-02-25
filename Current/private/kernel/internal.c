@@ -5,10 +5,7 @@
 //
 #include "../distorm/include/distorm.h"
 
-HC_EXTERN_API 
-BOOLEAN
-HCAPI 
-HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
+DECL_EXTERN_API(BOOLEAN, InternalCompare, PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
 {
 	for (; tLength--; pbFirst++, pbSecond++)
 	{
@@ -20,10 +17,7 @@ HcInternalCompare(PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
 	return TRUE;
 }
 
-HC_EXTERN_API 
-PVOID
-HCAPI 
-HcInternalCopy(PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalCopy, PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
 {
 	PVOID ret = pDst;
 	SIZE_T sz = tCount;
@@ -36,10 +30,7 @@ HcInternalCopy(PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
 	return (ret);
 }
 
-HC_EXTERN_API
-PVOID 
-HCAPI 
-HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalMove, PVOID pDst, PVOID pSrc, SIZE_T tCount)
 {
 	PVOID ret = pDst;
 
@@ -73,10 +64,7 @@ HcInternalMove(PVOID pDst, PVOID pSrc, SIZE_T tCount)
 	return(ret);
 }
 
-HC_EXTERN_API
-PVOID
-HCAPI 
-HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalSet, PVOID pDst, BYTE bVal, SIZE_T tCount)
 {
 	PVOID start = pDst;
 
@@ -88,13 +76,7 @@ HcInternalSet(PVOID pDst, BYTE bVal, SIZE_T tCount)
 	return (start);
 }
 
-//
-// Fixme, crahes sometimes.
-//
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcInternalValidate(LPCVOID lpcAddress)
+DECL_EXTERN_API(BOOLEAN, InternalValidate, LPCVOID lpcAddress)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 	SIZE_T ReturnedSize;
@@ -105,10 +87,7 @@ HcInternalValidate(LPCVOID lpcAddress)
 	return !(!ReturnedSize || (mbi.Protect & PAGE_NOACCESS) || (mbi.Protect & PAGE_GUARD));
 }
 
-HC_EXTERN_API
-LPVOID
-HCAPI
-HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(LPVOID, InternalLocatePointer, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 {
 	LPVOID CurrentAddress;
 	SIZE_T Index;
@@ -137,28 +116,19 @@ HcInternalLocatePointer(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 	return HcInternalValidate(CurrentAddress) ? (LPVOID)((SIZE_T)CurrentAddress + ptOffsets[tCount - 1]) : NULL;
 }
 
-HC_EXTERN_API
-INT
-HCAPI
-HcInternalReadIntEx32(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(INT, InternalReadIntEx32, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 {
 	LPVOID lpPtr = HcInternalLocatePointer(lpcAddress, ptOffsets, tCount);
 	return HcInternalValidate(lpPtr) ? *(DWORD*)lpPtr : 0;
 }
 
-HC_EXTERN_API
-INT64
-HCAPI
-HcInternalReadIntEx64(LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(INT64, InternalReadIntEx64, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
 {
 	LPVOID lpPtr = HcInternalLocatePointer(lpcAddress, ptOffsets, tCount);
 	return HcInternalValidate(lpPtr) ? *(DWORD64*)lpPtr : 0;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
+DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
 {
 	DWORD dwProtection = PAGE_EXECUTE;
 
@@ -181,10 +151,7 @@ HcInternalMemoryWrite(LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
 	return FALSE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcInternalMemoryNopInstruction(PVOID pAddress)
+DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, PVOID pAddress)
 {
 	_CodeInfo ci;
 	_DInst di;
@@ -224,10 +191,7 @@ HcInternalMemoryNopInstruction(PVOID pAddress)
 	return FALSE;
 }
 
-HC_EXTERN_API
-LPBYTE
-HCAPI
-HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
+DECL_EXTERN_API(LPBYTE, InternalPatternFind, LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;
@@ -269,12 +233,7 @@ HcInternalPatternFind(LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW
 	return NULL;
 }
 
-
-
-HC_EXTERN_API
-LPBYTE
-HCAPI
-HcInternalPatternFindInBuffer(LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size)
+DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;

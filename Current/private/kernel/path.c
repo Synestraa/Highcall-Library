@@ -2,10 +2,7 @@
 
 #include "../../public/imports.h"
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcPathGetFullPathNameA(IN LPCSTR lpFileName, OUT LPSTR lpBuffer)
+DECL_EXTERN_API(DWORD, PathGetFullPathNameA, IN LPCSTR lpFileName, OUT LPSTR lpBuffer)
 {
 	LPWSTR lpTemp = HcStringAllocW(MAX_PATH);
 	LPWSTR lpConvertedName;
@@ -29,10 +26,7 @@ HcPathGetFullPathNameA(IN LPCSTR lpFileName, OUT LPSTR lpBuffer)
 	return Length;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcPathGetFullPathNameW(IN LPCWSTR lpFileName, OUT LPWSTR lpBuffer)
+DECL_EXTERN_API(DWORD, PathGetFullPathNameW, IN LPCWSTR lpFileName, OUT LPWSTR lpBuffer)
 {
 	/* Rewriting this would take ages, cba right now lol */
 	return RtlGetFullPathName_U(lpFileName,
@@ -41,19 +35,13 @@ HcPathGetFullPathNameW(IN LPCWSTR lpFileName, OUT LPWSTR lpBuffer)
 		NULL) / sizeof(WCHAR);
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI 
-HcPathGetTempFolderW(IN LPWSTR lpBuffer)
+DECL_EXTERN_API(DWORD, PathGetTempFolderW, IN LPWSTR lpBuffer)
 /* Rtl is safe to use in this case (there is barely any trace, no system calls) although it's still a @TODO due to import hooking. */
 {
 	return 0;
 }
 
-HC_EXTERN_API 
-DWORD 
-HCAPI 
-HcPathGetTempFolderA(IN LPWSTR lpBuffer)
+DECL_EXTERN_API(DWORD, PathGetTempFolderA, IN LPWSTR lpBuffer)
 {
 	return 0;
 }

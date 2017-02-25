@@ -1,6 +1,6 @@
 #include <highcall.h>
 
-PHC_MODULE_INFORMATIONW HCAPI HcInitializeModuleInformationW(DWORD tNameSize, DWORD tPathSize)
+DECL_EXTERN_API(PHC_MODULE_INFORMATIONW, InitializeModuleInformationW, DWORD tNameSize, DWORD tPathSize)
 {
 	PHC_MODULE_INFORMATIONW obj = HcAlloc(sizeof(*obj));
 
@@ -10,14 +10,14 @@ PHC_MODULE_INFORMATIONW HCAPI HcInitializeModuleInformationW(DWORD tNameSize, DW
 	return obj;
 }
 
-VOID HCAPI HcDestroyModuleInformationW(PHC_MODULE_INFORMATIONW o)
+DECL_EXTERN_API(VOID, DestroyModuleInformationW, PHC_MODULE_INFORMATIONW o)
 {
 	HcFree(o->Name);
 	HcFree(o->Path);
 	HcFree(o);
 }
 
-PHC_PROCESS_INFORMATION_EXW HCAPI HcInitializeProcessInformationExW(DWORD tNameSize)
+DECL_EXTERN_API(PHC_PROCESS_INFORMATION_EXW, InitializeProcessInformationExW, DWORD tNameSize)
 {
 	PHC_PROCESS_INFORMATION_EXW obj = HcAlloc(sizeof(*obj));
 
@@ -27,14 +27,14 @@ PHC_PROCESS_INFORMATION_EXW HCAPI HcInitializeProcessInformationExW(DWORD tNameS
 	return obj;
 }
 
-VOID HCAPI HcDestroyProcessInformationExW(PHC_PROCESS_INFORMATION_EXW o)
+DECL_EXTERN_API(VOID, DestroyProcessInformationExW, PHC_PROCESS_INFORMATION_EXW o)
 {
 	HcFree(o->Name);
 	HcDestroyModuleInformationW(o->MainModule);
 	HcFree(o);
 }
 
-PHC_PROCESS_INFORMATIONW HCAPI HcInitializeProcessInformationW(DWORD tNameSize)
+DECL_EXTERN_API(PHC_PROCESS_INFORMATIONW, InitializeProcessInformationW, DWORD tNameSize)
 {
 	PHC_PROCESS_INFORMATIONW obj;
 
@@ -44,7 +44,7 @@ PHC_PROCESS_INFORMATIONW HCAPI HcInitializeProcessInformationW(DWORD tNameSize)
 	return obj;
 }
 
-VOID HCAPI HcDestroyProcessInformationW(PHC_PROCESS_INFORMATIONW o)
+DECL_EXTERN_API(VOID, DestroyProcessInformationW, PHC_PROCESS_INFORMATIONW o)
 {
 	HcFree(o->Name);
 	HcFree(o);

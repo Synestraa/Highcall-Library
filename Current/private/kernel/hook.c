@@ -220,10 +220,7 @@ VOID RelocateConditional(PBYTE lpAddress,
 	}
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI 
-HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
+DECL_EXTERN_API(DWORD, HookAssertLength, LPVOID lpBaseAddress, DWORD MinimumLength)
 {
 	_CodeInfo Info;
 	_DInst* Instructions = NULL;
@@ -270,25 +267,7 @@ HcHookAssertLength(LPVOID lpBaseAddress, DWORD MinimumLength)
 	return Size;
 }
 
-//
-//	CODER: Synestra
-//
-//	PURPOSE: Relocates destinations of calls and jumps to their respective module addresses
-//
-//	PARAMETERS: Buffer, start of the instructions
-//				Size, length of the relocation
-//				Source, the original module that contained the code
-//
-//	RETURN: 
-//
-//	HISTORY: 8/29/2016 Created
-//
-HC_EXTERN_API
-HStatus 
-HCAPI 
-HcHookRelocateCode(PBYTE Code,
-	DWORD Size, 
-	PBYTE Source)
+DECL_EXTERN_API(HStatus, HookRelocateCode, PBYTE Code, DWORD Size, PBYTE Source)
 {
 	_CodeInfo Info;
 	_DInst Instruction;
@@ -422,20 +401,14 @@ HcHookRelocateCode(PBYTE Code,
 	return HOOK_NO_ERR;
 }
 
-HC_EXTERN_API
-PVOID
-HCAPI
-HcHookCreateCave32(LPVOID lpBaseAddress, SIZE_T Size)
+DECL_EXTERN_API(PVOID, HookCreateCave32, LPVOID lpBaseAddress, SIZE_T Size)
 {
 	return HcVirtualAlloc(lpBaseAddress, Size,
 		MEM_RESERVE | MEM_COMMIT,
 		PAGE_EXECUTE_READWRITE);
 }
 
-HC_EXTERN_API
-PVOID
-HCAPI
-HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
+DECL_EXTERN_API(PVOID, HookCreateCave64, LPVOID lpBaseAddress, SIZE_T Size)
 {
 	LPVOID lpAddress = NULL;
 	MEMORY_BASIC_INFORMATION mbi;
@@ -477,23 +450,7 @@ HcHookCreateCave64(LPVOID lpBaseAddress, SIZE_T Size)
 #define HcHookCreateCave(x, y) HcHookCreateCave64(x, y);
 #endif
 
-//
-//	CODER: Synestra
-//
-//	PURPOSE: Restore a function in a new codecave, regardless of previous type of hook.
-//
-//	PARAMETERS: lpBaseAddress, start point of our restoration
-//				dwMinimumSize, minimum amount of bytes that should be taken over from the function.
-//
-//	RETURN: address to the restored function, any restored functions should proceed to call this restored address instead of the original.
-//
-//	HISTORY: unknown date created
-//			 documented
-//
-HC_EXTERN_API
-PVOID
-HCAPI
-HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
+DECL_EXTERN_API(PVOID, HookRecreateCode, PBYTE lpBaseAddress, DWORD dwMinimumSize)
 {
 	PVOID Recreated;
 	PBYTE Original;
@@ -564,10 +521,7 @@ HcHookRecreateCode(PBYTE lpBaseAddress, DWORD dwMinimumSize)
 	return Recreated;
 }
 
-HC_EXTERN_API
-HStatus
-HCAPI
-HcHookDetour(PDetourContext Context)
+DECL_EXTERN_API(HStatus, HookDetour, PDetourContext Context)
 {
 	DWORD ContinuedJumpSize;
 	DWORD DetourMethodSize;
@@ -724,10 +678,7 @@ HcHookDetour(PDetourContext Context)
 	return HOOK_NO_ERR;
 }
 
-HC_EXTERN_API
-HStatus
-HCAPI
-HcHookDetourContextRestore(PDetourContext Context)
+DECL_EXTERN_API(HStatus, HookDetourContextRestore, PDetourContext Context)
 {
 	DWORD dwProtection = PAGE_EXECUTE;
 	SIZE_T NumberofBytesToProtect;

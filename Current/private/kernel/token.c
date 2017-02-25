@@ -75,10 +75,7 @@ static const PRIVILEGE_DATA WellKnownPrivileges[] =
 	{ { SE_CREATE_GLOBAL_PRIVILEGE, 0 }, SE_CREATE_GLOBAL_NAME }
 };
 
-HC_EXTERN_API
-PLUID
-HCAPI
-HcLookupPrivilegeValueW(LPCWSTR Name)
+DECL_EXTERN_API(PLUID, LookupPrivilegeValueW, LPCWSTR Name)
 {
 	ULONG Priv;
 
@@ -91,10 +88,7 @@ HcLookupPrivilegeValueW(LPCWSTR Name)
 	return NULL;
 }
 
-HC_EXTERN_API
-PLUID
-HCAPI
-HcLookupPrivilegeValueA(LPCSTR Name)
+DECL_EXTERN_API(PLUID, LookupPrivilegeValueA, LPCSTR Name)
 {
 	ULONG Priv;
 	LPWSTR Converted;
@@ -114,12 +108,8 @@ HcLookupPrivilegeValueA(LPCSTR Name)
 	return NULL;
 }
 
-HC_EXTERN_API
-NTSTATUS
-HCAPI
-HcTokenIsElevated(HANDLE TokenHandle,
-	PBOOLEAN Elevated
-) {
+DECL_EXTERN_API(NTSTATUS, TokenIsElevated, HANDLE TokenHandle, PBOOLEAN Elevated) 
+{
 	NTSTATUS Status;
 	TOKEN_ELEVATION Elevation;
 	ULONG returnLength = 0;

@@ -2,10 +2,7 @@
 
 #include "../../public/imports.h"
 
-HC_EXTERN_API 
-DWORD 
-HCAPI 
-HcModuleFileNameA(HANDLE hModule, LPSTR lpModuleFileName)
+DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName)
 {
 	LPWSTR lpTemp = HcStringAllocW(MAX_PATH);
 	DWORD Length;
@@ -20,10 +17,7 @@ HcModuleFileNameA(HANDLE hModule, LPSTR lpModuleFileName)
 	return Length;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcModuleFileNameW(HANDLE hModule, LPWSTR lpModuleFileName)
+DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName)
 {
 	PLIST_ENTRY ModuleListHead, Entry;
 	PLDR_DATA_TABLE_ENTRY Module;
@@ -76,10 +70,7 @@ HcModuleFileNameW(HANDLE hModule, LPWSTR lpModuleFileName)
 	return Length;
 }
 
-HC_EXTERN_API
-PBYTE
-HCAPI
-HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
+DECL_EXTERN_API(PBYTE, ModuleProcedureAddressA, HANDLE hModule, LPCSTR lpProcedureName)
 {
 	PBYTE pbModule;
 	PIMAGE_EXPORT_DIRECTORY pExports;
@@ -125,10 +116,7 @@ HcModuleProcedureAddressA(HANDLE hModule, LPCSTR lpProcedureName)
 	return 0;
 }
 
-HC_EXTERN_API
-PBYTE
-HCAPI
-HcModuleProcedureAddressW(HANDLE hModule, LPCWSTR lpProcedureName)
+DECL_EXTERN_API(PBYTE, ModuleProcedureAddressW, HANDLE hModule, LPCWSTR lpProcedureName)
 {
 	SIZE_T Size;
 	PBYTE ReturnValue;
@@ -149,10 +137,7 @@ HcModuleProcedureAddressW(HANDLE hModule, LPCWSTR lpProcedureName)
 	return ReturnValue;
 }
 
-HC_EXTERN_API
-BOOLEAN 
-HCAPI
-HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam)
+DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam)
 {
 	PIMAGE_EXPORT_DIRECTORY pExports;
 	PDWORD pExportNames;
@@ -197,10 +182,7 @@ HcModuleListExports(HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lp
 	return TRUE;
 }
 
-HC_EXTERN_API
-HMODULE
-HCAPI
-HcModuleHandleW(LPCWSTR lpModuleName)
+DECL_EXTERN_API(HMODULE, ModuleHandleW, LPCWSTR lpModuleName)
 {
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
@@ -239,10 +221,7 @@ HcModuleHandleW(LPCWSTR lpModuleName)
 #define RemoveEntryList(x) (x).Blink->Flink = (x).Flink; \
 	(x).Flink->Blink = (x).Blink;
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcModuleHide(CONST IN HMODULE hModule)
+DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule)
 {
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
@@ -288,10 +267,7 @@ HcModuleHide(CONST IN HMODULE hModule)
 }
 
 
-HC_EXTERN_API
-HMODULE
-HCAPI
-HcModuleHandleA(LPCSTR lpModuleName)
+DECL_EXTERN_API(HMODULE, ModuleHandleA, LPCSTR lpModuleName)
 {
 	LPWSTR lpConvertedName;
 	HMODULE ReturnValue;
@@ -315,10 +291,7 @@ HcModuleHandleA(LPCSTR lpModuleName)
 	return ReturnValue;
 }
 
-HC_EXTERN_API
-HMODULE
-HCAPI
-HcModuleLoadA(LPCSTR lpPath)
+DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath)
 {
 	NTSTATUS Status;
 	UNICODE_STRING Path;
@@ -347,10 +320,7 @@ HcModuleLoadA(LPCSTR lpPath)
 	return (HMODULE)hModule;
 }
 
-HC_EXTERN_API
-HMODULE
-HCAPI
-HcModuleLoadW(LPCWSTR lpPath)
+DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath)
 {
 	NTSTATUS Status;
 	UNICODE_STRING Path;
@@ -369,10 +339,7 @@ HcModuleLoadW(LPCWSTR lpPath)
 	return (HMODULE)hModule;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcModuleUnload(HMODULE hModule)
+DECL_EXTERN_API(BOOLEAN, ModuleUnload, HMODULE hModule)
 {
 	return NT_SUCCESS(LdrUnloadDll(hModule));
 }

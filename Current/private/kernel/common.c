@@ -4,13 +4,13 @@
 
 #define WAIT_IO_COMPLETION 0xC0
 
-HC_EXTERN_API VOID HCAPI HcSleep(CONST IN DWORD dwMilliseconds)
+DECL_EXTERN_API(VOID, Sleep, CONST IN DWORD dwMilliseconds)
 {
 	LARGE_INTEGER Time;
 	PLARGE_INTEGER TimePtr;
 	NTSTATUS Status;
 
-	HcInternalSet(&Time, 0, sizeof(Time));
+	ZERO(&Time);
 
 	/* Convert the timeout */
 	TimePtr = HcObjectMillisecondsToNano(&Time, dwMilliseconds);

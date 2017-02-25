@@ -3,18 +3,12 @@
 #include "../../public/imports.h"
 #include "../sys/syscall.h"
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcProcessGetCurrentId(VOID)
+DECL_EXTERN_API(DWORD, ProcessGetCurrentId, VOID)
 {
 	return HandleToUlong(NtCurrentTeb()->ClientId.UniqueProcess);
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcProcessGetId(IN HANDLE Process)
+DECL_EXTERN_API(DWORD, ProcessGetId, IN HANDLE Process)
 {
 	PROCESS_BASIC_INFORMATION ProcessBasic;
 	NTSTATUS Status;
@@ -39,10 +33,7 @@ HcProcessGetId(IN HANDLE Process)
 	return HandleToUlong(ProcessBasic.UniqueProcessId);
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessIsWow64Ex(CONST IN HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessIsWow64Ex, CONST IN HANDLE hProcess)
 {
 	ULONG_PTR pbi = 0;
 	NTSTATUS Status;
@@ -65,10 +56,7 @@ HcProcessIsWow64Ex(CONST IN HANDLE hProcess)
 	return pbi != 0;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessIsWow64(CONST IN DWORD dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessIsWow64, CONST IN DWORD dwProcessId)
 {
 	HANDLE hProcess;
 	BOOLEAN Result;
@@ -85,11 +73,7 @@ HcProcessIsWow64(CONST IN DWORD dwProcessId)
 	return Result;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessExitCode(CONST IN SIZE_T dwProcessId,
-	IN LPDWORD lpExitCode)
+DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, IN LPDWORD lpExitCode)
 {
 	HANDLE hProcess;
 	PROCESS_BASIC_INFORMATION ProcessBasic;
@@ -123,11 +107,7 @@ HcProcessExitCode(CONST IN SIZE_T dwProcessId,
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN 
-HCAPI
-HcProcessExitCodeEx(CONST IN HANDLE hProcess,
-	IN LPDWORD lpExitCode)
+DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, IN LPDWORD lpExitCode)
 {
 	PROCESS_BASIC_INFORMATION ProcessBasic;
 	NTSTATUS Status;
@@ -152,11 +132,7 @@ HcProcessExitCodeEx(CONST IN HANDLE hProcess,
 	return TRUE;
 }
 
-HC_EXTERN_API
-HANDLE
-HCAPI
-HcProcessOpen(CONST SIZE_T dwProcessId,
-	CONST ACCESS_MASK DesiredAccess)
+DECL_EXTERN_API(HANDLE, ProcessOpen, CONST SIZE_T dwProcessId, CONST ACCESS_MASK DesiredAccess)
 {
 	NTSTATUS Status;
 	OBJECT_ATTRIBUTES oa;
@@ -182,10 +158,7 @@ HcProcessOpen(CONST SIZE_T dwProcessId,
 	return 0;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessReadyEx(CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess)
 {
 	NTSTATUS Status;
 	PPEB_LDR_DATA LoaderData;
@@ -227,10 +200,7 @@ HcProcessReadyEx(CONST HANDLE hProcess)
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessReady(CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId)
 {
 	BOOLEAN Success;
 	HANDLE hProcess;
@@ -250,10 +220,7 @@ HcProcessReady(CONST SIZE_T dwProcessId)
 	return Success;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessSuspend(CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId)
 {
 	NTSTATUS Status;
 	HANDLE hProcess;
@@ -270,19 +237,13 @@ HcProcessSuspend(CONST SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessSuspendEx(CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessSuspendEx, CONST HANDLE hProcess)
 {
 	/* Suspend and return */
 	return NT_SUCCESS(HcSuspendProcess(hProcess));
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessResume(CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST SIZE_T dwProcessId)
 {
 	NTSTATUS Status;
 	HANDLE hProcess;
@@ -299,18 +260,12 @@ HcProcessResume(CONST SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessResumeEx(CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessResumeEx, CONST HANDLE hProcess)
 {
 	return NT_SUCCESS(HcResumeProcess(hProcess));
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessWriteMemory(CONST HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST HANDLE hProcess,
 	CONST LPVOID lpBaseAddress,
 	CONST VOID* lpBuffer,
 	SIZE_T nSize,
@@ -417,10 +372,7 @@ HcProcessWriteMemory(CONST HANDLE hProcess,
 	return FALSE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessReadMemory(CONST IN HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessReadMemory, CONST IN HANDLE hProcess,
 	IN LPCVOID lpBaseAddress,
 	IN LPVOID lpBuffer,
 	IN SIZE_T nSize,
@@ -449,10 +401,7 @@ HcProcessReadMemory(CONST IN HANDLE hProcess,
 	return TRUE;
 }
 
-HC_EXTERN_API
-HANDLE
-HCAPI
-HcProcessCreateThread(CONST IN HANDLE hProcess,
+DECL_EXTERN_API(HANDLE, ProcessCreateThread, CONST IN HANDLE hProcess,
 	CONST IN LPTHREAD_START_ROUTINE lpStartAddress,
 	CONST IN LPVOID lpParamater,
 	CONST IN DWORD dwCreationFlags)
@@ -481,10 +430,7 @@ HcProcessCreateThread(CONST IN HANDLE hProcess,
 	return hThread;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessReadNullifiedString(CONST HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST HANDLE hProcess,
 	CONST PUNICODE_STRING usStringIn,
 	LPWSTR lpStringOut,
 	CONST SIZE_T lpSize)
@@ -533,10 +479,7 @@ HcProcessReadNullifiedString(CONST HANDLE hProcess,
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessLdrModuleToHighCallModule(CONST IN HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessLdrModuleToHighCallModule, CONST IN HANDLE hProcess,
 	CONST IN PLDR_DATA_TABLE_ENTRY Module,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
@@ -556,10 +499,7 @@ HcProcessLdrModuleToHighCallModule(CONST IN HANDLE hProcess,
 	return TRUE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessQueryInformationModule(CONST IN HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessQueryInformationModule, CONST IN HANDLE hProcess,
 	IN HMODULE hModule OPTIONAL,
 	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
 {
@@ -663,10 +603,7 @@ HcProcessQueryInformationModule(CONST IN HANDLE hProcess,
 	return FALSE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessEnumModulesW(CONST HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessEnumModulesW, CONST HANDLE hProcess,
 	CONST HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
@@ -768,10 +705,7 @@ HcProcessEnumModulesW(CONST HANDLE hProcess,
 	return FALSE;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI 
-HcProcessEnumMappedImagesW(CONST HANDLE ProcessHandle,
+DECL_EXTERN_API(BOOLEAN, ProcessEnumMappedImagesW, CONST HANDLE ProcessHandle,
 	CONST HC_MODULE_CALLBACK_EVENTW hcmCallback,
 	LPARAM lParam)
 {
@@ -924,10 +858,7 @@ GetProcessList(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation
 	return Status;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessEnumByNameExW(CONST LPCWSTR lpProcessName,
+DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACK_EXW Callback,
 	LPARAM lParam)
 {
@@ -1004,10 +935,7 @@ HcProcessEnumByNameExW(CONST LPCWSTR lpProcessName,
 	return FALSE;
 }
 
-HC_EXTERN_API 
-BOOLEAN 
-HCAPI 
-HcProcessGetById(CONST IN DWORD dwProcessId, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
+DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
 {
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
@@ -1058,7 +986,7 @@ end:
 	return ReturnValue;
 }
 
-HC_EXTERN_API BOOLEAN HCAPI HcProcessGetByNameW(CONST IN LPCWSTR lpName, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
+DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PHC_PROCESS_INFORMATIONW pProcessInfo)
 {
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
@@ -1110,10 +1038,7 @@ end:
 	return ReturnValue;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessEnumByNameW(CONST LPCWSTR lpProcessName,
+DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName,
 	HC_PROCESS_CALLBACKW Callback,
 	LPARAM lParam)
 {
@@ -1172,10 +1097,7 @@ HcProcessEnumByNameW(CONST LPCWSTR lpProcessName,
 	return FALSE;
 }
 
-HC_EXTERN_API
-SIZE_T
-WINAPI
-HcProcessModuleFileName(CONST HANDLE hProcess,
+DECL_EXTERN_API(SIZE_T, ProcessModuleFileName, CONST HANDLE hProcess,
 	CONST LPVOID lpv,
 	LPWSTR lpFilename,
 	CONST DWORD nSize)
@@ -1258,7 +1180,7 @@ static HC_EXTERN_API NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION*
 	return Status;
 }
 
-HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumHandleEntries(HC_HANDLE_ENTRY_CALLBACKW callback, LPARAM lParam)
+DECL_EXTERN_API(BOOLEAN, ProcessEnumHandleEntries, HC_HANDLE_ENTRY_CALLBACKW callback, LPARAM lParam)
 {
 	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
 	NTSTATUS Status;
@@ -1286,10 +1208,7 @@ HC_EXTERN_API BOOLEAN HCAPI HcProcessEnumHandleEntries(HC_HANDLE_ENTRY_CALLBACKW
 	return ReturnValue;
 }
 
-HC_EXTERN_API 
-BOOLEAN 
-HCAPI
-HcProcessEnumHandles(HC_HANDLE_CALLBACKW callback, DWORD dwTypeIndex, LPARAM lParam)
+DECL_EXTERN_API(BOOLEAN, ProcessEnumHandles, HC_HANDLE_CALLBACKW callback, DWORD dwTypeIndex, LPARAM lParam)
 {
 	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
 	NTSTATUS Status;
@@ -1365,13 +1284,10 @@ done:
 	return ReturnValue;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessSetPrivilegeA(CONST HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST HANDLE hProcess,
 	CONST LPCSTR Privilege,
-	CONST BOOLEAN bEnablePrivilege
-){
+	CONST BOOLEAN bEnablePrivilege)
+{
 	LPWSTR lpConvertedPrivilege = HcStringConvertAtoW(Privilege);
 	BOOLEAN bReturn;
 
@@ -1384,10 +1300,7 @@ HcProcessSetPrivilegeA(CONST HANDLE hProcess,
 	return bReturn;
 }
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessSetPrivilegeW(CONST HANDLE hProcess,
+DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	CONST LPCWSTR Privilege,
 	CONST BOOLEAN bEnablePrivilege)
 {
@@ -1477,10 +1390,7 @@ HcProcessSetPrivilegeW(CONST HANDLE hProcess,
 	return TRUE;
 };
 
-HC_EXTERN_API
-BOOLEAN
-HCAPI
-HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb)
 {
 	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION ProcInfo;
@@ -1519,13 +1429,7 @@ HcProcessGetPeb(CONST HANDLE hProcess, PPEB pPeb)
 	return TRUE;
 }
 
-HC_EXTERN_API 
-DWORD
-HCAPI 
-HcProcessGetCommandLineA(
-	CONST HANDLE hProcess,
-	LPSTR* lpszCommandline,
-	CONST BOOLEAN bAlloc)
+DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc)
 {
 	LPWSTR lpCmd = NULL;
 	DWORD dwReturnLEngth;
@@ -1548,10 +1452,7 @@ HcProcessGetCommandLineA(
 	return dwReturnLEngth;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcProcessGetCommandLineW(CONST HANDLE hProcess,
+DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess,
 	LPWSTR* lpszCommandline,
 	CONST BOOLEAN bAlloc)
 {
@@ -1605,10 +1506,7 @@ HcProcessGetCommandLineW(CONST HANDLE hProcess,
 	return dwCmdLength;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
+DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW,CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 {
 	PROCESS_BASIC_INFORMATION pbi;
 	RTL_USER_PROCESS_PARAMETERS upp;
@@ -1651,10 +1549,7 @@ HcProcessGetCurrentDirectoryW(CONST HANDLE hProcess, LPWSTR* lpszDirectory)
 	return dwReturnLength;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcProcessGetCurrentDirectoryA(CONST HANDLE hProcess, LPSTR* szDirectory)
+DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST HANDLE hProcess, LPSTR* szDirectory)
 {
 	LPWSTR lpCopy = HcStringAllocW(MAX_PATH);
 	DWORD dwCount;

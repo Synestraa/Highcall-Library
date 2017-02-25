@@ -9,10 +9,7 @@ struct error_table
 
 static const struct error_table error_table[29];
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcErrorStatusTranslate(IN NTSTATUS Status)
+DECL_EXTERN_API(DWORD, ErrorStatusTranslate, IN NTSTATUS Status)
 {
 	DWORD ErrorCode;
 	const struct error_table *table = error_table;
@@ -59,36 +56,23 @@ HcErrorStatusTranslate(IN NTSTATUS Status)
 	return ERROR_MR_MID_NOT_FOUND;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcErrorStatusToDos(IN NTSTATUS Status)
+DECL_EXTERN_API(DWORD, ErrorStatusToDos, IN NTSTATUS Status)
 {
 	return HcErrorStatusTranslate(Status);
 }
 
-HC_EXTERN_API
-VOID
-WINAPI
-HcErrorSetDosError(IN DWORD dwErrCode)
+DECL_EXTERN_API(VOID, ErrorSetDosError, IN DWORD dwErrCode)
 {
 	/* Check if the error is already set before setting it. */
 	if (NtCurrentTeb()->LastErrorValue != dwErrCode) NtCurrentTeb()->LastErrorValue = dwErrCode;
 }
 
-HC_EXTERN_API
-DWORD
-WINAPI
-HcErrorGetDosError(VOID)
+DECL_EXTERN_API(DWORD, ErrorGetDosError, VOID)
 {
 	/* Return the current value */
 	return NtCurrentTeb()->LastErrorValue;
 }
-
-HC_EXTERN_API
-DWORD
-WINAPI
-HcErrorSetNtStatus(IN NTSTATUS Status)
+DECL_EXTERN_API(DWORD, ErrorSetNtStatus, IN NTSTATUS Status)
 {
 	DWORD dwErrCode;
 	PTEB Teb = NtCurrentTeb();
@@ -104,10 +88,7 @@ HcErrorSetNtStatus(IN NTSTATUS Status)
 	return dwErrCode;
 }
 
-HC_EXTERN_API
-NTSTATUS
-HCAPI 
-HcErrorGetLastStatus() 
+DECL_EXTERN_API(NTSTATUS, ErrorGetLastStatus) 
 {
 	return NtCurrentTeb()->LastStatusValue;
 }

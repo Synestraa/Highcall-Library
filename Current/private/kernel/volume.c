@@ -3,60 +3,7 @@
 #include "../sys/syscall.h"
 #include "../../public/imports.h"
 
-static
-HANDLE
-HCAPI
-HcFileOpenDirectory(IN LPCWSTR DirName, IN BOOLEAN Write)
-{
-	UNICODE_STRING NtPathU;
-	OBJECT_ATTRIBUTES ObjectAttributes;
-	IO_STATUS_BLOCK IoStatusBlock;
-	NTSTATUS errCode;
-	HANDLE hFile = NULL;
-
-	ZERO(&IoStatusBlock);
-	ZERO(&ObjectAttributes);
-
-	if (!RtlDosPathNameToNtPathName_U(DirName, &NtPathU, NULL, NULL))
-	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		return INVALID_HANDLE;
-	}
-
-	InitializeObjectAttributes(&ObjectAttributes,
-		&NtPathU,
-		OBJ_CASE_INSENSITIVE,
-		NULL,
-		NULL);
-
-	errCode = HcCreateFile(&hFile,
-		Write ? FILE_GENERIC_WRITE : FILE_GENERIC_READ,
-		&ObjectAttributes,
-		&IoStatusBlock,
-		NULL,
-		0,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		FILE_OPEN,
-		0,
-		NULL,
-		0);
-
-	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
-
-	if (!NT_SUCCESS(errCode))
-	{
-		HcErrorSetNtStatus(errCode);
-		return INVALID_HANDLE;
-	}
-
-	return hFile;
-}
-
-
-HC_EXTERN_API 
-BOOLEAN 
-HCAPI 
-HcVolumeGetInformationA(
+DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA, 
 	_In_opt_  LPCSTR  lpRootPathName,
 	_Out_opt_ LPSTR   lpVolumeNameBuffer,
 	_In_      DWORD   nVolumeNameSize,
@@ -144,10 +91,7 @@ HcVolumeGetInformationA(
 	return Result;
 }
 
-HC_EXTERN_API 
-BOOLEAN 
-HCAPI 
-HcVolumeGetInformationW(
+DECL_EXTERN_API(BOOLEAN, VolumeGetInformationW, 
 	_In_opt_  LPCWSTR lpRootPathName,
 	_Out_opt_ LPWSTR  lpVolumeNameBuffer,
 	_In_      DWORD   nVolumeNameSize,
@@ -179,7 +123,7 @@ HcVolumeGetInformationW(
 	}
 	RootPathName[3] = 0;
 
-	hFile = HcFileOpenDirectory(RootPathName, FALSE);
+	hFile = HcFileOpenW(RootPathName, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
 	{
 		return FALSE;

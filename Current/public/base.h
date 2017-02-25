@@ -1,7 +1,7 @@
 #pragma once
 
 #pragma region General Includes
-#include "ntuser.h" /* contains native.h, wintype.h */
+#include "native.h" /* contains native.h, wintype.h */
 
 #include <winerror.h> /* for DOS error codes */
 #include <minwinbase.h> /* definitions */

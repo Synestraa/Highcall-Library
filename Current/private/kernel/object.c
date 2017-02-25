@@ -59,7 +59,7 @@ static VOID _baseInitObjectTypes(VOID)
 	HcFree(Types);
 }
 
-HANDLE HCAPI HcObjectTranslateHandle(CONST IN HANDLE Handle)
+DECL_EXTERN_API(HANDLE, ObjectTranslateHandle, CONST IN HANDLE Handle)
 {
 	PRTL_USER_PROCESS_PARAMETERS Ppb = NtCurrentPeb()->ProcessParameters;
 	
@@ -73,7 +73,7 @@ HANDLE HCAPI HcObjectTranslateHandle(CONST IN HANDLE Handle)
 	return Handle;
 }
 
-HC_EXTERN_API DWORD HCAPI HcObjectTypeIndexByName(IN LPCWSTR lpObjectName)
+DECL_EXTERN_API(DWORD, ObjectTypeIndexByName, IN LPCWSTR lpObjectName)
 {
 	DWORD typeIndex = 0;
 
@@ -97,10 +97,7 @@ HC_EXTERN_API DWORD HCAPI HcObjectTypeIndexByName(IN LPCWSTR lpObjectName)
 	return OBJECT_TYPE_ANY;
 }
 
-HC_EXTERN_API
-PLARGE_INTEGER 
-HCAPI 
-HcObjectMillisecondsToNano(OUT PLARGE_INTEGER Timeout, CONST IN DWORD dwMiliseconds)
+DECL_EXTERN_API(PLARGE_INTEGER, ObjectMillisecondsToNano, OUT PLARGE_INTEGER Timeout, CONST IN DWORD dwMiliseconds)
 {
 	if (dwMiliseconds == INFINITE)
 	{
@@ -112,10 +109,7 @@ HcObjectMillisecondsToNano(OUT PLARGE_INTEGER Timeout, CONST IN DWORD dwMiliseco
 	return Timeout;
 }
 
-HC_EXTERN_API
-DWORD
-HCAPI
-HcObjectWaitMultiple(IN DWORD nCount,
+DECL_EXTERN_API(DWORD, ObjectWaitMultiple, IN DWORD nCount,
 	IN CONST PHANDLE lpHandles,
 	IN BOOL bWaitAll,
 	IN DWORD dwMilliseconds)
@@ -185,10 +179,7 @@ HcObjectWaitMultiple(IN DWORD nCount,
 	return Status;
 }
 
-HC_EXTERN_API
-DWORD 
-HCAPI 
-HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
+DECL_EXTERN_API(DWORD, ObjectWait, HANDLE hObject, IN DWORD dwMiliseconds)
 {
 	PLARGE_INTEGER TimePtr;
 	LARGE_INTEGER Time;
@@ -212,10 +203,7 @@ HcObjectWait(HANDLE hObject, IN DWORD dwMiliseconds)
 	return Status;
 }
 
-HC_EXTERN_API
-VOID
-HCAPI
-HcObjectClose(HANDLE hObject)
+DECL_EXTERN_API(VOID, ObjectClose, HANDLE hObject)
 {
 	HcClose(hObject);
 }
