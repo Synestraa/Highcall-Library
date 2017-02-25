@@ -206,6 +206,11 @@ static int __tolower(int c)
 	return c;
 }
 
+static int __islower(int c)
+{
+	return c >= 'a' && c <= 'z';
+}
+
 static int __toupper(int c)
 {
 	return __islower(c) ? c - 'a' + 'A' : c;

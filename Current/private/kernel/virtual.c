@@ -980,7 +980,7 @@ DECL_EXTERN_API(PVOID, Alloc, IN SIZE_T Size)
 	return RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
 }
 
-DECL_EXTERN_API(VOID, HcFree, IN LPVOID lpAddress)
+DECL_EXTERN_API(VOID, Free, IN LPVOID lpAddress)
 {
 	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
 }

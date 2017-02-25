@@ -22,7 +22,7 @@ DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName)
 	PLIST_ENTRY ModuleListHead, Entry;
 	PLDR_DATA_TABLE_ENTRY Module;
 	ULONG Length = 0;
-	ULONG Cookie = 0;
+	ULONG_PTR Cookie = 0;
 
 	if (!hModule)
 	{
@@ -187,7 +187,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleW, LPCWSTR lpModuleName)
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
 	PLIST_ENTRY pListHead, pListEntry;
-	ULONG Cookie = 0;
+	ULONG_PTR Cookie = 0;
 	HMODULE hReturn = NULL;
 
 	/* if there is no name specified, return base address of main module */
@@ -227,7 +227,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule)
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
 	PLIST_ENTRY pListHead, pListEntry;
 	BOOLEAN bReturn = FALSE;
-	ULONG Cookie = 0;
+	ULONG_PTR Cookie = 0;
 
 	/* if there is no name specified, return base address of main module */
 	if (!hModule)
