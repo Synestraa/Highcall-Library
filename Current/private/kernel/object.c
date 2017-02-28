@@ -49,7 +49,7 @@ static VOID _baseInitObjectTypes(VOID)
 
 				HcStringCopyW(_baseObjectTypePairs[i]->Name,
 					type->TypeName.Buffer,
-					type->TypeName.Length);
+					type->TypeName.Length / sizeof(WCHAR));
 			}
 
 			type = (POBJECT_TYPE_INFORMATION)((PCHAR)(type + 1) + ALIGN_UP(type->TypeName.MaximumLength, ULONG_PTR));

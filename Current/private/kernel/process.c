@@ -499,15 +499,122 @@ DECL_EXTERN_API(BOOLEAN, ProcessLdrModuleToHighCallModule, CONST IN HANDLE hProc
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW, 
+DECL_EXTERN_API(BOOLEAN, ProcessQueryInformationModule, CONST IN HANDLE hProcess,
+	IN HMODULE hModule OPTIONAL,
+	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
+{
+	SIZE_T Count = 0;
+	NTSTATUS Status;
+	PPEB_LDR_DATA LoaderData;
+	PLIST_ENTRY ListHead, ListEntry;
+	PROCESS_BASIC_INFORMATION ProcInfo;
+	LDR_DATA_TABLE_ENTRY Module;
+	ULONG Len = 0;
+
+	ZERO(&ProcInfo);
+	ZERO(&Module);
+
+	/* Query the process information to get its PEB address */
+	Status = HcQueryInformationProcess(hProcess,
+		ProcessBasicInformation,
+		&ProcInfo,
+		sizeof(PROCESS_BASIC_INFORMATION),
+		&Len);
+
+	if (!NT_SUCCESS(Status))
+	{
+		return FALSE;
+	}
+
+	/* If no module was provided, get base as module */
+	if (hModule == NULL)
+	{
+		if (!HcProcessReadMemory(hProcess,
+			&(ProcInfo.PebBaseAddress->ImageBaseAddress),
+			&hModule,
+			sizeof(hModule),
+			NULL))
+		{
+			return FALSE;
+		}
+	}
+
+	/* Read loader data address from PEB */
+	if (!HcProcessReadMemory(hProcess,
+		&(ProcInfo.PebBaseAddress->LoaderData),
+		&LoaderData,
+		sizeof(LoaderData),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	if (LoaderData == NULL)
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_HANDLE);
+		return FALSE;
+	}
+	
+	/* Store list head address */
+	ListHead = &(LoaderData->InMemoryOrderModuleList);
+
+	/* Read first element in the modules list */
+	if (!HcProcessReadMemory(hProcess,
+		&(LoaderData->InMemoryOrderModuleList.Flink),
+		&ListEntry,
+		sizeof(ListEntry),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	/* Loop on the modules */
+	while (ListEntry != ListHead)
+	{
+		/* Load module data */
+		if (!HcProcessReadMemory(hProcess,
+			CONTAINING_RECORD(ListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks),
+			&Module,
+			sizeof(Module),
+			NULL))
+		{
+			return FALSE;
+		}
+
+		/* Does that match the module we're looking for? */
+		if (Module.ModuleBase == hModule)
+		{
+			return HcProcessLdrModuleToHighCallModule(hProcess,
+				&Module,
+				phcModuleOut);
+		}
+		
+		++Count;
+		if (Count > MAX_MODULES)
+		{
+			break;
+		}	
+		
+		/* Get to next listed module */
+		ListEntry = Module.InMemoryOrderLinks.Flink;
+	}
+
+	HcErrorSetNtStatus(STATUS_INVALID_HANDLE);
+	return FALSE;
+}
+
+DECL_EXTERN_API(HMODULE, ProcessGetModuleHandleByNameAdvW, 
 	CONST IN HANDLE ProcessHandle,
 	IN LPCWSTR lpModuleName OPTIONAL)
 {
 	BOOLEAN Continue;
 	MEMORY_BASIC_INFORMATION basicInfo;
-	PHC_MODULE_INFORMATIONW hcmInformation;
+	HMODULE hModule = NULL;
 	SIZE_T allocationSize = 0;
+	LPWSTR lpFilePath;
+	LPWSTR lpModuleNameExtracted;
 	PVOID baseAddress = NULL;
+	BOOLEAN Success = FALSE;
 
 	ZERO(&basicInfo);
 
@@ -528,9 +635,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW,
 	{
 		if (basicInfo.Type == MEM_IMAGE)
 		{
-			hcmInformation = HcInitializeModuleInformationW(MAX_PATH, MAX_PATH);
+			hModule = basicInfo.AllocationBase;
+			lpFilePath = HcStringAllocW(MAX_PATH);
+			lpModuleNameExtracted = HcStringAllocW(MAX_PATH);
 
-			hcmInformation->Base = basicInfo.AllocationBase;
 			allocationSize = 0;
 
 			/* Calculate destination of next module. */
@@ -550,13 +658,11 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW,
 					break;
 				}
 
-			} while (basicInfo.AllocationBase == (PVOID)hcmInformation->Base);
-
-			hcmInformation->Size = allocationSize;
+			} while (basicInfo.AllocationBase == (PVOID)hModule);
 
 			if (HcProcessModuleFileName(ProcessHandle,
-				(PVOID)hcmInformation->Base,
-				hcmInformation->Path,
+				(PVOID)hModule,
+				lpFilePath,
 				MAX_PATH))
 			{
 				//
@@ -564,10 +670,27 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW,
 				// The name should be stripped from the path.
 				// The path should be resolved from native to dos.
 				//
-				HcStringCopyW(hcmInformation->Name, hcmInformation->Path, MAX_PATH);
+				DWORD lastIndex = HcStringLastIndexOfW(lpFilePath, L"\\", FALSE);
+				if (lastIndex != -1)
+				{
+					if (HcStringSubtractW(lpFilePath, lpModuleNameExtracted, lastIndex, -1))
+					{
+						if (HcStringEqualW(lpModuleName, lpModuleNameExtracted, TRUE))
+						{
+							Success = TRUE;
+							break;
+						}
+					}
+					else if (HcStringContainsW(lpFilePath, lpModuleName, TRUE))
+					{
+						Success = TRUE;
+						break;
+					}
+				}
 			}
 
-			HcDestroyModuleInformationW(hcmInformation);
+			HcFree(lpModuleNameExtracted);
+			HcFree(lpFilePath);
 		}
 		else
 		{
@@ -585,7 +708,12 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW,
 		}
 	}
 
-	return TRUE;
+	if (!Success)
+	{
+		hModule = NULL;
+	}
+
+	return hModule;
 }
 
 DECL_EXTERN_API(BOOLEAN, ProcessEnumModulesW, CONST HANDLE hProcess,
@@ -750,11 +878,16 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumMappedImagesW, CONST HANDLE ProcessHandle,
 				hcmInformation->Path,
 				MAX_PATH))
 			{
-				/* Temporary.
-					The name should be stripped from the path.
-					The path should be resolved from native to dos.
-				*/
-				HcStringCopyW(hcmInformation->Name, hcmInformation->Path, MAX_PATH);
+				//
+				// Temporary.
+				// The name should be stripped from the path.
+				// The path should be resolved from native to dos.
+				//
+				DWORD lastIndex = HcStringLastIndexOfW(hcmInformation->Path, L"\\", FALSE);
+				if (lastIndex != -1)
+				{
+					HcStringSubtractW(hcmInformation->Path, hcmInformation->Name, lastIndex, -1);
+				}
 			}
 
 			if (hcmCallback(*hcmInformation, lParam))
@@ -877,7 +1010,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName,
 			/* Copy the name */
 			HcStringCopyW(hcpInformation->Name,
 				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length);
+				processInfo->ImageName.Length / sizeof(WCHAR));
 
 			/* Try opening the process */
 			CurrentHandle = HcProcessOpen((SIZE_T)processInfo->UniqueProcessId,
@@ -951,7 +1084,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PHC_PRO
 			/* Copy the name */
 			HcStringCopyW(pProcessInfo->Name,
 				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length);
+				processInfo->ImageName.Length / sizeof(WCHAR));
 
 			ReturnValue = TRUE;
 			goto end;
@@ -1003,7 +1136,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PHC_PRO
 			/* Copy the name */
 			HcStringCopyW(pProcessInfo->Name,
 				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length);
+				processInfo->ImageName.Length / sizeof(WCHAR));
 
 			ReturnValue = TRUE;
 			goto end;
@@ -1056,7 +1189,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName,
 			/* Copy the name */
 			HcStringCopyW(hcpInformation->Name,
 				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length);
+				processInfo->ImageName.Length / sizeof(WCHAR));
 
 			/* Call the callback as long as the user doesn't return FALSE. */
 			if (Callback(*hcpInformation, lParam))
