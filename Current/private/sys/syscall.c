@@ -52,6 +52,9 @@ sciDeviceIoControlFile,
 sciCreateEvent = SYSI_INVALID,
 sciSetInformationFile = SYSI_INVALID,
 sciReadFile = SYSI_INVALID,
+sciWow64QueryInformationProcess64 = SYSI_INVALID,
+sciWow64ReadVirtualMemory64 = SYSI_INVALID,
+sciWow64WriteVirtualMemory64 = SYSI_INVALID,
 sciDuplicateObject = SYSI_INVALID;
 #pragma endregion
 
@@ -97,7 +100,7 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 	PIMAGE_NT_HEADERS pHeaderNT;
 	DWORD dwFileOffset = 0;
 	LPBYTE VirtualAddress = 0;
-	LPBYTE RelativeVirtualAddress = 0;
+	DWORD RelativeVirtualAddress = 0;
 
 	pHeaderNT = HcPEGetNtHeader((HMODULE)lpModule);
 	if (!pHeaderNT)
@@ -129,7 +132,7 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 		if (VirtualAddress)
 		{
 			/* Calculate the relative offset */
-			RelativeVirtualAddress = (LPBYTE)(VirtualAddress - lpModule);
+			RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
 
 			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 
@@ -181,6 +184,9 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			SYSINDEX_ASSERT(DuplicateObject);
 			SYSINDEX_ASSERT(SetInformationFile);
 			SYSINDEX_ASSERT(ReadFile);
+			SYSINDEX_ASSERT(Wow64QueryInformationProcess64);
+			SYSINDEX_ASSERT(Wow64ReadVirtualMemory64);
+			SYSINDEX_ASSERT(Wow64WriteVirtualMemory64);
 
 			/* Syscwall identification end */
 		}

@@ -365,7 +365,7 @@ DECL_EXTERN_API(DWORD, FileSizeW, LPCWSTR lpPath)
 DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, HMODULE hModule, LPCSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	LPBYTE RelativeVirtualAddress;
+	DWORD RelativeVirtualAddress;
 	LPBYTE VirtualAddress;
 	LPBYTE lpModule;
 
@@ -386,11 +386,11 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, HMODULE hModule, LPCSTR lpExport
 	// Get the absolute address of requested export, subtract the module's base,
 	// pass to the PE handler function.
 	//
-	VirtualAddress = HcModuleProcedureAddressA(hModule, lpExportName);
+	VirtualAddress = HcModuleProcedureA(hModule, lpExportName);
 	if (VirtualAddress)
 	{
 		/* Calculate the relative offset */
-		RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
+		RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
 
 		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 	}
@@ -401,7 +401,7 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, HMODULE hModule, LPCSTR lpExport
 DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	LPBYTE RelativeVirtualAddress;
+	DWORD RelativeVirtualAddress;
 	LPBYTE VirtualAddress;
 	LPBYTE lpModule;
 
@@ -426,7 +426,7 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExpor
 	if (VirtualAddress)
 	{
 		/* Calculate the relative offset */
-		RelativeVirtualAddress = (LPBYTE) (VirtualAddress - lpModule);
+		RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
 
 		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 	}
@@ -437,7 +437,7 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExpor
 DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, LPCVOID lpAddress)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	PBYTE RelativeVirtualAddress;
+	DWORD RelativeVirtualAddress;
 	PBYTE lpModule;
 	MEMORY_BASIC_INFORMATION memInfo;
 	HMODULE hModule;
@@ -468,7 +468,7 @@ DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, LPCVOID lpAddress)
 	}
 
 	/* Calculate the relative offset */
-	RelativeVirtualAddress = (LPBYTE)((PBYTE)lpAddress - lpModule);
+	RelativeVirtualAddress = (DWORD) ((PBYTE)lpAddress - lpModule);
 
 	return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 }

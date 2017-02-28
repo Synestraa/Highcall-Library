@@ -4,7 +4,7 @@
 #include "native.h" /* contains native.h, wintype.h */
 
 #include <winerror.h> /* for DOS error codes */
-#include <minwinbase.h> /* definitions */
+#include <WinBase.h> /* definitions */
 #pragma endregion
 
 #pragma region General Usage Definitions

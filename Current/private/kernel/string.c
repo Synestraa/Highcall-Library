@@ -127,6 +127,18 @@ DECL_EXTERN_API(DWORD, StringIndexOf, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN 
 	return Buffer ? (DWORD) (Buffer - lpStr) : -1;
 }
 
+DECL_EXTERN_API(DWORD, StringLastIndexOf, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
+{
+	if (!HcStringLenA(lpStr))
+	{
+		return -1;
+	}
+
+	LPCSTR Buffer = HcStringWithinStringLastA(lpStr, lpDelimiter, CaseInsensitive);
+	return Buffer ? (DWORD)(Buffer - lpStr) : -1;
+}
+
+
 DECL_EXTERN_API(DWORD, StringIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
 {
 	if (!HcStringLenW(lpStr))
@@ -135,8 +147,20 @@ DECL_EXTERN_API(DWORD, StringIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLE
 	}
 
 	LPCWSTR Buffer = HcStringWithinStringW(lpStr, lpDelimiter, CaseInsensitive);
-	return Buffer ? (DWORD) (Buffer - lpStr) : -1;
+	return Buffer ? (DWORD) (Buffer - lpStr) / sizeof(WCHAR) : -1;
 }
+
+DECL_EXTERN_API(DWORD, StringLastIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
+{
+	if (!HcStringLenW(lpStr))
+	{
+		return -1;
+	}
+
+	LPCWSTR Buffer = HcStringWithinStringLastW(lpStr, lpDelimiter, CaseInsensitive);
+	return Buffer ? (DWORD)(Buffer - lpStr) / sizeof(WCHAR) : -1;
+}
+
 
 DECL_EXTERN_API(DWORD, StringEndOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
 {
@@ -477,6 +501,108 @@ DECL_EXTERN_API(LPSTR, StringWithinStringA, LPCSTR szStr, LPCSTR szToFind, BOOLE
 	}
 
 	return (LPSTR)(szStr + tIndex);
+}
+
+DECL_EXTERN_API(LPSTR, StringWithinStringLastA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
+{
+	DWORD tIndex = 0;
+	DWORD lastOccuredIndex = -1;
+	DWORD tLen;
+	LPSTR lpStr1 = (LPSTR)szStr, lpStr2 = (LPSTR)szToFind;
+	DWORD tSize1, tSize2;
+	CHAR LastChar = ANSI_NULL;
+
+	if (CaseInsensitive)
+	{
+		tSize1 = HcStringSizeA(lpStr1);
+		tSize2 = HcStringSizeA(lpStr2);
+
+		lpStr1 = HcStringAllocA(tSize1);
+
+		HcStringCopyA(lpStr1, szStr, tSize1);
+		HcStringToLowerA(lpStr1);
+
+		lpStr2 = HcStringAllocA(tSize2);
+
+		HcStringCopyA(lpStr2, szToFind, tSize2);
+		HcStringToLowerA(lpStr2);
+	}
+
+	for (tLen = HcStringSizeA(lpStr2);
+		*(lpStr1 + tIndex) != ANSI_NULL;
+		tIndex++)
+	{
+		if (HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen))
+		{
+			lastOccuredIndex = tIndex;
+		}
+	}
+
+	LastChar = *(lpStr1 + tIndex);
+
+	if (CaseInsensitive)
+	{
+		HcFree(lpStr1);
+		HcFree(lpStr2);
+	}
+
+	if (lastOccuredIndex == -1)
+	{
+		return NULL;
+	}
+
+	return (LPSTR)(szStr + tIndex);
+}
+
+DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
+{
+	DWORD tIndex = 0;
+	DWORD tLen;
+	LPWSTR lpStr1 = (LPWSTR)szStr, lpStr2 = (LPWSTR)szToFind;
+	DWORD tSize1, tSize2;
+	WCHAR LastChar = UNICODE_NULL;
+	DWORD lastOccuredIndex = -1;
+
+	if (CaseInsensitive)
+	{
+		tSize1 = HcStringSizeW(lpStr1);
+		tSize2 = HcStringSizeW(lpStr2);
+
+		lpStr1 = HcStringAllocW(tSize1);
+
+		HcStringCopyW(lpStr1, szStr, tSize1);
+		HcStringToLowerW(lpStr1);
+
+		lpStr2 = HcStringAllocW(tSize2);
+
+		HcStringCopyW(lpStr2, szToFind, tSize2);
+		HcStringToLowerW(lpStr2);
+	}
+
+	for (tLen = HcStringSizeW(lpStr2);
+		*(lpStr1 + tIndex) != UNICODE_NULL;
+		tIndex++)
+	{
+		if (HcInternalCompare((PBYTE)(lpStr1 + tIndex), (PBYTE)lpStr2, tLen))
+		{
+			lastOccuredIndex = tIndex;
+		}
+	}
+
+	LastChar = *(lpStr1 + tIndex);
+
+	if (CaseInsensitive)
+	{
+		HcFree(lpStr1);
+		HcFree(lpStr2);
+	}
+
+	if (lastOccuredIndex == -1)
+	{
+		return NULL;
+	}
+
+	return ((LPWSTR)(szStr + tIndex));
 }
 
 DECL_EXTERN_API(LPWSTR, StringWithinStringW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)

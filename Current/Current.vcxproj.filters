@@ -245,16 +245,7 @@
     <MASM Include="private\sys\asm\AccessCheckByType.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
-    <MASM Include="private\sys\asm\AccessCheckByTypeAndAuditAlarm.asm">
-      <Filter>private\sys\asm</Filter>
-    </MASM>
     <MASM Include="private\sys\asm\AccessCheckByTypeResultList.asm">
-      <Filter>private\sys\asm</Filter>
-    </MASM>
-    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarm.asm">
-      <Filter>private\sys\asm</Filter>
-    </MASM>
-    <MASM Include="private\sys\asm\AccessCheckByTypeResultListAndAuditAlarmByHandle.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
     <MASM Include="private\sys\asm\AddAtom.asm">
@@ -1488,6 +1479,15 @@
       <Filter>private\sys\asm</Filter>
     </MASM>
     <MASM Include="private\sys\asm\WriteVirtualMemory.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\Wow64ReadVirtualMemory64.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\Wow64QueryInformationProcess64.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\Wow64WriteVirtualMemory64.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
   </ItemGroup>

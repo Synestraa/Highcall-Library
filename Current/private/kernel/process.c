@@ -499,108 +499,93 @@ DECL_EXTERN_API(BOOLEAN, ProcessLdrModuleToHighCallModule, CONST IN HANDLE hProc
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessQueryInformationModule, CONST IN HANDLE hProcess,
-	IN HMODULE hModule OPTIONAL,
-	OUT PHC_MODULE_INFORMATIONW phcModuleOut)
+DECL_EXTERN_API(BOOLEAN, ProcessGetModuleHandleByNameAdvW, 
+	CONST IN HANDLE ProcessHandle,
+	IN LPCWSTR lpModuleName OPTIONAL)
 {
-	SIZE_T Count = 0;
-	NTSTATUS Status;
-	PPEB_LDR_DATA LoaderData;
-	PLIST_ENTRY ListHead, ListEntry;
-	PROCESS_BASIC_INFORMATION ProcInfo;
-	LDR_DATA_TABLE_ENTRY Module;
-	ULONG Len = 0;
+	BOOLEAN Continue;
+	MEMORY_BASIC_INFORMATION basicInfo;
+	PHC_MODULE_INFORMATIONW hcmInformation;
+	SIZE_T allocationSize = 0;
+	PVOID baseAddress = NULL;
 
-	ZERO(&ProcInfo);
-	ZERO(&Module);
+	ZERO(&basicInfo);
 
-	/* Query the process information to get its PEB address */
-	Status = HcQueryInformationProcess(hProcess,
-		ProcessBasicInformation,
-		&ProcInfo,
-		sizeof(PROCESS_BASIC_INFORMATION),
-		&Len);
-
-	if (!NT_SUCCESS(Status))
+	if (!NT_SUCCESS(HcQueryVirtualMemory(
+		ProcessHandle,
+		baseAddress,
+		MemoryBasicInformation,
+		&basicInfo,
+		sizeof(MEMORY_BASIC_INFORMATION),
+		NULL)))
 	{
 		return FALSE;
 	}
 
-	/* If no module was provided, get base as module */
-	if (hModule == NULL)
+	Continue = TRUE;
+
+	while (Continue)
 	{
-		if (!HcProcessReadMemory(hProcess,
-			&(ProcInfo.PebBaseAddress->ImageBaseAddress),
-			&hModule,
-			sizeof(hModule),
-			NULL))
+		if (basicInfo.Type == MEM_IMAGE)
 		{
-			return FALSE;
+			hcmInformation = HcInitializeModuleInformationW(MAX_PATH, MAX_PATH);
+
+			hcmInformation->Base = basicInfo.AllocationBase;
+			allocationSize = 0;
+
+			/* Calculate destination of next module. */
+			do
+			{
+				baseAddress = (PVOID)((ULONG_PTR)baseAddress + basicInfo.RegionSize);
+				allocationSize += basicInfo.RegionSize;
+
+				if (!NT_SUCCESS(HcQueryVirtualMemory(ProcessHandle,
+					baseAddress,
+					MemoryBasicInformation,
+					&basicInfo,
+					sizeof(MEMORY_BASIC_INFORMATION),
+					NULL)))
+				{
+					Continue = FALSE;
+					break;
+				}
+
+			} while (basicInfo.AllocationBase == (PVOID)hcmInformation->Base);
+
+			hcmInformation->Size = allocationSize;
+
+			if (HcProcessModuleFileName(ProcessHandle,
+				(PVOID)hcmInformation->Base,
+				hcmInformation->Path,
+				MAX_PATH))
+			{
+				//
+				// Temporary.
+				// The name should be stripped from the path.
+				// The path should be resolved from native to dos.
+				//
+				HcStringCopyW(hcmInformation->Name, hcmInformation->Path, MAX_PATH);
+			}
+
+			HcDestroyModuleInformationW(hcmInformation);
+		}
+		else
+		{
+			baseAddress = (PVOID)((ULONG_PTR)baseAddress + basicInfo.RegionSize);
+
+			if (!NT_SUCCESS(HcQueryVirtualMemory(ProcessHandle,
+				baseAddress,
+				MemoryBasicInformation,
+				&basicInfo,
+				sizeof(MEMORY_BASIC_INFORMATION),
+				NULL)))
+			{
+				Continue = FALSE;
+			}
 		}
 	}
 
-	/* Read loader data address from PEB */
-	if (!HcProcessReadMemory(hProcess,
-		&(ProcInfo.PebBaseAddress->LoaderData),
-		&LoaderData,
-		sizeof(LoaderData),
-		NULL))
-	{
-		return FALSE;
-	}
-
-	if (LoaderData == NULL)
-	{
-		HcErrorSetNtStatus(STATUS_INVALID_HANDLE);
-		return FALSE;
-	}
-
-	/* Store list head address */
-	ListHead = &(LoaderData->InMemoryOrderModuleList);
-
-	/* Read first element in the modules list */
-	if (!HcProcessReadMemory(hProcess,
-		&(LoaderData->InMemoryOrderModuleList.Flink),
-		&ListEntry,
-		sizeof(ListEntry),
-		NULL))
-	{
-		return FALSE;
-	}
-
-	/* Loop on the modules */
-	while (ListEntry != ListHead)
-	{
-		/* Load module data */
-		if (!HcProcessReadMemory(hProcess,
-			CONTAINING_RECORD(ListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks),
-			&Module,
-			sizeof(Module),
-			NULL))
-		{
-			return FALSE;
-		}
-
-		/* Does that match the module we're looking for? */
-		if (Module.ModuleBase == hModule)
-		{
-			return HcProcessLdrModuleToHighCallModule(hProcess,
-				&Module,
-				phcModuleOut);
-		}
-
-		++Count;
-		if (Count > MAX_MODULES)
-		{
-			break;
-		}
-
-		/* Get to next listed module */
-		ListEntry = Module.InMemoryOrderLinks.Flink;
-	}
-
-	HcErrorSetNtStatus(STATUS_INVALID_HANDLE);
-	return FALSE;
+	return TRUE;
 }
 
 DECL_EXTERN_API(BOOLEAN, ProcessEnumModulesW, CONST HANDLE hProcess,
@@ -1417,7 +1402,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb)
 	}
 
 	if (!HcProcessReadMemory(hProcess,
-		wow64,
+		(LPVOID)wow64,
 		pPeb,
 		sizeof(*pPeb),
 		NULL))
@@ -1428,7 +1413,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb)
 {
 	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION ProcInfo;
@@ -1463,6 +1448,107 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
 	{
 		return FALSE;
 	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb)
+{
+	NTSTATUS Status;
+	PROCESS_BASIC_INFORMATION32 ProcInfo;
+	ULONG Len = 0;
+
+	ZERO(&ProcInfo);
+
+	/* Query the process information to get its PEB address */
+	Status = HcQueryInformationProcess(hProcess,
+		ProcessBasicInformation,
+		&ProcInfo,
+		sizeof(ProcInfo),
+		&Len);
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	if (!ProcInfo.PebBaseAddress)
+	{
+		HcErrorSetNtStatus(STATUS_PARTIAL_COPY);
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess,
+		UlongToHandle(ProcInfo.PebBaseAddress) /* HANDLE == VOID* */,
+		pPeb,
+		sizeof(*pPeb),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
+{
+	NTSTATUS Status;
+#ifdef _WIN64
+	PROCESS_BASIC_INFORMATION ProcInfo;
+#else
+	PROCESS_BASIC_INFORMATION64 ProcInfo;
+#endif
+	ULONG Len = 0;
+
+	ZERO(&ProcInfo);
+
+#ifdef _WIN64
+	/* Query the process information to get its PEB address */
+	Status = HcQueryInformationProcess(hProcess,
+		ProcessBasicInformation,
+		&ProcInfo,
+		sizeof(ProcInfo),
+		&Len);
+#else
+	Status = HcWow64QueryInformationProcess64(hProcess,
+		ProcessBasicInformation,
+		&ProcInfo,
+		sizeof(ProcInfo),
+		&Len);
+#endif
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	if (!ProcInfo.PebBaseAddress)
+	{
+		HcErrorSetNtStatus(STATUS_PARTIAL_COPY);
+		return FALSE;
+	}
+
+#ifdef _WIN64
+	if (!HcProcessReadMemory(hProcess,
+		(PVOID)ProcInfo.PebBaseAddress,
+		pPeb,
+		sizeof(*pPeb),
+		NULL))
+	{
+		return FALSE;
+	}
+#else
+	if (!HcWow64ReadVirtualMemory64(hProcess,
+		(PVOID64)ProcInfo.PebBaseAddress,
+		pPeb,
+		sizeof(*pPeb),
+		NULL))
+	{
+		return FALSE;
+	}
+#endif
 
 	return TRUE;
 }

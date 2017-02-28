@@ -308,6 +308,29 @@ NTSTATUS HcReadFile(
 	IN  PLARGE_INTEGER   ByteOffset OPTIONAL,
 	IN  PULONG           Key OPTIONAL);
 
+HC_GLOBAL SYS_INDEX sciWow64QueryInformationProcess64;
+NTSTATUS HcWow64QueryInformationProcess64(
+	IN HANDLE ProcessHandle,
+	IN PROCESSINFOCLASS ProcessInformationClass,
+	OUT PVOID ProcessInformation64,
+	IN ULONG ProcessInformationLength,
+	OUT PULONG ReturnLength OPTIONAL);
+
+HC_GLOBAL SYS_INDEX sciWow64ReadVirtualMemory64;
+NTSTATUS HcWow64ReadVirtualMemory64(
+	IN HANDLE ProcessHandle,
+	IN PVOID64 BaseAddress OPTIONAL,
+	IN PVOID Buffer,
+	IN ULONG64 BufferSize,
+	OUT PULONGLONG NumberOfBytesRead OPTIONAL);
+
+HC_GLOBAL SYS_INDEX sciWow64WriteVirtualMemory64;
+NTSTATUS HcWow64WriteVirtualMemory64(
+	IN HANDLE ProcessHandle,
+	IN PVOID64 BaseAddress OPTIONAL,
+	IN PVOID Buffer,
+	IN ULONG64 BufferSize,
+	OUT PULONG64 NumberOfBytesWritten OPTIONAL);
 
 #if defined (__cplusplus)
 }

@@ -5,8 +5,8 @@
 #include "status.h"
 
 // different architecture processes
-#define POINTER_64(Type) ULONGLONG
-#define POINTER_32(Type) ULONG
+#define PTR_64(Type) ULONGLONG
+#define PTR_32(Type) ULONG
 
 #define THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER	0x00000004
 #define THREAD_CREATE_FLAGS_CREATE_SUSPENDED 0x00000001
@@ -735,21 +735,21 @@ typedef struct _PROCESS_BASIC_INFORMATION
 typedef struct _PROCESS_BASIC_INFORMATION32
 {
 	NTSTATUS ExitStatus;
-	POINTER_32(PPEB) PebBaseAddress;
-	POINTER_32(ULONG_PTR) AffinityMask;
+	PTR_32(PPEB) PebBaseAddress;
+	PTR_32(ULONG_PTR) AffinityMask;
 	KPRIORITY BasePriority;
-	POINTER_32(HANDLE) UniqueProcessId;
-	POINTER_32(HANDLE) InheritedFromUniqueProcessId;
+	PTR_32(HANDLE) UniqueProcessId;
+	PTR_32(HANDLE) InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION32, *PPROCESS_BASIC_INFORMATION32;
 
 typedef struct _PROCESS_BASIC_INFORMATION64
 {
 	NTSTATUS ExitStatus;
-	POINTER_64(PPEB) PebBaseAddress;
-	POINTER_64(ULONG_PTR) AffinityMask;
+	PTR_64(PPEB) PebBaseAddress;
+	PTR_64(ULONG_PTR) AffinityMask;
 	KPRIORITY BasePriority;
-	POINTER_64(HANDLE) UniqueProcessId;
-	POINTER_64(HANDLE) InheritedFromUniqueProcessId;
+	PTR_64(HANDLE) UniqueProcessId;
+	PTR_64(HANDLE) InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION64, *PPROCESS_BASIC_INFORMATION64;
 
 typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO
@@ -1735,12 +1735,6 @@ typedef struct _STRING32
 typedef STRING32 UNICODE_STRING32, *PUNICODE_STRING32;
 typedef STRING32 ANSI_STRING32, *PANSI_STRING32;
 
-typedef struct _CLIENT_ID
-{
-	HANDLE UniqueProcess;
-	HANDLE UniqueThread;
-} CLIENT_ID, *PCLIENT_ID;
-
 typedef struct _CLIENT_ID32
 {
 	ULONG UniqueProcess;
@@ -1768,55 +1762,55 @@ typedef struct _RTL_BALANCED_NODE32
 {
 	union
 	{
-		POINTER_32(struct _RTL_BALANCED_NODE *) Children[2];
+		PTR_32(struct _RTL_BALANCED_NODE *) Children[2];
 		struct
 		{
-			POINTER_32(struct _RTL_BALANCED_NODE *) Left;
-			POINTER_32(struct _RTL_BALANCED_NODE *) Right;
+			PTR_32(struct _RTL_BALANCED_NODE *) Left;
+			PTR_32(struct _RTL_BALANCED_NODE *) Right;
 		};
 	};
 	union
 	{
-		POINTER_32(UCHAR) Red : 1;
-		POINTER_32(UCHAR) Balance : 2;
-		POINTER_32(ULONG_PTR) ParentValue;
+		PTR_32(UCHAR) Red : 1;
+		PTR_32(UCHAR) Balance : 2;
+		PTR_32(ULONG_PTR) ParentValue;
 	};
 } RTL_BALANCED_NODE32, *PRTL_BALANCED_NODE32;
 
 typedef struct _RTL_RB_TREE32
 {
-	POINTER_32(PRTL_BALANCED_NODE) Root;
-	POINTER_32(PRTL_BALANCED_NODE) Min;
+	PTR_32(PRTL_BALANCED_NODE) Root;
+	PTR_32(PRTL_BALANCED_NODE) Min;
 } RTL_RB_TREE32, *PRTL_RB_TREE32;
 
 typedef struct _PEB_LDR_DATA32
 {
 	ULONG Length;
 	BOOLEAN Initialized;
-	POINTER_32(HANDLE) SsHandle;
+	PTR_32(HANDLE) SsHandle;
 	LIST_ENTRY32 InLoadOrderModuleList;
 	LIST_ENTRY32 InMemoryOrderModuleList;
 	LIST_ENTRY32 InInitializationOrderModuleList;
-	POINTER_32(PVOID) EntryInProgress;
+	PTR_32(PVOID) EntryInProgress;
 	BOOLEAN ShutdownInProgress;
-	POINTER_32(HANDLE) ShutdownThreadId;
+	PTR_32(HANDLE) ShutdownThreadId;
 } PEB_LDR_DATA32, *PPEB_LDR_DATA32;
 
 typedef struct _LDR_SERVICE_TAG_RECORD32
 {
-	POINTER_32(struct _LDR_SERVICE_TAG_RECORD *) Next;
+	PTR_32(struct _LDR_SERVICE_TAG_RECORD *) Next;
 	ULONG ServiceTag;
 } LDR_SERVICE_TAG_RECORD32, *PLDR_SERVICE_TAG_RECORD32;
 
 typedef struct _LDRP_CSLIST32
 {
-	POINTER_32(PSINGLE_LIST_ENTRY) Tail;
+	PTR_32(PSINGLE_LIST_ENTRY) Tail;
 } LDRP_CSLIST32, *PLDRP_CSLIST32;
 
 typedef struct _LDR_DDAG_NODE32
 {
 	LIST_ENTRY32 Modules;
-	POINTER_32(PLDR_SERVICE_TAG_RECORD) ServiceTagList;
+	PTR_32(PLDR_SERVICE_TAG_RECORD) ServiceTagList;
 	ULONG LoadCount;
 	ULONG ReferenceCount;
 	ULONG DependencyCount;
@@ -1845,8 +1839,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
 		LIST_ENTRY32 InInitializationOrderLinks;
 		LIST_ENTRY32 InProgressLinks;
 	};
-	POINTER_32(PVOID) DllBase;
-	POINTER_32(PVOID) EntryPoint;
+	PTR_32(PVOID) DllBase;
+	PTR_32(PVOID) EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING32 FullDllName;
 	UNICODE_STRING32 BaseDllName;
@@ -1889,16 +1883,16 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
 	USHORT TlsIndex;
 	LIST_ENTRY32 HashLinks;
 	ULONG TimeDateStamp;
-	POINTER_32(struct _ACTIVATION_CONTEXT *) EntryPointActivationContext;
-	POINTER_32(PVOID) Lock;
-	POINTER_32(PLDR_DDAG_NODE) DdagNode;
+	PTR_32(struct _ACTIVATION_CONTEXT *) EntryPointActivationContext;
+	PTR_32(PVOID) Lock;
+	PTR_32(PLDR_DDAG_NODE) DdagNode;
 	LIST_ENTRY32 NodeModuleLink;
-	POINTER_32(struct _LDRP_LOAD_CONTEXT *) LoadContext;
-	POINTER_32(PVOID) ParentDllBase;
-	POINTER_32(PVOID) SwitchBackContext;
+	PTR_32(struct _LDRP_LOAD_CONTEXT *) LoadContext;
+	PTR_32(PVOID) ParentDllBase;
+	PTR_32(PVOID) SwitchBackContext;
 	RTL_BALANCED_NODE32 BaseAddressIndexNode;
 	RTL_BALANCED_NODE32 MappingInfoIndexNode;
-	POINTER_32(ULONG_PTR) OriginalBase;
+	PTR_32(ULONG_PTR) OriginalBase;
 	LARGE_INTEGER LoadTime;
 	ULONG BaseNameHashValue;
 	LDR_DLL_LOAD_REASON LoadReason;
@@ -1909,7 +1903,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
 typedef struct _CURDIR32
 {
 	UNICODE_STRING32 DosPath;
-	POINTER_32(HANDLE) Handle;
+	PTR_32(HANDLE) Handle;
 } CURDIR32, *PCURDIR32;
 
 typedef struct _RTL_DRIVE_LETTER_CURDIR32
@@ -1928,17 +1922,17 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS32
 	ULONG Flags;
 	ULONG DebugFlags;
 
-	POINTER_32(HANDLE) ConsoleHandle;
+	PTR_32(HANDLE) ConsoleHandle;
 	ULONG ConsoleFlags;
-	POINTER_32(HANDLE) StandardInput;
-	POINTER_32(HANDLE) StandardOutput;
-	POINTER_32(HANDLE) StandardError;
+	PTR_32(HANDLE) StandardInput;
+	PTR_32(HANDLE) StandardOutput;
+	PTR_32(HANDLE) StandardError;
 
 	CURDIR32 CurrentDirectory;
 	UNICODE_STRING32 DllPath;
 	UNICODE_STRING32 ImagePathName;
 	UNICODE_STRING32 CommandLine;
-	POINTER_32(PVOID) Environment;
+	PTR_32(PVOID) Environment;
 
 	ULONG StartingX;
 	ULONG StartingY;
@@ -1958,7 +1952,7 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS32
 
 	ULONG EnvironmentSize;
 	ULONG EnvironmentVersion;
-	POINTER_32(PVOID) PackageDependencyData;
+	PTR_32(PVOID) PackageDependencyData;
 	ULONG ProcessGroupId;
 	ULONG LoaderThreads;
 } RTL_USER_PROCESS_PARAMETERS32, *PRTL_USER_PROCESS_PARAMETERS32;
@@ -1983,16 +1977,16 @@ typedef struct _PEB32
 			BOOLEAN SpareBits : 1;
 		};
 	};
-	POINTER_32(HANDLE) Mutant;
+	PTR_32(HANDLE) Mutant;
 
-	POINTER_32(PVOID) ImageBaseAddress;
-	POINTER_32(PPEB_LDR_DATA) Ldr;
-	POINTER_32(PRTL_USER_PROCESS_PARAMETERS) ProcessParameters;
-	POINTER_32(PVOID) SubSystemData;
-	POINTER_32(PVOID) ProcessHeap;
-	POINTER_32(PRTL_CRITICAL_SECTION) FastPebLock;
-	POINTER_32(PVOID) AtlThunkSListPtr;
-	POINTER_32(PVOID) IFEOKey;
+	PTR_32(PVOID) ImageBaseAddress;
+	PTR_32(PPEB_LDR_DATA) Ldr;
+	PTR_32(PRTL_USER_PROCESS_PARAMETERS) ProcessParameters;
+	PTR_32(PVOID) SubSystemData;
+	PTR_32(PVOID) ProcessHeap;
+	PTR_32(PRTL_CRITICAL_SECTION) FastPebLock;
+	PTR_32(PVOID) AtlThunkSListPtr;
+	PTR_32(PVOID) IFEOKey;
 	union
 	{
 		ULONG CrossProcessFlags;
@@ -2009,40 +2003,40 @@ typedef struct _PEB32
 	};
 	union
 	{
-		POINTER_32(PVOID) KernelCallbackTable;
-		POINTER_32(PVOID) UserSharedInfoPtr;
+		PTR_32(PVOID) KernelCallbackTable;
+		PTR_32(PVOID) UserSharedInfoPtr;
 	};
 	ULONG SystemReserved[1];
 	ULONG AtlThunkSListPtr32;
-	POINTER_32(PVOID) ApiSetMap;
+	PTR_32(PVOID) ApiSetMap;
 	ULONG TlsExpansionCounter;
-	POINTER_32(PVOID) TlsBitmap;
+	PTR_32(PVOID) TlsBitmap;
 	ULONG TlsBitmapBits[2];
-	POINTER_32(PVOID) ReadOnlySharedMemoryBase;
-	POINTER_32(PVOID) HotpatchInformation;
-	POINTER_32(PVOID *) ReadOnlyStaticServerData;
-	POINTER_32(PVOID) AnsiCodePageData;
-	POINTER_32(PVOID) OemCodePageData;
-	POINTER_32(PVOID) UnicodeCaseTableData;
+	PTR_32(PVOID) ReadOnlySharedMemoryBase;
+	PTR_32(PVOID) HotpatchInformation;
+	PTR_32(PVOID *) ReadOnlyStaticServerData;
+	PTR_32(PVOID) AnsiCodePageData;
+	PTR_32(PVOID) OemCodePageData;
+	PTR_32(PVOID) UnicodeCaseTableData;
 
 	ULONG NumberOfProcessors;
 	ULONG NtGlobalFlag;
 
 	LARGE_INTEGER CriticalSectionTimeout;
-	POINTER_32(SIZE_T) HeapSegmentReserve;
-	POINTER_32(SIZE_T) HeapSegmentCommit;
-	POINTER_32(SIZE_T) HeapDeCommitTotalFreeThreshold;
-	POINTER_32(SIZE_T) HeapDeCommitFreeBlockThreshold;
+	PTR_32(SIZE_T) HeapSegmentReserve;
+	PTR_32(SIZE_T) HeapSegmentCommit;
+	PTR_32(SIZE_T) HeapDeCommitTotalFreeThreshold;
+	PTR_32(SIZE_T) HeapDeCommitFreeBlockThreshold;
 
 	ULONG NumberOfHeaps;
 	ULONG MaximumNumberOfHeaps;
-	POINTER_32(PVOID *) ProcessHeaps;
+	PTR_32(PVOID *) ProcessHeaps;
 
-	POINTER_32(PVOID) GdiSharedHandleTable;
-	POINTER_32(PVOID) ProcessStarterHelper;
+	PTR_32(PVOID) GdiSharedHandleTable;
+	PTR_32(PVOID) ProcessStarterHelper;
 	ULONG GdiDCAttributeList;
 
-	POINTER_32(PRTL_CRITICAL_SECTION) LoaderLock;
+	PTR_32(PRTL_CRITICAL_SECTION) LoaderLock;
 
 	ULONG OSMajorVersion;
 	ULONG OSMinorVersion;
@@ -2052,39 +2046,39 @@ typedef struct _PEB32
 	ULONG ImageSubsystem;
 	ULONG ImageSubsystemMajorVersion;
 	ULONG ImageSubsystemMinorVersion;
-	POINTER_32(ULONG_PTR) ImageProcessAffinityMask;
+	PTR_32(ULONG_PTR) ImageProcessAffinityMask;
 	GDI_HANDLE_BUFFER32 GdiHandleBuffer;
-	POINTER_32(PVOID) PostProcessInitRoutine;
+	PTR_32(PVOID) PostProcessInitRoutine;
 
-	POINTER_32(PVOID) TlsExpansionBitmap;
+	PTR_32(PVOID) TlsExpansionBitmap;
 	ULONG TlsExpansionBitmapBits[32];
 
 	ULONG SessionId;
 
 	ULARGE_INTEGER AppCompatFlags;
 	ULARGE_INTEGER AppCompatFlagsUser;
-	POINTER_32(PVOID) pShimData;
-	POINTER_32(PVOID) AppCompatInfo;
+	PTR_32(PVOID) pShimData;
+	PTR_32(PVOID) AppCompatInfo;
 
 	UNICODE_STRING32 CSDVersion;
 
-	POINTER_32(PVOID) ActivationContextData;
-	POINTER_32(PVOID) ProcessAssemblyStorageMap;
-	POINTER_32(PVOID) SystemDefaultActivationContextData;
-	POINTER_32(PVOID) SystemAssemblyStorageMap;
+	PTR_32(PVOID) ActivationContextData;
+	PTR_32(PVOID) ProcessAssemblyStorageMap;
+	PTR_32(PVOID) SystemDefaultActivationContextData;
+	PTR_32(PVOID) SystemAssemblyStorageMap;
 
-	POINTER_32(SIZE_T) MinimumStackCommit;
+	PTR_32(SIZE_T) MinimumStackCommit;
 
-	POINTER_32(PVOID *) FlsCallback;
+	PTR_32(PVOID *) FlsCallback;
 	LIST_ENTRY32 FlsListHead;
-	POINTER_32(PVOID) FlsBitmap;
+	PTR_32(PVOID) FlsBitmap;
 	ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
 	ULONG FlsHighIndex;
 
-	POINTER_32(PVOID) WerRegistrationData;
-	POINTER_32(PVOID) WerShipAssertPtr;
-	POINTER_32(PVOID) pContextData;
-	POINTER_32(PVOID) pImageHeaderHash;
+	PTR_32(PVOID) WerRegistrationData;
+	PTR_32(PVOID) WerShipAssertPtr;
+	PTR_32(PVOID) pContextData;
+	PTR_32(PVOID) pImageHeaderHash;
 	union
 	{
 		ULONG TracingFlags;
@@ -2104,7 +2098,7 @@ typedef struct _PEB32
 typedef struct _GDI_TEB_BATCH32
 {
 	ULONG Offset;
-	POINTER_32(ULONG_PTR) HDC;
+	PTR_32(ULONG_PTR) HDC;
 	ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
 } GDI_TEB_BATCH32, *PGDI_TEB_BATCH32;
 
@@ -2112,49 +2106,49 @@ typedef struct _TEB32
 {
 	NT_TIB32 NtTib;
 
-	POINTER_32(PVOID) EnvironmentPointer;
+	PTR_32(PVOID) EnvironmentPointer;
 	CLIENT_ID32 ClientId;
-	POINTER_32(PVOID) ActiveRpcHandle;
-	POINTER_32(PVOID) ThreadLocalStoragePointer;
-	POINTER_32(PPEB) ProcessEnvironmentBlock;
+	PTR_32(PVOID) ActiveRpcHandle;
+	PTR_32(PVOID) ThreadLocalStoragePointer;
+	PTR_32(PPEB) ProcessEnvironmentBlock;
 
 	ULONG LastErrorValue;
 	ULONG CountOfOwnedCriticalSections;
-	POINTER_32(PVOID) CsrClientThread;
-	POINTER_32(PVOID) Win32ThreadInfo;
+	PTR_32(PVOID) CsrClientThread;
+	PTR_32(PVOID) Win32ThreadInfo;
 	ULONG User32Reserved[26];
 	ULONG UserReserved[5];
-	POINTER_32(PVOID) WOW32Reserved;
+	PTR_32(PVOID) WOW32Reserved;
 	LCID CurrentLocale;
 	ULONG FpSoftwareStatusRegister;
-	POINTER_32(PVOID) SystemReserved1[54];
+	PTR_32(PVOID) SystemReserved1[54];
 	NTSTATUS ExceptionCode;
-	POINTER_32(PVOID) ActivationContextStackPointer;
+	PTR_32(PVOID) ActivationContextStackPointer;
 	BYTE SpareBytes[36];
 	ULONG TxFsContext;
 
 	GDI_TEB_BATCH32 GdiTebBatch;
 	CLIENT_ID32 RealClientId;
-	POINTER_32(HANDLE) GdiCachedProcessHandle;
+	PTR_32(HANDLE) GdiCachedProcessHandle;
 	ULONG GdiClientPID;
 	ULONG GdiClientTID;
-	POINTER_32(PVOID) GdiThreadLocalInfo;
-	POINTER_32(ULONG_PTR) Win32ClientInfo[62];
-	POINTER_32(PVOID) glDispatchTable[233];
-	POINTER_32(ULONG_PTR) glReserved1[29];
-	POINTER_32(PVOID) glReserved2;
-	POINTER_32(PVOID) glSectionInfo;
-	POINTER_32(PVOID) glSection;
-	POINTER_32(PVOID) glTable;
-	POINTER_32(PVOID) glCurrentRC;
-	POINTER_32(PVOID) glContext;
+	PTR_32(PVOID) GdiThreadLocalInfo;
+	PTR_32(ULONG_PTR) Win32ClientInfo[62];
+	PTR_32(PVOID) glDispatchTable[233];
+	PTR_32(ULONG_PTR) glReserved1[29];
+	PTR_32(PVOID) glReserved2;
+	PTR_32(PVOID) glSectionInfo;
+	PTR_32(PVOID) glSection;
+	PTR_32(PVOID) glTable;
+	PTR_32(PVOID) glCurrentRC;
+	PTR_32(PVOID) glContext;
 
 	NTSTATUS LastStatusValue;
 	UNICODE_STRING32 StaticUnicodeString;
 	WCHAR StaticUnicodeBuffer[261];
 
-	POINTER_32(PVOID) DeallocationStack;
-	POINTER_32(PVOID) TlsSlots[64];
+	PTR_32(PVOID) DeallocationStack;
+	PTR_32(PVOID) TlsSlots[64];
 	LIST_ENTRY32 TlsLinks;
 } TEB32, *PTEB32;
 
@@ -2164,12 +2158,6 @@ typedef struct _SINGLE_LIST_ENTRY64
 {
 	ULONG Next;
 } SINGLE_LIST_ENTRY64, *PSINGLE_LIST_ENTRY64;
-
-typedef struct _CLIENT_ID
-{
-	HANDLE UniqueProcess;
-	HANDLE UniqueThread;
-} CLIENT_ID, *PCLIENT_ID;
 
 typedef struct _CLIENT_ID64
 {
@@ -2191,55 +2179,55 @@ typedef struct _RTL_BALANCED_NODE64
 {
 	union
 	{
-		POINTER_64(struct _RTL_BALANCED_NODE *) Children[2];
+		PTR_64(struct _RTL_BALANCED_NODE *) Children[2];
 		struct
 		{
-			POINTER_64(struct _RTL_BALANCED_NODE *) Left;
-			POINTER_64(struct _RTL_BALANCED_NODE *) Right;
+			PTR_64(struct _RTL_BALANCED_NODE *) Left;
+			PTR_64(struct _RTL_BALANCED_NODE *) Right;
 		};
 	};
 	union
 	{
-		POINTER_64(UCHAR) Red : 1;
-		POINTER_64(UCHAR) Balance : 2;
-		POINTER_64(ULONG_PTR) ParentValue;
+		PTR_64(UCHAR) Red : 1;
+		PTR_64(UCHAR) Balance : 2;
+		PTR_64(ULONG_PTR) ParentValue;
 	};
 } RTL_BALANCED_NODE64, *PRTL_BALANCED_NODE64;
 
 typedef struct _RTL_RB_TREE64
 {
-	POINTER_64(PRTL_BALANCED_NODE) Root;
-	POINTER_64(PRTL_BALANCED_NODE) Min;
+	PTR_64(PRTL_BALANCED_NODE) Root;
+	PTR_64(PRTL_BALANCED_NODE) Min;
 } RTL_RB_TREE64, *PRTL_RB_TREE64;
 
 typedef struct _PEB_LDR_DATA64
 {
 	ULONG Length;
 	BOOLEAN Initialized;
-	POINTER_64(HANDLE) SsHandle;
+	PTR_64(HANDLE) SsHandle;
 	LIST_ENTRY64 InLoadOrderModuleList;
 	LIST_ENTRY64 InMemoryOrderModuleList;
 	LIST_ENTRY64 InInitializationOrderModuleList;
-	POINTER_64(PVOID) EntryInProgress;
+	PTR_64(PVOID) EntryInProgress;
 	BOOLEAN ShutdownInProgress;
-	POINTER_64(HANDLE) ShutdownThreadId;
+	PTR_64(HANDLE) ShutdownThreadId;
 } PEB_LDR_DATA64, *PPEB_LDR_DATA64;
 
 typedef struct _LDR_SERVICE_TAG_RECORD64
 {
-	POINTER_64(struct _LDR_SERVICE_TAG_RECORD *) Next;
+	PTR_64(struct _LDR_SERVICE_TAG_RECORD *) Next;
 	ULONG ServiceTag;
 } LDR_SERVICE_TAG_RECORD64, *PLDR_SERVICE_TAG_RECORD64;
 
 typedef struct _LDRP_CSLIST64
 {
-	POINTER_64(PSINGLE_LIST_ENTRY) Tail;
+	PTR_64(PSINGLE_LIST_ENTRY) Tail;
 } LDRP_CSLIST64, *PLDRP_CSLIST64;
 
 typedef struct _LDR_DDAG_NODE64
 {
 	LIST_ENTRY64 Modules;
-	POINTER_64(PLDR_SERVICE_TAG_RECORD) ServiceTagList;
+	PTR_64(PLDR_SERVICE_TAG_RECORD) ServiceTagList;
 	ULONG LoadCount;
 	ULONG ReferenceCount;
 	ULONG DependencyCount;
@@ -2268,8 +2256,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY64
 		LIST_ENTRY64 InInitializationOrderLinks;
 		LIST_ENTRY64 InProgressLinks;
 	};
-	POINTER_64(PVOID) DllBase;
-	POINTER_64(PVOID) EntryPoint;
+	PTR_64(PVOID) DllBase;
+	PTR_64(PVOID) EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING64 FullDllName;
 	UNICODE_STRING64 BaseDllName;
@@ -2312,16 +2300,16 @@ typedef struct _LDR_DATA_TABLE_ENTRY64
 	USHORT TlsIndex;
 	LIST_ENTRY64 HashLinks;
 	ULONG TimeDateStamp;
-	POINTER_64(struct _ACTIVATION_CONTEXT *) EntryPointActivationContext;
-	POINTER_64(PVOID) Lock;
-	POINTER_64(PLDR_DDAG_NODE) DdagNode;
+	PTR_64(struct _ACTIVATION_CONTEXT *) EntryPointActivationContext;
+	PTR_64(PVOID) Lock;
+	PTR_64(PLDR_DDAG_NODE) DdagNode;
 	LIST_ENTRY64 NodeModuleLink;
-	POINTER_64(struct _LDRP_LOAD_CONTEXT *) LoadContext;
-	POINTER_64(PVOID) ParentDllBase;
-	POINTER_64(PVOID) SwitchBackContext;
+	PTR_64(struct _LDRP_LOAD_CONTEXT *) LoadContext;
+	PTR_64(PVOID) ParentDllBase;
+	PTR_64(PVOID) SwitchBackContext;
 	RTL_BALANCED_NODE64 BaseAddressIndexNode;
 	RTL_BALANCED_NODE64 MappingInfoIndexNode;
-	POINTER_64(ULONG_PTR) OriginalBase;
+	PTR_64(ULONG_PTR) OriginalBase;
 	LARGE_INTEGER LoadTime;
 	ULONG BaseNameHashValue;
 	LDR_DLL_LOAD_REASON LoadReason;
@@ -2332,7 +2320,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY64
 typedef struct _CURDIR64
 {
 	UNICODE_STRING64 DosPath;
-	POINTER_64(HANDLE) Handle;
+	PTR_64(HANDLE) Handle;
 } CURDIR64, *PCURDIR64;
 
 typedef struct _RTL_DRIVE_LETTER_CURDIR64
@@ -2351,17 +2339,17 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS64
 	ULONG Flags;
 	ULONG DebugFlags;
 
-	POINTER_64(HANDLE) ConsoleHandle;
+	PTR_64(HANDLE) ConsoleHandle;
 	ULONG ConsoleFlags;
-	POINTER_64(HANDLE) StandardInput;
-	POINTER_64(HANDLE) StandardOutput;
-	POINTER_64(HANDLE) StandardError;
+	PTR_64(HANDLE) StandardInput;
+	PTR_64(HANDLE) StandardOutput;
+	PTR_64(HANDLE) StandardError;
 
 	CURDIR64 CurrentDirectory;
 	UNICODE_STRING64 DllPath;
 	UNICODE_STRING64 ImagePathName;
 	UNICODE_STRING64 CommandLine;
-	POINTER_64(PVOID) Environment;
+	PTR_64(PVOID) Environment;
 
 	ULONG StartingX;
 	ULONG StartingY;
@@ -2381,7 +2369,7 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS64
 
 	ULONG EnvironmentSize;
 	ULONG EnvironmentVersion;
-	POINTER_64(PVOID) PackageDependencyData;
+	PTR_64(PVOID) PackageDependencyData;
 	ULONG ProcessGroupId;
 	ULONG LoaderThreads;
 } RTL_USER_PROCESS_PARAMETERS64, *PRTL_USER_PROCESS_PARAMETERS64;
@@ -2406,16 +2394,16 @@ typedef struct _PEB64
 			BOOLEAN SpareBits : 1;
 		};
 	};
-	POINTER_64(HANDLE) Mutant;
+	PTR_64(HANDLE) Mutant;
 
-	POINTER_64(PVOID) ImageBaseAddress;
-	POINTER_64(PPEB_LDR_DATA) Ldr;
-	POINTER_64(PRTL_USER_PROCESS_PARAMETERS) ProcessParameters;
-	POINTER_64(PVOID) SubSystemData;
-	POINTER_64(PVOID) ProcessHeap;
-	POINTER_64(PRTL_CRITICAL_SECTION) FastPebLock;
-	POINTER_64(PVOID) AtlThunkSListPtr;
-	POINTER_64(PVOID) IFEOKey;
+	PTR_64(PVOID) ImageBaseAddress;
+	PTR_64(PPEB_LDR_DATA) Ldr;
+	PTR_64(PRTL_USER_PROCESS_PARAMETERS) ProcessParameters;
+	PTR_64(PVOID) SubSystemData;
+	PTR_64(PVOID) ProcessHeap;
+	PTR_64(PRTL_CRITICAL_SECTION) FastPebLock;
+	PTR_64(PVOID) AtlThunkSListPtr;
+	PTR_64(PVOID) IFEOKey;
 	union
 	{
 		ULONG CrossProcessFlags;
@@ -2432,40 +2420,40 @@ typedef struct _PEB64
 	};
 	union
 	{
-		POINTER_64(PVOID) KernelCallbackTable;
-		POINTER_64(PVOID) UserSharedInfoPtr;
+		PTR_64(PVOID) KernelCallbackTable;
+		PTR_64(PVOID) UserSharedInfoPtr;
 	};
 	ULONG SystemReserved[1];
 	ULONG AtlThunkSListPtr64;
-	POINTER_64(PVOID) ApiSetMap;
+	PTR_64(PVOID) ApiSetMap;
 	ULONG TlsExpansionCounter;
-	POINTER_64(PVOID) TlsBitmap;
+	PTR_64(PVOID) TlsBitmap;
 	ULONG TlsBitmapBits[2];
-	POINTER_64(PVOID) ReadOnlySharedMemoryBase;
-	POINTER_64(PVOID) HotpatchInformation;
-	POINTER_64(PVOID *) ReadOnlyStaticServerData;
-	POINTER_64(PVOID) AnsiCodePageData;
-	POINTER_64(PVOID) OemCodePageData;
-	POINTER_64(PVOID) UnicodeCaseTableData;
+	PTR_64(PVOID) ReadOnlySharedMemoryBase;
+	PTR_64(PVOID) HotpatchInformation;
+	PTR_64(PVOID *) ReadOnlyStaticServerData;
+	PTR_64(PVOID) AnsiCodePageData;
+	PTR_64(PVOID) OemCodePageData;
+	PTR_64(PVOID) UnicodeCaseTableData;
 
 	ULONG NumberOfProcessors;
 	ULONG NtGlobalFlag;
 
 	LARGE_INTEGER CriticalSectionTimeout;
-	POINTER_64(SIZE_T) HeapSegmentReserve;
-	POINTER_64(SIZE_T) HeapSegmentCommit;
-	POINTER_64(SIZE_T) HeapDeCommitTotalFreeThreshold;
-	POINTER_64(SIZE_T) HeapDeCommitFreeBlockThreshold;
+	PTR_64(SIZE_T) HeapSegmentReserve;
+	PTR_64(SIZE_T) HeapSegmentCommit;
+	PTR_64(SIZE_T) HeapDeCommitTotalFreeThreshold;
+	PTR_64(SIZE_T) HeapDeCommitFreeBlockThreshold;
 
 	ULONG NumberOfHeaps;
 	ULONG MaximumNumberOfHeaps;
-	POINTER_64(PVOID *) ProcessHeaps;
+	PTR_64(PVOID *) ProcessHeaps;
 
-	POINTER_64(PVOID) GdiSharedHandleTable;
-	POINTER_64(PVOID) ProcessStarterHelper;
+	PTR_64(PVOID) GdiSharedHandleTable;
+	PTR_64(PVOID) ProcessStarterHelper;
 	ULONG GdiDCAttributeList;
 
-	POINTER_64(PRTL_CRITICAL_SECTION) LoaderLock;
+	PTR_64(PRTL_CRITICAL_SECTION) LoaderLock;
 
 	ULONG OSMajorVersion;
 	ULONG OSMinorVersion;
@@ -2475,39 +2463,39 @@ typedef struct _PEB64
 	ULONG ImageSubsystem;
 	ULONG ImageSubsystemMajorVersion;
 	ULONG ImageSubsystemMinorVersion;
-	POINTER_64(ULONG_PTR) ImageProcessAffinityMask;
+	PTR_64(ULONG_PTR) ImageProcessAffinityMask;
 	GDI_HANDLE_BUFFER64 GdiHandleBuffer;
-	POINTER_64(PVOID) PostProcessInitRoutine;
+	PTR_64(PVOID) PostProcessInitRoutine;
 
-	POINTER_64(PVOID) TlsExpansionBitmap;
+	PTR_64(PVOID) TlsExpansionBitmap;
 	ULONG TlsExpansionBitmapBits[32];
 
 	ULONG SessionId;
 
 	ULARGE_INTEGER AppCompatFlags;
 	ULARGE_INTEGER AppCompatFlagsUser;
-	POINTER_64(PVOID) pShimData;
-	POINTER_64(PVOID) AppCompatInfo;
+	PTR_64(PVOID) pShimData;
+	PTR_64(PVOID) AppCompatInfo;
 
 	UNICODE_STRING64 CSDVersion;
 
-	POINTER_64(PVOID) ActivationContextData;
-	POINTER_64(PVOID) ProcessAssemblyStorageMap;
-	POINTER_64(PVOID) SystemDefaultActivationContextData;
-	POINTER_64(PVOID) SystemAssemblyStorageMap;
+	PTR_64(PVOID) ActivationContextData;
+	PTR_64(PVOID) ProcessAssemblyStorageMap;
+	PTR_64(PVOID) SystemDefaultActivationContextData;
+	PTR_64(PVOID) SystemAssemblyStorageMap;
 
-	POINTER_64(SIZE_T) MinimumStackCommit;
+	PTR_64(SIZE_T) MinimumStackCommit;
 
-	POINTER_64(PVOID *) FlsCallback;
+	PTR_64(PVOID *) FlsCallback;
 	LIST_ENTRY64 FlsListHead;
-	POINTER_64(PVOID) FlsBitmap;
+	PTR_64(PVOID) FlsBitmap;
 	ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
 	ULONG FlsHighIndex;
 
-	POINTER_64(PVOID) WerRegistrationData;
-	POINTER_64(PVOID) WerShipAssertPtr;
-	POINTER_64(PVOID) pContextData;
-	POINTER_64(PVOID) pImageHeaderHash;
+	PTR_64(PVOID) WerRegistrationData;
+	PTR_64(PVOID) WerShipAssertPtr;
+	PTR_64(PVOID) pContextData;
+	PTR_64(PVOID) pImageHeaderHash;
 	union
 	{
 		ULONG TracingFlags;
@@ -2527,7 +2515,7 @@ typedef struct _PEB64
 typedef struct _GDI_TEB_BATCH64
 {
 	ULONG Offset;
-	POINTER_64(ULONG_PTR) HDC;
+	PTR_64(ULONG_PTR) HDC;
 	ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
 } GDI_TEB_BATCH64, *PGDI_TEB_BATCH64;
 
@@ -2535,49 +2523,49 @@ typedef struct _TEB64
 {
 	NT_TIB64 NtTib;
 
-	POINTER_64(PVOID) EnvironmentPointer;
+	PTR_64(PVOID) EnvironmentPointer;
 	CLIENT_ID64 ClientId;
-	POINTER_64(PVOID) ActiveRpcHandle;
-	POINTER_64(PVOID) ThreadLocalStoragePointer;
-	POINTER_64(PPEB) ProcessEnvironmentBlock;
+	PTR_64(PVOID) ActiveRpcHandle;
+	PTR_64(PVOID) ThreadLocalStoragePointer;
+	PTR_64(PPEB) ProcessEnvironmentBlock;
 
 	ULONG LastErrorValue;
 	ULONG CountOfOwnedCriticalSections;
-	POINTER_64(PVOID) CsrClientThread;
-	POINTER_64(PVOID) Win64ThreadInfo;
+	PTR_64(PVOID) CsrClientThread;
+	PTR_64(PVOID) Win64ThreadInfo;
 	ULONG User64Reserved[26];
 	ULONG UserReserved[5];
-	POINTER_64(PVOID) WOW64Reserved;
+	PTR_64(PVOID) WOW64Reserved;
 	LCID CurrentLocale;
 	ULONG FpSoftwareStatusRegister;
-	POINTER_64(PVOID) SystemReserved1[54];
+	PTR_64(PVOID) SystemReserved1[54];
 	NTSTATUS ExceptionCode;
-	POINTER_64(PVOID) ActivationContextStackPointer;
+	PTR_64(PVOID) ActivationContextStackPointer;
 	BYTE SpareBytes[36];
 	ULONG TxFsContext;
 
 	GDI_TEB_BATCH64 GdiTebBatch;
 	CLIENT_ID64 RealClientId;
-	POINTER_64(HANDLE) GdiCachedProcessHandle;
+	PTR_64(HANDLE) GdiCachedProcessHandle;
 	ULONG GdiClientPID;
 	ULONG GdiClientTID;
-	POINTER_64(PVOID) GdiThreadLocalInfo;
-	POINTER_64(ULONG_PTR) Win32ClientInfo[62];
-	POINTER_64(PVOID) glDispatchTable[233];
-	POINTER_64(ULONG_PTR) glReserved1[29];
-	POINTER_64(PVOID) glReserved2;
-	POINTER_64(PVOID) glSectionInfo;
-	POINTER_64(PVOID) glSection;
-	POINTER_64(PVOID) glTable;
-	POINTER_64(PVOID) glCurrentRC;
-	POINTER_64(PVOID) glContext;
+	PTR_64(PVOID) GdiThreadLocalInfo;
+	PTR_64(ULONG_PTR) Win32ClientInfo[62];
+	PTR_64(PVOID) glDispatchTable[233];
+	PTR_64(ULONG_PTR) glReserved1[29];
+	PTR_64(PVOID) glReserved2;
+	PTR_64(PVOID) glSectionInfo;
+	PTR_64(PVOID) glSection;
+	PTR_64(PVOID) glTable;
+	PTR_64(PVOID) glCurrentRC;
+	PTR_64(PVOID) glContext;
 
 	NTSTATUS LastStatusValue;
 	UNICODE_STRING64 StaticUnicodeString;
 	WCHAR StaticUnicodeBuffer[261];
 
-	POINTER_64(PVOID) DeallocationStack;
-	POINTER_64(PVOID) TlsSlots[64];
+	PTR_64(PVOID) DeallocationStack;
+	PTR_64(PVOID) TlsSlots[64];
 	LIST_ENTRY64 TlsLinks;
 } TEB64, *PTEB64;
 

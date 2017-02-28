@@ -922,18 +922,6 @@ typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
 
 #pragma endregion
 
-#pragma region PEXEC definitons
-#ifdef _WIN64
-#define HcPEGetNtHeader PEGetNtHeader64
-#define HcPEGetExportDirectory PEGetExportDirectory64
-#define HcPEOffsetFromRVA PEOffsetFromRVA64
-#else
-#define HcPEGetNtHeader PEGetNtHeader32
-#define HcPEGetExportDirectory PEGetExportDirectory32
-#define HcPEOffsetFromRVA PEOffsetFromRVA32
-#endif
-#pragma endregion
-
 #pragma region Globals
 
 typedef enum
@@ -1050,6 +1038,8 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, ProcessQueryInformationModule, CONST IN HANDLE hProcess, IN HMODULE hModule OPTIONAL, OUT PHC_MODULE_INFORMATIONW phcModuleOut);
 	DECL_EXTERN_API(BOOLEAN, ProcessEnumModulesW, CONST HANDLE hProcess, CONST HC_MODULE_CALLBACK_EVENTW pCallback, LPARAM lParam);
 	DECL_EXTERN_API(BOOLEAN, ProcessEnumMappedImagesW, CONST HANDLE ProcessHandle, CONST HC_MODULE_CALLBACK_EVENTW pCallback, LPARAM lParam);
+	/* does not handle NULL lpModuleName */
+	DECL_EXTERN_API(ULONG64, ProcessGetModuleHandleByNameAdvW, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName);
 	DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId);
 	DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess);
 	DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId);
@@ -1068,6 +1058,7 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb);
 	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb);
 	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb);
 	DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc);
 	DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess, LPWSTR* lpszCommandline, CONST BOOLEAN bAlloc);
 	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWSTR* szDirectory);
@@ -1091,14 +1082,14 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName);
 	DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName);
 	DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule);
-	DECL_EXTERN_API(HMODULE, ModuleHandle32W, LPCWSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandle64W, LPCWSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandle32A, LPCSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandle64A, LPCSTR lpModuleName);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress32A, HANDLE hModule, LPCSTR lpProcedureName);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress64A, HANDLE hModule, LPCSTR lpProcedureName);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress32W, HANDLE hModule, LPCWSTR lpProcedureName);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress64W, HANDLE hModule, LPCWSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG, ModuleHandle32W, LPCWSTR lpModuleName);
+	DECL_EXTERN_API(ULONG64, ModuleHandle64W, LPCWSTR lpModuleName);
+	DECL_EXTERN_API(ULONG, ModuleHandle32A, LPCSTR lpModuleName);
+	DECL_EXTERN_API(ULONG64, ModuleHandle64A, LPCSTR lpModuleName);
+	DECL_EXTERN_API(ULONG, ModuleProcedureAddress32A, ULONG hModule, LPCSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, ULONG64 hModule, LPCSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG, ModuleProcedureAddress32W, ULONG32 hModule, LPCWSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64W, ULONG64 hModule, LPCWSTR lpProcedureName);
 	DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath);
 	DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath);
 	DECL_EXTERN_API(BOOLEAN, ModuleUnload, HMODULE hModule);
@@ -1114,13 +1105,16 @@ extern "C" {
 
 	/* defined in pexec.c */
 	DECL_EXTERN_API(BOOLEAN, PEIsValid, HMODULE);
-	DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, HMODULE);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, HMODULE);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, HMODULE);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, HMODULE);
+	DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, ULONG hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, ULONG64 hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, HMODULE hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, ULONG hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, ULONG64 hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, HMODULE hModule);
 	DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, PIMAGE_NT_HEADERS32 pImageHeader, DWORD RVA);
 	DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, PIMAGE_NT_HEADERS64 pImageHeader, DWORD RVA);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA, PIMAGE_NT_HEADERS pImageHeader, DWORD RVA);
 
 	/* defined in string.c */
 	DECL_EXTERN_API(LPSTR, StringAllocA, DWORD tSize);
@@ -1131,6 +1125,7 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, StringSubtractW, LPCWSTR lpStr, LPWSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex);
 	DECL_EXTERN_API(DWORD, StringIndexOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringLastIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringEndOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringEndOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringLenA, LPCSTR lpString);
@@ -1147,6 +1142,8 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, StringEqualW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(LPSTR, StringWithinStringA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(LPWSTR, StringWithinStringW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPSTR, StringWithinStringLastA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(BOOLEAN, StringContainsA, LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(BOOLEAN, StringContainsW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, LPCSTR lpStringToConvert, LPWSTR lpStringOut, DWORD dwStringCount);

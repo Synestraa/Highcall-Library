@@ -36,7 +36,7 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 	PDLL_MAIN EntryPoint;
 
 	pIBR = ManualInject->BaseRelocation;
-	Delta = (DWORD)((LPBYTE)ManualInject->ImageBase - ManualInject->NtHeaders->OptionalHeader.ImageBase);
+	Delta = (ULONG_PTR) ((LPBYTE)ManualInject->ImageBase - ManualInject->NtHeaders->OptionalHeader.ImageBase);
 
 	while (pIBR->VirtualAddress)
 	{
@@ -49,7 +49,7 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 			{
 				if (ImportList[Index])
 				{
-					FunctionPointer = (PDWORD) ((LPBYTE)ManualInject->ImageBase + (pIBR->VirtualAddress + (ImportList[Index] & 0xFFF)));
+					FunctionPointer = (PULONG_PTR) ((LPBYTE)ManualInject->ImageBase + (pIBR->VirtualAddress + (ImportList[Index] & 0xFFF)));
 					*FunctionPointer += Delta;
 				}
 			}

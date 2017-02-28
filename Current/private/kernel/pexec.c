@@ -3,7 +3,7 @@
 DECL_EXTERN_API(BOOLEAN, PEIsValid, HMODULE lpModule)
 {
 	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
-	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader64(lpModule);
+	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
 
 	return (pHeaderDOS != NULL && pHeaderNT != NULL);
 }
@@ -17,6 +17,23 @@ DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE lpModule)
 	}
 
 	return pHeaderDOS;
+}
+
+DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, HMODULE lpModule)
+{
+	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
+	if (!pHeaderDOS)
+	{
+		return NULL;
+	}
+
+	PIMAGE_NT_HEADERS pHeaderNT = (PIMAGE_NT_HEADERS)((LPBYTE)lpModule + pHeaderDOS->e_lfanew);
+	if (pHeaderNT->Signature != IMAGE_NT_SIGNATURE)
+	{
+		return NULL;
+	}
+
+	return pHeaderNT;
 }
 
 DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, HMODULE lpModule)
@@ -44,13 +61,27 @@ DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, HMODULE lpModule)
 		return NULL;
 	}
 
-	PIMAGE_NT_HEADERS32 pHeaderNT = (PIMAGE_NT_HEADERS32) ((DWORD32)lpModule + pHeaderDOS->e_lfanew);
+	PIMAGE_NT_HEADERS32 pHeaderNT = (PIMAGE_NT_HEADERS32) ((ULONG_PTR)lpModule + pHeaderDOS->e_lfanew);
 	if (pHeaderNT->Signature != IMAGE_NT_SIGNATURE)
 	{
 		return NULL;
 	}
 
 	return pHeaderNT;
+}
+
+DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, HMODULE lpModule)
+{
+	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
+	if (!pHeaderNT)
+	{
+		return NULL;
+	}
+
+	PIMAGE_EXPORT_DIRECTORY lpExportDirectory = (PIMAGE_EXPORT_DIRECTORY)
+		(pHeaderNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (ULONG_PTR)lpModule);
+
+	return lpExportDirectory;
 }
 
 DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, HMODULE lpModule)
@@ -62,7 +93,7 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, HMODULE lpModul
 	}
 
 	PIMAGE_EXPORT_DIRECTORY lpExportDirectory = (PIMAGE_EXPORT_DIRECTORY)
-		(pHeaderNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (DWORD32) lpModule);
+		(pHeaderNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (ULONG_PTR)lpModule);
 
 	return lpExportDirectory;
 }
@@ -79,6 +110,31 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, HMODULE lpModul
 		(pHeaderNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (DWORD64)lpModule);
 
 	return lpExportDirectory;
+}
+
+DECL_EXTERN_API(ULONG, PEOffsetFromRVA, PIMAGE_NT_HEADERS pImageHeader, DWORD RVA)
+{
+	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+
+	/* Search through all sections */
+	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
+	{
+		/* Check if the section we hit is the one we need */
+		if (sectionHeader->VirtualAddress <= RVA)
+		{
+			if ((sectionHeader->VirtualAddress + sectionHeader->Misc.VirtualSize) > RVA)
+			{
+				/* The section is good, calculate our offset */
+
+				RVA -= sectionHeader->VirtualAddress;
+				RVA += sectionHeader->PointerToRawData;
+
+				return RVA;
+			}
+		}
+	}
+
+	return 0;
 }
 
 DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, PIMAGE_NT_HEADERS32 pImageHeader, DWORD RVA)
