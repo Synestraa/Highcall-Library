@@ -2,6 +2,9 @@
 #define HIGHCALL_H
 
 #include "../../public/base.h"
+#include "../../private/sys/syscall.h"
+
+#pragma comment(lib, "ntdll.lib")
 
 #pragma region FILE definitions
 /* file.c definitions */

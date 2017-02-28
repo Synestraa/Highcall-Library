@@ -663,7 +663,7 @@ DECL_EXTERN_API(HStatus, HookDetour, PDetourContext Context)
 		DWORD Protection;
 		if (HcVirtualProtect(Context->lpSource, Context->dwLength, PAGE_EXECUTE_READWRITE, &Protection))
 		{
-			for (DWORD i = 5; i < Context->dwLength; i++)
+			for (DWORD i = DetourMethodSize; i < Context->dwLength; i++)
 			{
 				((PBYTE)(Context->lpSource))[i] = OPCODE_INSTRUCTION_NOP;
 			}

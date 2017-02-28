@@ -21,7 +21,7 @@ ELSE
 
 EXTERNDEF C sciWriteVirtualMemory:DWORD
 
-.586			  
+.386			  
 .MODEL FLAT, C   
 .STACK
 .DATA

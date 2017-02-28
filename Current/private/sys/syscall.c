@@ -219,8 +219,11 @@ HcSysInitializeNativeSystem()
 
 	lpModulePath = HcStringAllocW(MAX_PATH);
 
-	wchar_t path[] = L"C:/Windows/System32/ntdll.dll";
-	HcStringCopyW(lpModulePath, path, sizeof(path));
+	if (!HcModuleFileNameW(hModule, lpModulePath))
+	{
+		HcFree(lpModulePath);
+		return FALSE;
+	}
 
 	/* validate & translate the filename */
 	if (!RtlDosPathNameToNtPathName_U(lpModulePath,
@@ -248,7 +251,7 @@ HcSysInitializeNativeSystem()
 		&IoStatusBlock,
 		NULL,
 		FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY),
-		0,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		FILE_OPEN,
 		FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE,
 		EaBuffer,

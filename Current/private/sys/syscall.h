@@ -81,7 +81,8 @@ NTSTATUS HcFlushInstructionCache(CONST IN HANDLE ProcessHandle,
 	CONST IN SIZE_T NumberOfBytesToFlush);
 
 HC_GLOBAL SYS_INDEX sciOpenProcess;
-NTSTATUS HcOpenProcess(OUT PHANDLE	ProcessHandle,
+NTSTATUS HcOpenProcess(
+	OUT			PHANDLE				ProcessHandle,
 	CONST IN    ACCESS_MASK			DesiredAccess,
 	CONST IN    POBJECT_ATTRIBUTES	ObjectAttributes,
 	IN			PCLIENT_ID			ClientId OPTIONAL

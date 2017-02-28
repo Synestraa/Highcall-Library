@@ -215,9 +215,6 @@
     <MASM Include="private\sys\asm\WaitForSingleObject.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
-    <MASM Include="private\sys\asm\WriteVirtualMemory.asm">
-      <Filter>private\sys\asm</Filter>
-    </MASM>
     <MASM Include="private\sys\asm\OpenProcessToken.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
@@ -1488,6 +1485,9 @@
       <Filter>private\sys\asm</Filter>
     </MASM>
     <MASM Include="private\sys\asm\YieldExecution.asm">
+      <Filter>private\sys\asm</Filter>
+    </MASM>
+    <MASM Include="private\sys\asm\WriteVirtualMemory.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
   </ItemGroup>

@@ -46,7 +46,7 @@ DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName)
 		/* Check if this is the requested module */
 		if (Module->ModuleBase == hModule)
 		{
-			Length = Module->FullModuleName.Length / sizeof(WCHAR);
+			Length = Module->FullModuleName.Length;
 
 			if (Module->FullModuleName.Buffer == NULL || Length == 0)
 			{
