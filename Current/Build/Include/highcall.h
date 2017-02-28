@@ -358,6 +358,18 @@ typedef BOOLEAN(CALLBACK* HC_HANDLE_CALLBACKW)(CONST HANDLE Handle, CONST HANDLE
 
 #pragma region MODULE definitions
 typedef BOOLEAN(CALLBACK* HC_EXPORT_LIST_CALLBACK)(LPCSTR, LPARAM);
+
+#ifdef _WIN64
+#define HcModuleProcedureA HcModuleProcedureAddress64A
+#define HcModuleProcedureW HcModuleProcedureAddress64W
+#define HcModuleHandleW HcModuleHandle64W
+#define HcModuleHandleA HcModuleHandle64A
+#else
+#define HcModuleProcedureA HcModuleProcedureAddress32A
+#define HcModuleProcedureW HcModuleProcedureAddress32W
+#define HcModuleHandleW HcModuleHandle32W
+#define HcModuleHandleA HcModuleHandle32A
+#endif
 #pragma endregion
 
 #pragma region OBJECT definitions
@@ -910,6 +922,18 @@ typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
 
 #pragma endregion
 
+#pragma region PEXEC definitons
+#ifdef _WIN64
+#define HcPEGetNtHeader PEGetNtHeader64
+#define HcPEGetExportDirectory PEGetExportDirectory64
+#define HcPEOffsetFromRVA PEOffsetFromRVA64
+#else
+#define HcPEGetNtHeader PEGetNtHeader32
+#define HcPEGetExportDirectory PEGetExportDirectory32
+#define HcPEOffsetFromRVA PEOffsetFromRVA32
+#endif
+#pragma endregion
+
 #pragma region Globals
 
 typedef enum
@@ -944,6 +968,16 @@ typedef struct _HcGlobalEnv
 HC_GLOBAL HcGlobalEnv HcGlobal;
 #pragma endregion
 
+//
+// Purpose:
+//	Defines a highcall API function signature.
+//
+// Parameters:
+//
+//	The return type.
+//	The name.
+//	The rest of the parameters.
+// 
 #define DECL_EXTERN_API(retn, name, ...) HC_EXTERN_API retn HCAPI Hc##name(##__VA_ARGS__)
 
 #if defined (__cplusplus)
@@ -1031,7 +1065,9 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName, HC_PROCESS_CALLBACK_EXW pCallback, LPARAM lParam);
 	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST HANDLE hProcess, CONST LPCSTR Privilege, CONST BOOLEAN bEnablePrivilege);
 	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess, CONST LPCWSTR Privilege, CONST BOOLEAN bEnablePrivilege);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb);
 	DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc);
 	DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess, LPWSTR* lpszCommandline, CONST BOOLEAN bAlloc);
 	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWSTR* szDirectory);
@@ -1055,14 +1091,18 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName);
 	DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName);
 	DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule);
-	DECL_EXTERN_API(HMODULE, ModuleHandleW, LPCWSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandleA, LPCSTR lpModuleName);
-	DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddressA, HANDLE hModule, LPCSTR lpProcedureName);
-	DECL_EXTERN_API(PBYTE, ModuleProcedureAddressW, HANDLE hModule, LPCWSTR lpProcedureName);
+	DECL_EXTERN_API(HMODULE, ModuleHandle32W, LPCWSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleHandle64W, LPCWSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleHandle32A, LPCSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleHandle64A, LPCSTR lpModuleName);
+	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress32A, HANDLE hModule, LPCSTR lpProcedureName);
+	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress64A, HANDLE hModule, LPCSTR lpProcedureName);
+	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress32W, HANDLE hModule, LPCWSTR lpProcedureName);
+	DECL_EXTERN_API(PBYTE, ModuleProcedureAddress64W, HANDLE hModule, LPCWSTR lpProcedureName);
 	DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath);
 	DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath);
 	DECL_EXTERN_API(BOOLEAN, ModuleUnload, HMODULE hModule);
+	DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam);
 
 	/* defined in object.c */
 	DECL_EXTERN_API(HANDLE, ObjectTranslateHandle, CONST IN HANDLE Handle);
@@ -1075,9 +1115,12 @@ extern "C" {
 	/* defined in pexec.c */
 	DECL_EXTERN_API(BOOLEAN, PEIsValid, HMODULE);
 	DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, HMODULE);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, HMODULE);
-	DECL_EXTERN_API(ULONG, PEOffsetFromRVA, PIMAGE_NT_HEADERS pImageHeader, PBYTE RVA);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, HMODULE);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, HMODULE);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, HMODULE);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, HMODULE);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, PIMAGE_NT_HEADERS32 pImageHeader, DWORD RVA);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, PIMAGE_NT_HEADERS64 pImageHeader, DWORD RVA);
 
 	/* defined in string.c */
 	DECL_EXTERN_API(LPSTR, StringAllocA, DWORD tSize);

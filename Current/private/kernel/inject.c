@@ -337,8 +337,8 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath)
 	ManualInject.NtHeaders = (PIMAGE_NT_HEADERS)((LPBYTE)ImageBuffer + pHeaderDos->e_lfanew);
 	ManualInject.BaseRelocation = (PIMAGE_BASE_RELOCATION)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 	ManualInject.ImportDirectory = (PIMAGE_IMPORT_DESCRIPTOR)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-	ManualInject.fnLoadLibraryA = (pLoadLibraryA) HcModuleProcedureAddressW(HcModuleHandleW(L"kernel32.dll"), L"LoadLibraryA");
-	ManualInject.fnGetProcAddress = (pGetProcAddress) HcModuleProcedureAddressW(HcModuleHandleW(L"kernel32.dll"), L"GetProcAddress");
+	ManualInject.fnLoadLibraryA = (pLoadLibraryA)HcModuleProcedureW(HcModuleHandleW(L"kernel32.dll"), L"LoadLibraryA");
+	ManualInject.fnGetProcAddress = (pGetProcAddress)HcModuleProcedureW(HcModuleHandleW(L"kernel32.dll"), L"GetProcAddress");
 
 	/* Set the manual map information */
 	if (!HcProcessWriteMemory(hProcess,
@@ -433,7 +433,7 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	lpToLoadLibrary = (LPVOID)HcModuleProcedureAddressA(HcModuleLoadW(L"kernel32.dll"), "LoadLibraryW");
+	lpToLoadLibrary = (LPVOID)HcModuleProcedureA(HcModuleLoadW(L"kernel32.dll"), "LoadLibraryW");
 	if (!lpToLoadLibrary)
 	{
 		HcErrorSetNtStatus(STATUS_INVALID_ADDRESS);

@@ -99,7 +99,7 @@ BOOLEAN SetJump(PBYTE Source, PBYTE Destination)
 		//
 		BYTE detour[] = { 0x50, 0x48, 0xB8, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x87, 0x04, 0x24, 0xC3 };
 		HcInternalCopy((PBYTE)Source, detour, sizeof(detour));
-		*(PBYTE*)&((PBYTE)Source)[3] = Destination;
+		*(PBYTE*)(Source + 3) = Destination;
 #else
 		/* jmp dword ptr [address] */
 		*(BYTE*)Source = 0xE9;
@@ -188,8 +188,7 @@ VOID RelocateConditional(PBYTE lpAddress,
 	}
 
 	/* Calculate the new offset of our conditional, this time to the location of our direct jump. */
-	Offset = GetRelativeDestination(lpAddress, FreeSpace, InstSize);
-	estimatedOffset = (ULONG_PTR)Offset;
+	estimatedOffset = (ULONG_PTR) GetRelativeDestination(lpAddress, FreeSpace, InstSize);
 
 	/* Its assumed that the conditional offset is never in a place other than 1 
 

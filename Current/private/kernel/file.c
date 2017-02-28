@@ -422,7 +422,7 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExpor
 	// Get the absolute address of requested export, subtract the module's base,
 	// pass to the PE handler function.
 	//
-	VirtualAddress = (LPBYTE)HcModuleProcedureAddressW(hModule, lpExportName);
+	VirtualAddress = (LPBYTE)HcModuleProcedureW(hModule, lpExportName);
 	if (VirtualAddress)
 	{
 		/* Calculate the relative offset */

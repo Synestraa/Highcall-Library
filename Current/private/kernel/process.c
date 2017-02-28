@@ -1390,7 +1390,45 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	return TRUE;
 };
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb)
+{
+	NTSTATUS Status;
+	ULONG_PTR wow64 = 0;
+	ULONG Len = 0;
+
+	/* Query the process information to get its PEB address */
+	Status = HcQueryInformationProcess(
+		hProcess,
+		ProcessWow64Information,
+		&wow64,
+		sizeof(wow64),
+		&Len);
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	if (wow64 == 0)
+	{
+		HcErrorSetNtStatus(STATUS_PARTIAL_COPY);
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess,
+		wow64,
+		pPeb,
+		sizeof(*pPeb),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
 {
 	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION ProcInfo;
