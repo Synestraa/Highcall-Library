@@ -2,8 +2,6 @@
 
 #include "../sys/syscall.h"
 
-#define WAIT_IO_COMPLETION 0xC0
-
 DECL_EXTERN_API(VOID, Sleep, CONST IN DWORD dwMilliseconds)
 {
 	LARGE_INTEGER Time;

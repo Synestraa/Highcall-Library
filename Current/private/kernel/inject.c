@@ -132,6 +132,7 @@ HcParameterVerifyInjectModuleManual(PVOID Buffer)
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
 
+static
 DECL_EXTERN_API(DWORD, AssertFunctionSize, LPVOID lpBaseAddress)
 {
 	DWORD Size = 0;
@@ -182,7 +183,7 @@ DECL_EXTERN_API(DWORD, AssertFunctionSize, LPVOID lpBaseAddress)
 	return Size;
 }
 
-DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath)
+DECL_EXTERN_API(BOOLEAN, InjectManualMapW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
 {
 	MANUAL_MAP ManualInject;
 	PIMAGE_DOS_HEADER pHeaderDos;
@@ -239,7 +240,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	HcObjectClose(hFile);
+	HcObjectClose(&hFile);
 
 	/* Verify this is a PE DLL */
 	if (!HcParameterVerifyInjectModuleManual(FileBuffer))
@@ -417,7 +418,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, HANDLE hProcess, LPCWSTR szcPath)
+DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
 {
 	LPVOID PathToDll;
 	SIZE_T PathSize;
@@ -474,7 +475,7 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, HANDLE hProcess, LPCWSTR szcPath)
 		return FALSE;
 	}
 
-	HcObjectClose(hFile);
+	HcObjectClose(&hFile);
 
 	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)

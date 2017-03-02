@@ -61,18 +61,21 @@ DECL_EXTERN_API(DWORD, ErrorStatusToDos, IN NTSTATUS Status)
 	return HcErrorStatusTranslate(Status);
 }
 
-DECL_EXTERN_API(VOID, ErrorSetDosError, IN DWORD dwErrCode)
+DECL_EXTERN_API(VOID, ErrorSetDosError, CONST IN DWORD dwErrCode)
 {
 	/* Check if the error is already set before setting it. */
-	if (NtCurrentTeb()->LastErrorValue != dwErrCode) NtCurrentTeb()->LastErrorValue = dwErrCode;
+	if (NtCurrentTeb()->LastErrorValue != dwErrCode)
+	{
+		NtCurrentTeb()->LastErrorValue = dwErrCode;
+	}
 }
 
-DECL_EXTERN_API(DWORD, ErrorGetDosError, VOID)
+DECL_EXTERN_API(DWORD, ErrorGetDosError)
 {
 	/* Return the current value */
 	return NtCurrentTeb()->LastErrorValue;
 }
-DECL_EXTERN_API(DWORD, ErrorSetNtStatus, IN NTSTATUS Status)
+DECL_EXTERN_API(DWORD, ErrorSetNtStatus, CONST IN NTSTATUS Status)
 {
 	DWORD dwErrCode;
 	PTEB Teb = NtCurrentTeb();

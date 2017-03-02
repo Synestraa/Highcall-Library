@@ -1,89 +1,30 @@
 #include <highcall.h>
 
-DECL_EXTERN_API(LPSTR, StringAllocA, DWORD tSize)
+DECL_EXTERN_API(LPSTR, StringAllocA, CONST IN DWORD tSize)
 {
 	return (LPSTR) HcAlloc(tSize * sizeof(CHAR) + sizeof(ANSI_NULL));
 }
 
-DECL_EXTERN_API(LPWSTR, StringAllocW, DWORD tSize)
+DECL_EXTERN_API(LPWSTR, StringAllocW, CONST IN DWORD tSize)
 {
 	return (LPWSTR) HcAlloc(tSize * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 }
 
-DECL_EXTERN_API(BOOLEAN, StringSplitA, LPSTR lpStr, const CHAR cDelimiter, LPSTR lpStrArrayOut[], PDWORD pdwCount)
+/* @unimplemented */
+DECL_EXTERN_API(BOOLEAN, StringSplitA, VOID)
 {
 	return FALSE;
-
-	DWORD strSize = HcStringLenA(lpStr);
-	if (strSize == 0)
-	{
-		return FALSE;
-	}
-
-	LPSTR lpCopy = HcStringAllocA(strSize);
-	HcInternalCopy(lpCopy, lpStr, strSize);
-
-	LPSTR lpToken;
-	CHAR lpTerminatedDelim[] = { cDelimiter, ANSI_NULL };
-
-	*pdwCount = 0;
-
-	/* Get the first token. */
-	//lpToken = strtok_s(lpCopy, lpTerminatedDelim, &lpToken);
-
-	/* Loop over the splits. */
-	while (lpToken)
-	{
-		/* Duplicate the string and insert into return array. */
-		lpStrArrayOut[*pdwCount] = _strdup(strtok_s(NULL, lpTerminatedDelim, &lpToken));
-
-		*pdwCount += 1;
-	}
-
-	/* Null terminate final string. */
-	lpStrArrayOut[*pdwCount] = '\0';
-	
-	HcFree(lpCopy);
-	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringSplitW, LPWSTR lpStr, const WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PDWORD pdwCount)
+/* @unimplemented */
+DECL_EXTERN_API(BOOLEAN, StringSplitW, VOID)
 {
 	return FALSE;
-
-	DWORD tlpStrSize = HcStringLenW(lpStr);
-	if (!tlpStrSize)
-	{
-		return FALSE;
-	}
-
-	LPWSTR lpCopy = HcStringAllocW(tlpStrSize);
-	LPWSTR lpToken = NULL;
-	const WCHAR lpTerminatedDelim[] = { cDelimiter, UNICODE_NULL };
-
-	*pdwCount = 0;
-
-	/* Get the first token. */
-	//lpToken = wcstok_s(lpCopy, lpTerminatedDelim, &lpToken);
-
-	/* Loop over the splits. */
-	while (lpToken)
-	{
-		/* Duplicate the string and insert into return array. */
-		//lpStrArrayOut[*pdwCount] = _wcsdup(wcstok_s(0, lpTerminatedDelim, &lpToken));
-
-		*pdwCount += 1;
-	}
-
-	/* Null terminate final string. */
-	lpStrArrayOut[*pdwCount] = UNICODE_NULL;
-
-	HcFree(lpCopy);
-	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringSubtractA, LPCSTR lpStr, LPSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex)
+DECL_EXTERN_API(BOOLEAN, StringSubtractA, IN LPCSTR lpStr, OUT LPSTR lpOutStr, CONST IN DWORD szStartIndex, IN DWORD szEndIndex OPTIONAL)
 {
+	/* Optional param value */
 	if (szEndIndex == -1)
 	{
 		szEndIndex = HcStringLenA(lpStr);
@@ -99,8 +40,9 @@ DECL_EXTERN_API(BOOLEAN, StringSubtractA, LPCSTR lpStr, LPSTR lpOutStr, DWORD sz
 	return FALSE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringSubtractW, LPCWSTR lpStr, LPWSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex)
+DECL_EXTERN_API(BOOLEAN, StringSubtractW, IN LPCWSTR lpStr, OUT LPWSTR lpOutStr, CONST IN DWORD szStartIndex, IN DWORD szEndIndex OPTIONAL)
 {
+	/* Optional param value */
 	if (szEndIndex == -1)
 	{
 		szEndIndex = HcStringLenW(lpStr);
@@ -116,56 +58,34 @@ DECL_EXTERN_API(BOOLEAN, StringSubtractW, LPCWSTR lpStr, LPWSTR lpOutStr, DWORD 
 	return FALSE;
 }
 
-DECL_EXTERN_API(DWORD, StringIndexOf, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringIndexOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
-	if (!HcStringLenA(lpStr))
-	{
-		return -1;
-	}
-
 	LPCSTR Buffer = HcStringWithinStringA(lpStr, lpDelimiter, CaseInsensitive);
-	return Buffer ? (DWORD) (Buffer - lpStr) + 1: -1;
+	return Buffer ? (DWORD) (Buffer - lpStr) + 1 : -1;
 }
 
-DECL_EXTERN_API(DWORD, StringLastIndexOf, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringLastIndexOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
-	if (!HcStringLenA(lpStr))
-	{
-		return -1;
-	}
-
 	LPCSTR Buffer = HcStringWithinStringLastA(lpStr, lpDelimiter, CaseInsensitive);
-	return Buffer ? (DWORD)(Buffer - lpStr) + 1: -1;
+	return Buffer ? (DWORD)(Buffer - lpStr) + 1 : -1;
 }
 
-
-DECL_EXTERN_API(DWORD, StringIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
-	if (!HcStringLenW(lpStr))
-	{
-		return -1;
-	}
-
 	LPCWSTR Buffer = HcStringWithinStringW(lpStr, lpDelimiter, CaseInsensitive);
 	return Buffer ? (DWORD) (Buffer - lpStr) + 1 : -1;
 }
 
-DECL_EXTERN_API(DWORD, StringLastIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringLastIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
-	if (!HcStringLenW(lpStr))
-	{
-		return -1;
-	}
-
 	LPCWSTR Buffer = HcStringWithinStringLastW(lpStr, lpDelimiter, CaseInsensitive);
 	return Buffer ? (DWORD)(Buffer - lpStr) + 1 : -1;
 }
 
-
-DECL_EXTERN_API(DWORD, StringEndOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringEndOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD tDelimSize = HcStringLenA(lpDelimiter);
-	if (!HcStringLenA(lpStr) || !tDelimSize)
+	if (!tDelimSize)
 	{
 		return -1;
 	}
@@ -174,10 +94,10 @@ DECL_EXTERN_API(DWORD, StringEndOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN C
 	return Buffer ? (DWORD) (Buffer - lpStr) + tDelimSize : -1;
 }
 
-DECL_EXTERN_API(DWORD, StringEndOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(DWORD, StringEndOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD tDelimSize = HcStringLenW(lpDelimiter);
-	if (!HcStringLenW(lpStr) || !tDelimSize)
+	if (!tDelimSize)
 	{
 		return -1;
 	}
@@ -186,19 +106,19 @@ DECL_EXTERN_API(DWORD, StringEndOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN
 	return Buffer ? (DWORD) (Buffer - lpStr) + tDelimSize : -1;
 }
 
-DECL_EXTERN_API(DWORD, StringLenA, LPCSTR lpString)
+DECL_EXTERN_API(DWORD, StringLenA, IN LPCSTR lpString)
 {
 	return HcStringSizeA(lpString) / sizeof(CHAR);
 }
 
-DECL_EXTERN_API(DWORD, StringLenW, LPCWSTR lpString)
+DECL_EXTERN_API(DWORD, StringLenW, IN LPCWSTR lpString)
 {
 	return HcStringSizeW(lpString) / sizeof(WCHAR);
 }
 
-DECL_EXTERN_API(DWORD, StringSizeA, LPCSTR szcString)
+DECL_EXTERN_API(DWORD, StringSizeA, IN LPCSTR szcString)
 {
-	LPCSTR p = szcString;
+	LPSTR p = (LPSTR) szcString;
 
 	while (*p)
 	{
@@ -208,9 +128,9 @@ DECL_EXTERN_API(DWORD, StringSizeA, LPCSTR szcString)
 	return (DWORD) (p - szcString) * sizeof(CHAR);
 }
 
-DECL_EXTERN_API(DWORD, StringSizeW, LPCWSTR szcString)
+DECL_EXTERN_API(DWORD, StringSizeW, IN LPCWSTR szcString)
 {
-	LPCWSTR p = szcString;
+	LPWSTR p = (LPWSTR) szcString;
 
 	while (*p)
 	{
@@ -240,7 +160,7 @@ static int __toupper(int c)
 	return __islower(c) ? c - 'a' + 'A' : c;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringToLowerA, LPSTR lpStr)
+DECL_EXTERN_API(BOOLEAN, StringToLowerA, IN OUT LPSTR lpStr)
 {
 	LPSTR p = lpStr;
 	for (; *p; ++p)
@@ -251,7 +171,7 @@ DECL_EXTERN_API(BOOLEAN, StringToLowerA, LPSTR lpStr)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringToLowerW, LPWSTR lpStr)
+DECL_EXTERN_API(BOOLEAN, StringToLowerW, IN OUT LPWSTR lpStr)
 {
 	LPWSTR p = lpStr;
 	for (; *p; ++p)
@@ -262,7 +182,7 @@ DECL_EXTERN_API(BOOLEAN, StringToLowerW, LPWSTR lpStr)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringToUpperA, LPSTR lpStr)
+DECL_EXTERN_API(BOOLEAN, StringToUpperA, IN OUT LPSTR lpStr)
 {
 	for (; *lpStr; *lpStr++)
 	{
@@ -272,7 +192,7 @@ DECL_EXTERN_API(BOOLEAN, StringToUpperA, LPSTR lpStr)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringToUpperW, LPWSTR lpStr)
+DECL_EXTERN_API(BOOLEAN, StringToUpperW, IN OUT LPWSTR lpStr)
 {
 	for (; *lpStr; *lpStr++)
 	{
@@ -282,7 +202,12 @@ DECL_EXTERN_API(BOOLEAN, StringToUpperW, LPWSTR lpStr)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCompareContentA, LPCSTR lpStr1, LPCSTR lpStr2)
+DECL_EXTERN_API(BOOLEAN, StringCompareContent, IN LPCVOID lpStr1, IN LPCVOID lpStr2, CONST IN DWORD dwLen)
+{
+	return HcInternalCompare((PBYTE)lpStr1, (PBYTE)lpStr2, dwLen);
+}
+
+DECL_EXTERN_API(BOOLEAN, StringCompareA, IN LPCSTR lpStr1, IN LPCSTR lpStr2)
 {
 	DWORD Size1, Size2;
 
@@ -309,10 +234,10 @@ DECL_EXTERN_API(BOOLEAN, StringCompareContentA, LPCSTR lpStr1, LPCSTR lpStr2)
 		return FALSE;
 	}
 
-	return HcInternalCompare((PBYTE)lpStr1, (PBYTE)lpStr2, Size1);
+	return HcStringCompareContent(lpStr1, lpStr2, Size1);
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCompareContentW, LPCWSTR lpStr1, LPCWSTR lpStr2)
+DECL_EXTERN_API(BOOLEAN, StringCompareW, IN LPCWSTR lpStr1, IN LPCWSTR lpStr2)
 {
 	DWORD Size1, Size2;
 
@@ -339,17 +264,17 @@ DECL_EXTERN_API(BOOLEAN, StringCompareContentW, LPCWSTR lpStr1, LPCWSTR lpStr2)
 		return FALSE;
 	}
 
-	return HcInternalCompare((PBYTE)lpStr1, (PBYTE)lpStr2, Size1);
+	return HcStringCompareContent(lpStr1, lpStr2, Size1);
 }
 
-DECL_EXTERN_API(BOOLEAN, StringEqualA, LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
+DECL_EXTERN_API(BOOLEAN, StringEqualA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive)
 {
 	BOOLEAN Return;
 	DWORD dwLen1, dwLen2;
 	BOOLEAN bString1, bString2;
 
-	bString1 = HcStringIsBad(lpString1);
-	bString2 = HcStringIsBad(lpString2);
+	bString1 = HcStringIsNullOrEmpty(lpString1);
+	bString2 = HcStringIsNullOrEmpty(lpString2);
 
 	if (bString1 && bString2)
 	{
@@ -389,7 +314,7 @@ DECL_EXTERN_API(BOOLEAN, StringEqualA, LPCSTR lpString1, LPCSTR lpString2, BOOLE
 		HcStringCopyA(lpCopy2, lpString2, dwLen2);
 		HcStringToLowerA(lpCopy2);
 
-		Return = HcStringCompareContentA(lpCopy1, lpCopy2);
+		Return = HcStringCompareContent(lpCopy1, lpCopy2, dwLen1 * sizeof(CHAR));
 
 		HcFree(lpCopy1);
 		HcFree(lpCopy2);
@@ -397,17 +322,17 @@ DECL_EXTERN_API(BOOLEAN, StringEqualA, LPCSTR lpString1, LPCSTR lpString2, BOOLE
 		return Return;
 	}
 
-	return HcInternalCompare((PBYTE)lpString1, (PBYTE)lpString2, dwLen1);
+	return HcStringCompareContent(lpString1, lpString2, dwLen1 * sizeof(CHAR));
 }
 
-DECL_EXTERN_API(BOOLEAN, StringEqualW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive)
+DECL_EXTERN_API(BOOLEAN, StringEqualW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInSensitive)
 {
 	BOOLEAN Return;
 	DWORD Length1, Length2;
 	BOOLEAN bString1, bString2;
 
-	bString1 = HcStringIsBad(lpString1);
-	bString2 = HcStringIsBad(lpString2);
+	bString1 = HcStringIsNullOrEmpty(lpString1);
+	bString2 = HcStringIsNullOrEmpty(lpString2);
 
 	if (bString1 && bString2)
 	{
@@ -447,7 +372,7 @@ DECL_EXTERN_API(BOOLEAN, StringEqualW, LPCWSTR lpString1, LPCWSTR lpString2, BOO
 		HcStringCopyW(lpCopy2, lpString2, Length2);
 		HcStringToLowerW(lpCopy2);
 
-		Return = HcStringCompareContentW(lpCopy1, lpCopy2);
+		Return = HcStringCompareContent(lpCopy1, lpCopy2, Length1 * sizeof(WCHAR));
 
 		HcFree(lpCopy1);
 		HcFree(lpCopy2);
@@ -455,10 +380,10 @@ DECL_EXTERN_API(BOOLEAN, StringEqualW, LPCWSTR lpString1, LPCWSTR lpString2, BOO
 		return Return;
 	}
 
-	return HcInternalCompare((PBYTE)lpString1, (PBYTE)lpString2, Length1);
+	return HcStringCompareContent(lpString1, lpString2, Length1 * sizeof(WCHAR));
 }
 
-DECL_EXTERN_API(LPSTR, StringWithinStringA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(LPSTR, StringWithinStringA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD lastOccuredIndex = -1;
 	DWORD dwSizeInBytes;
@@ -507,7 +432,7 @@ DECL_EXTERN_API(LPSTR, StringWithinStringA, LPCSTR szStr, LPCSTR szToFind, BOOLE
 	return lpStr1;
 }
 
-DECL_EXTERN_API(LPSTR, StringWithinStringLastA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(LPSTR, StringWithinStringLastA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD lastOccuredIndex = -1;
 	DWORD dwSizeInBytes;
@@ -558,7 +483,7 @@ DECL_EXTERN_API(LPSTR, StringWithinStringLastA, LPCSTR szStr, LPCSTR szToFind, B
 }
 
 // TODO refine to EX
-DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD dwSizeInBytes;
 	LPWSTR lpStr1 = (LPWSTR)szStr, lpStr2 = (LPWSTR)szToFind;
@@ -607,7 +532,7 @@ DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, LPCWSTR szStr, LPCWSTR szToFind
 	return (LPWSTR) szStr + lastOccuredIndex;
 }
 
-DECL_EXTERN_API(LPWSTR, StringWithinStringW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(LPWSTR, StringWithinStringW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive)
 {
 	DWORD tLen;
 	LPWSTR lpStr1 = (LPWSTR)szStr, lpStr2 = (LPWSTR)szToFind;
@@ -657,12 +582,12 @@ DECL_EXTERN_API(LPWSTR, StringWithinStringW, LPCWSTR szStr, LPCWSTR szToFind, BO
 	return lpStr1;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringContainsA, LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive)
+DECL_EXTERN_API(BOOLEAN, StringContainsA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive)
 {
 	return HcStringWithinStringA(lpString1, lpString2, CaseInSensitive) != NULL;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringContainsW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInsensitive)
+DECL_EXTERN_API(BOOLEAN, StringContainsW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInsensitive)
 {
 	return HcStringWithinStringW(lpString1, lpString2, CaseInsensitive) != NULL;
 }
@@ -685,9 +610,7 @@ __mbstowcs(register wchar_t *pwcs, register const char *s, int n)
     return n - i;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, LPCSTR lpStringToConvert,
-	LPWSTR lpStringOut,
-	DWORD dwStringCount)
+DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, IN LPCSTR lpStringToConvert, OUT LPWSTR lpStringOut, CONST IN DWORD dwStringCount)
 {
 	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, dwStringCount);
 	TERMINATE_W(lpStringOut, dwStringCount);
@@ -710,9 +633,7 @@ __wcstombs(register char *s, register const wchar_t *pwcs, int n)
 	return n - i - 1;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCopyConvertWtoA, LPCWSTR lpStringToConvert,
-	LPSTR lpStringOut,
-	DWORD dwStringCount)
+DECL_EXTERN_API(BOOLEAN, StringCopyConvertWtoA, IN LPCWSTR lpStringToConvert, OUT LPSTR lpStringOut, CONST IN DWORD dwStringCount)
 {
 	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, dwStringCount);
 	TERMINATE_A(lpStringOut, dwStringCount);
@@ -769,7 +690,7 @@ DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert)
 	return convertedOut;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCopyA, IN LPSTR szOut, LPCSTR szcIn, DWORD dwLen)
+DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
 	DWORD Length = dwLen;
 	if (!Length)
@@ -787,7 +708,7 @@ DECL_EXTERN_API(BOOLEAN, StringCopyA, IN LPSTR szOut, LPCSTR szcIn, DWORD dwLen)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, StringCopyW, IN LPWSTR szOut, LPCWSTR szcIn, DWORD dwLen)
+DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
 	DWORD Length = dwLen;
 	if (!Length)

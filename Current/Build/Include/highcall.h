@@ -3,6 +3,7 @@
 
 #include "../../public/base.h"
 #include "../../private/sys/syscall.h"
+#include "../../public/imports.h"
 
 #pragma comment(lib, "ntdll.lib")
 
@@ -343,6 +344,11 @@ typedef BOOLEAN(CALLBACK* HC_HANDLE_CALLBACKW)(CONST HANDLE Handle, CONST HANDLE
 #pragma endregion
 
 #pragma region INTERNAL definitons
+#define USER_MAX_ADDRESS 0x7FFFFFFF
+#define USER_MIN_ADDRESS 0x00000000
+
+#define POINTER32_HARDCODED(Type) (Type) (ULONG_PTR)
+#define POINTER64_HARDCODED(Type) (Type) (ULONG64)
 
 /* still needs to be allocated.. -_- */
 #define HcInternalMainModule(pmi) (HcProcessQueryInformationModule(NtCurrentProcess, NULL, pmi)) 
@@ -357,8 +363,6 @@ typedef BOOLEAN(CALLBACK* HC_HANDLE_CALLBACKW)(CONST HANDLE Handle, CONST HANDLE
 #pragma endregion
 
 #pragma region MODULE definitions
-typedef BOOLEAN(CALLBACK* HC_EXPORT_LIST_CALLBACK)(LPCSTR, LPARAM);
-
 #ifdef _WIN64
 #define HcModuleProcedureA(x, y) ((LPBYTE) HcModuleProcedureAddress64A((ULONG64)(x), y))
 #define HcModuleProcedureW(x, y) ((LPBYTE) HcModuleProcedureAddress64W((ULONG64)(x), y))
@@ -962,7 +966,7 @@ HC_GLOBAL HcGlobalEnv HcGlobal;
 //	The name.
 //	The rest of the parameters.
 // 
-#define DECL_EXTERN_API(retn, name, ...) HC_EXTERN_API retn HCAPI Hc##name(##__VA_ARGS__)
+#define DECL_EXTERN_API(ReturnType, Name, ...) HC_EXTERN_API ReturnType HCAPI Hc##Name (##__VA_ARGS__)
 
 #if defined (__cplusplus)
 extern "C" {
@@ -971,52 +975,62 @@ extern "C" {
 	/* implemented in highcall.c */
 	HIGHCALL_STATUS HCAPI HcInitialize();
 
+#ifdef _WIN64
+	/* implemented in wow64stdcall.asm */
+	HC_EXTERN_API DWORD64 Wow64StdCall(LPCVOID lpRoutine, DWORD64 dwArgCount, DWORD64 unused_0, DWORD64 unused_1, ...);
+#else
+	HC_EXTERN_API DWORD64 FORCEINLINE __declspec(deprecated) Wow64StdCall(LPCVOID lpRoutine, DWORD64 dwArgCount, DWORD64 unused_0, DWORD64 unused_1, ...) { return 0; }
+#endif
+
 	/* implemented in common.c */
 	DECL_EXTERN_API(VOID, Sleep, CONST IN DWORD dwMilliseconds);
 
 	/* implemented in construct.c */
-	DECL_EXTERN_API(PHC_MODULE_INFORMATIONW, InitializeModuleInformationW, DWORD NameBufferMax, DWORD PathBufferMax);
-	DECL_EXTERN_API(VOID, DestroyModuleInformationW, PHC_MODULE_INFORMATIONW pObject);
-	DECL_EXTERN_API(PHC_PROCESS_INFORMATION_EXW, InitializeProcessInformationExW, DWORD NameBufferMax);
-	DECL_EXTERN_API(VOID, DestroyProcessInformationExW, PHC_PROCESS_INFORMATION_EXW pObject);
-	DECL_EXTERN_API(PHC_PROCESS_INFORMATIONW, InitializeProcessInformationW, DWORD NameBufferMax);
-	DECL_EXTERN_API(VOID, DestroyProcessInformationW, PHC_PROCESS_INFORMATIONW pObj);
+	DECL_EXTERN_API(PHC_MODULE_INFORMATIONW, InitializeModuleInformationW, CONST IN DWORD NameBufferMax, CONST IN DWORD PathBufferMax);
+	DECL_EXTERN_API(VOID, DestroyModuleInformationW, IN PHC_MODULE_INFORMATIONW pObject);
+	DECL_EXTERN_API(PHC_PROCESS_INFORMATION_EXW, InitializeProcessInformationExW, CONST IN DWORD NameBufferMax);
+	DECL_EXTERN_API(VOID, DestroyProcessInformationExW, IN PHC_PROCESS_INFORMATION_EXW pObject);
+	DECL_EXTERN_API(PHC_PROCESS_INFORMATIONW, InitializeProcessInformationW, CONST IN DWORD NameBufferMax);
+	DECL_EXTERN_API(VOID, DestroyProcessInformationW, IN PHC_PROCESS_INFORMATIONW pObj);
 
 	/* implemented in error.c */
-	DECL_EXTERN_API(VOID, ErrorSetDosError, IN DWORD dwErrCode);
-	DECL_EXTERN_API(DWORD, ErrorGetDosError, VOID);
-	DECL_EXTERN_API(DWORD, ErrorSetNtStatus, IN NTSTATUS Status);
-	DECL_EXTERN_API(NTSTATUS, ErrorGetLastStatus, VOID);
+	DECL_EXTERN_API(VOID, ErrorSetDosError, CONST IN DWORD dwErrCode);
+	DECL_EXTERN_API(DWORD, ErrorGetDosError);
+	DECL_EXTERN_API(DWORD, ErrorSetNtStatus, CONST IN NTSTATUS Status);
+	DECL_EXTERN_API(NTSTATUS, ErrorGetLastStatus);
 
 	/* defined in file.c */
-	DECL_EXTERN_API(BOOLEAN, FileExistsA, LPCSTR lpFilePath);
-	DECL_EXTERN_API(BOOLEAN, FileExistsW, LPCWSTR lpFilePath);
-	DECL_EXTERN_API(DWORD, FileSize, HANDLE hFile);
-	DECL_EXTERN_API(DWORD, FileSizeA, LPCSTR lpPath);
-	DECL_EXTERN_API(DWORD, FileSizeW, LPCWSTR lpPath);
-	DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, HMODULE hModule, LPCSTR lpExportName);
-	DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, HMODULE hModule, LPCWSTR lpExportName);
-	DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, LPCVOID lpAddress);
-	DECL_EXTERN_API(DWORD, FileReadModuleA, HMODULE hModule, LPCSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
-	DECL_EXTERN_API(DWORD, FileReadModuleW, HMODULE hModule, LPCWSTR lpExportName, PBYTE lpBuffer, DWORD dwCount);
-	DECL_EXTERN_API(DWORD, FileReadAddress, LPCVOID lpAddress, PBYTE lpBufferOut, DWORD dwCountToRead);
-	DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, LPWSTR buf);
-	DECL_EXTERN_API(DWORD, FileWrite, IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite OPTIONAL);
-	DECL_EXTERN_API(DWORD, FileRead, IN HANDLE hFile, IN LPVOID lpBuffer, IN DWORD nNumberOfBytesToRead);
-	DECL_EXTERN_API(DWORD, FileSetCurrent, HANDLE hFile, LONG lDistanceToMove, DWORD dwMoveMethod);
-	DECL_EXTERN_API(HANDLE, FileOpenW, LPCWSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);
-	DECL_EXTERN_API(HANDLE, FileOpenA, LPCSTR lpFileName, DWORD dwCreationDisposition, DWORD dwDesiredAccess);
+	DECL_EXTERN_API(BOOLEAN, FileExistsA, IN LPCSTR lpFilePath);
+	DECL_EXTERN_API(BOOLEAN, FileExistsW, IN LPCWSTR lpFilePath);
+	DECL_EXTERN_API(DWORD, FileSize, CONST IN HANDLE hFile);
+	DECL_EXTERN_API(DWORD, FileSizeA, IN LPCSTR lpPath);
+	DECL_EXTERN_API(DWORD, FileSizeW, IN LPCWSTR lpPath);
+	DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, IN HMODULE hModule OPTIONAL, IN LPCSTR lpExportName);
+	DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, IN HMODULE hModule OPTIONAL, IN LPCWSTR lpExportName);
+	DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, IN LPCVOID lpAddress);
+	DECL_EXTERN_API(DWORD, FileReadModuleA, CONST IN HMODULE hModule, IN LPCSTR lpExportName, IN OUT PBYTE lpBuffer, CONST IN DWORD dwCount);
+	DECL_EXTERN_API(DWORD, FileReadModuleW, CONST IN HMODULE hModule, IN LPCWSTR lpExportName, IN OUT PBYTE lpBuffer, CONST IN DWORD dwCount);
+	DECL_EXTERN_API(DWORD, FileReadAddress, IN LPCVOID lpAddress, OUT PBYTE lpBufferOut, CONST IN DWORD dwCountToRead);
+	/* @unimplemented: add ANSI */
+	DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, IN LPWSTR buf);
+	DECL_EXTERN_API(DWORD, FileWrite, CONST IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite);
+	DECL_EXTERN_API(DWORD, FileRead, CONST IN HANDLE hFile, IN OUT LPVOID lpBuffer, CONST IN DWORD nNumberOfBytesToRead);
+	DECL_EXTERN_API(DWORD, FileSetCurrent, CONST IN HANDLE hFile, CONST IN LONG lDistanceToMove, CONST IN DWORD dwMoveMethod);
+	DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDisposition, IN DWORD dwDesiredAccess);
+	DECL_EXTERN_API(HANDLE, FileOpenA, IN LPCSTR lpFileName, IN DWORD dwCreationDisposition, IN DWORD dwDesiredAccess);
 
 	/* defined in hook.c */
-	DECL_EXTERN_API(HStatus, HookDetour, PDetourContext Context);
-	DECL_EXTERN_API(HStatus, HookDetourContextRestore, PDetourContext Context);
-	DECL_EXTERN_API(HStatus, HookRelocateCode, PBYTE Code, DWORD Size, PBYTE Source);
-	DECL_EXTERN_API(DWORD, HookAssertLength, LPVOID lpBaseAddress, DWORD MinimumLength);
-	DECL_EXTERN_API(PVOID, HookRecreateCode, PBYTE lpBaseAddress, DWORD dwMinimumSize);
+	DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context);
+	DECL_EXTERN_API(HStatus, HookDetourContextRestore, CONST IN PDetourContext Context);
+	DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, CONST IN PBYTE Source);
+	DECL_EXTERN_API(PVOID, HookCreateCave32, IN LPVOID lpBaseAddress, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(PVOID, HookCreateCave64, IN LPVOID lpBaseAddress, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(DWORD, HookAssertLength, IN LPCVOID lpBaseAddress, CONST IN DWORD MinimumLength);
+	DECL_EXTERN_API(PVOID, HookRecreateCode, CONST IN PBYTE lpBaseAddress, CONST IN DWORD dwMinimumSize);
 
 	/* defined in inject.c */
-	DECL_EXTERN_API(BOOLEAN, InjectManualMapW, HANDLE hProcess, LPCWSTR szcPath);
-	DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, HANDLE hProcess, LPCWSTR szcPath);
+	DECL_EXTERN_API(BOOLEAN, InjectManualMapW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
 
 	/* defined in process.c */
 	DECL_EXTERN_API(DWORD, ProcessGetCurrentId, VOID);
@@ -1035,7 +1049,7 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, ProcessEnumModulesW, CONST HANDLE hProcess, CONST HC_MODULE_CALLBACK_EVENTW pCallback, LPARAM lParam);
 	DECL_EXTERN_API(BOOLEAN, ProcessEnumMappedImagesW, CONST HANDLE ProcessHandle, CONST HC_MODULE_CALLBACK_EVENTW pCallback, LPARAM lParam);
 	/* does not handle NULL lpModuleName */
-	DECL_EXTERN_API(HMODULE, ProcessGetModuleHandleByNameAdvW, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ProcessGetModuleHandleByNameAdvW, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32);
 	DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId);
 	DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess);
 	DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId);
@@ -1061,133 +1075,151 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST HANDLE hProcess, LPSTR* szDirectory);
 
 	/* defined in internal.c */
-	DECL_EXTERN_API(BOOLEAN, InternalCompare, PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength);
-	DECL_EXTERN_API(PVOID, InternalCopy, PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount);
-	DECL_EXTERN_API(PVOID, InternalMove, PVOID pDst, PVOID pSrc, SIZE_T tCount);
-	DECL_EXTERN_API(PVOID, InternalSet, PVOID pDst, BYTE bVal, SIZE_T tCount);
-	DECL_EXTERN_API(BOOLEAN, InternalValidate, LPCVOID lpcAddress);
-	DECL_EXTERN_API(LPVOID, InternalLocatePointer, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
-	DECL_EXTERN_API(INT, InternalReadIntEx32, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
-	DECL_EXTERN_API(INT64, InternalReadIntEx64, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount);
-	DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew);
-	DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, PVOID pAddress);
-	DECL_EXTERN_API(LPBYTE, InternalPatternFind, LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo);
-	DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size);
+	DECL_EXTERN_API(BOOLEAN, InternalCompare, IN PBYTE pbFirst, IN PBYTE pbSecond, IN SIZE_T tLength);
+	DECL_EXTERN_API(PVOID, InternalCopy, IN PVOID pDst, CONST IN LPCVOID pSrc, CONST IN SIZE_T tCount);
+	DECL_EXTERN_API(PVOID, InternalMove, IN PVOID pDst, IN PVOID pSrc, IN SIZE_T tCount);
+	DECL_EXTERN_API(PVOID, InternalSet, IN PVOID pDst, CONST IN BYTE bVal, IN SIZE_T tCount);
+	DECL_EXTERN_API(BOOLEAN, InternalValidate, IN LPCVOID lpcAddress);
+	DECL_EXTERN_API(LPVOID, InternalLocatePointer, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount);
+	DECL_EXTERN_API(INT, InternalReadIntEx32, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount);
+	DECL_EXTERN_API(INT64, InternalReadIntEx64, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount);
+	DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, IN LPVOID lpAddress, IN SIZE_T tLength, CONST IN PBYTE pbNew);
+	DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, IN LPVOID pAddress);
+	DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PHC_MODULE_INFORMATIONW pmInfo);
+	DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LPCSTR szcMask, IN LPBYTE lpBuffer, CONST IN SIZE_T Size);
 
 	/* defined in module.c */
-	DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName);
-	DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName);
+	DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryBaseW, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(DWORD, ModuleFileNameA, CONST IN HANDLE hModule, OUT LPSTR lpModuleFileName);
+	DECL_EXTERN_API(DWORD, ModuleFileNameW, CONST IN HANDLE hModule, OUT LPWSTR lpModuleFileName);
+	DECL_EXTERN_API(DWORD, ModuleNameA, CONST IN HMODULE hModule, OUT LPSTR lpModuleFileName);
+	DECL_EXTERN_API(DWORD, ModuleNameW, CONST IN HMODULE hModule, OUT LPWSTR lpModuleFileName);
+	DECL_EXTERN_API(ULONG_PTR, ModuleChecksum, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(ULONG_PTR, ModuleEntryPoint, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(ULONG_PTR, ModuleSize, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(HMODULE, ModuleHandleA, IN LPCSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleHandleW, IN LPCWSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleHandleExW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(HMODULE, ModuleHandleWow64W, IN LPCWSTR lpModuleName);
+	DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, CONST IN ULONG_PTR hModule, IN LPCSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, CONST IN ULONG64 hModule, IN LPCSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32W, CONST IN ULONG_PTR hModule, IN LPCWSTR lpProcedureName);
+	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64W, CONST IN ULONG64 hModule, IN LPCWSTR lpProcedureName);
 	DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule);
-	DECL_EXTERN_API(HMODULE, ModuleHandleA, LPCSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandleW, LPCWSTR lpModuleName);
-	DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, ULONG_PTR hModule, LPCSTR lpProcedureName);
-	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, ULONG64 hModule, LPCSTR lpProcedureName);
-	DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32W, ULONG_PTR hModule, LPCWSTR lpProcedureName);
-	DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64W, ULONG64 hModule, LPCWSTR lpProcedureName);
-	DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath);
-	DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath);
-	DECL_EXTERN_API(BOOLEAN, ModuleUnload, HMODULE hModule);
-	DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvW, LPCWSTR lpModuleName);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvA, LPCSTR lpModuleName);
+	DECL_EXTERN_API(HMODULE, ModuleLoadA, IN LPCSTR lpPath);
+	DECL_EXTERN_API(HMODULE, ModuleLoadW, IN LPCWSTR lpPath);
+	DECL_EXTERN_API(BOOLEAN, ModuleUnload, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32);
 
 	/* defined in object.c */
 	DECL_EXTERN_API(HANDLE, ObjectTranslateHandle, CONST IN HANDLE Handle);
 	DECL_EXTERN_API(DWORD, ObjectTypeIndexByName, IN LPCWSTR lpObjectName);
 	DECL_EXTERN_API(PLARGE_INTEGER, ObjectMillisecondsToNano, OUT PLARGE_INTEGER Timeout, CONST IN DWORD dwMiliseconds);
-	DECL_EXTERN_API(DWORD, ObjectWaitMultiple, IN DWORD nCount, IN CONST HANDLE *lpHandles, IN BOOL bWaitAll, IN DWORD dwMilliseconds);
-	DECL_EXTERN_API(DWORD, ObjectWait, HANDLE hObject, IN DWORD dwMiliseconds);
-	DECL_EXTERN_API(VOID, ObjectClose, HANDLE hObject);
+	DECL_EXTERN_API(DWORD, ObjectWaitMultiple, IN DWORD nCount, IN CONST PHANDLE lpHandles, IN BOOL bWaitAll, IN DWORD dwMilliseconds);
+	DECL_EXTERN_API(DWORD, ObjectWait, IN HANDLE hObject, IN DWORD dwMiliseconds);
+	DECL_EXTERN_API(VOID, ObjectClose, IN PHANDLE phObject);
 
 	/* defined in pexec.c */
-	DECL_EXTERN_API(BOOLEAN, PEIsValid, HMODULE);
-	DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, HMODULE hModule);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, ULONG_PTR hModule);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, ULONG64 hModule);
-	DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, HMODULE hModule);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, ULONG_PTR hModule);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, ULONG64 hModule);
-	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, HMODULE hModule);
-	DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, PIMAGE_NT_HEADERS32 pImageHeader, DWORD RVA);
-	DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, PIMAGE_NT_HEADERS64 pImageHeader, DWORD RVA);
-	DECL_EXTERN_API(ULONG, PEOffsetFromRVA, PIMAGE_NT_HEADERS pImageHeader, DWORD RVA);
+	DECL_EXTERN_API(BOOLEAN, PEIsValid, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, CONST IN ULONG_PTR hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, CONST IN ULONG64 hModule);
+	DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, CONST IN ULONG_PTR hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, CONST IN ULONG64 hModule);
+	DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, CONST IN HMODULE hModule);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, CONST IN PIMAGE_NT_HEADERS32 pImageHeader, IN DWORD RVA);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, CONST IN PIMAGE_NT_HEADERS64 pImageHeader, IN DWORD RVA);
+	DECL_EXTERN_API(ULONG, PEOffsetFromRVA, CONST IN PIMAGE_NT_HEADERS pImageHeader, IN DWORD RVA);
 
-	/* defined in string.c */
-	DECL_EXTERN_API(LPSTR, StringAllocA, DWORD tSize);
-	DECL_EXTERN_API(LPWSTR, StringAllocW, DWORD tSize);
-	DECL_EXTERN_API(BOOLEAN, StringSplitA, LPSTR lpStr, CONST CHAR cDelimiter, LPSTR lpStrArrayOut[], PDWORD pdwCount);
-	DECL_EXTERN_API(BOOLEAN, StringSplitW, LPWSTR lpStr, CONST WCHAR cDelimiter, LPWSTR lpStrArrayOut[], PDWORD pdwCount);
-	DECL_EXTERN_API(BOOLEAN, StringSubtractA, LPCSTR lpStr, LPSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex);
-	DECL_EXTERN_API(BOOLEAN, StringSubtractW, LPCWSTR lpStr, LPWSTR lpOutStr, DWORD szStartIndex, DWORD szEndIndex);
-	DECL_EXTERN_API(DWORD, StringIndexOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringLastIndexOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringEndOfA, LPCSTR lpStr, LPCSTR lpDelimiter, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringEndOfW, LPCWSTR lpStr, LPCWSTR lpDelimiter, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringLenA, LPCSTR lpString);
-	DECL_EXTERN_API(DWORD, StringLenW, LPCWSTR lpString);
-	DECL_EXTERN_API(DWORD, StringSizeA, LPCSTR lpString);
-	DECL_EXTERN_API(DWORD, StringSizeW, LPCWSTR lpString);
-	DECL_EXTERN_API(BOOLEAN, StringToLowerA, LPSTR lpStr);
-	DECL_EXTERN_API(BOOLEAN, StringToLowerW, LPWSTR lpStr);
-	DECL_EXTERN_API(BOOLEAN, StringToUpperA, LPSTR lpStr);
-	DECL_EXTERN_API(BOOLEAN, StringToUpperW, LPWSTR lpStr);
-	DECL_EXTERN_API(BOOLEAN, StringCompareContentA, LPCSTR lpStr1, LPCSTR lpStr2);
-	DECL_EXTERN_API(BOOLEAN, StringCompareContentW, LPCWSTR lpStr1, LPCWSTR lpStr2);
-	DECL_EXTERN_API(BOOLEAN, StringCompareA, LPCSTR lpStr1, LPCSTR lpStr2, DWORD dwLen);
-	DECL_EXTERN_API(BOOLEAN, StringCompareW, LPCWSTR lpStr1, LPCWSTR lpStr2, DWORD dwLen);
-	DECL_EXTERN_API(BOOLEAN, StringEqualA, LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
-	DECL_EXTERN_API(BOOLEAN, StringEqualW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
-	DECL_EXTERN_API(LPSTR, StringWithinStringA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPWSTR, StringWithinStringW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPSTR, StringWithinStringLastA, LPCSTR szStr, LPCSTR szToFind, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, LPCWSTR szStr, LPCWSTR szToFind, BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(BOOLEAN, StringContainsA, LPCSTR lpString1, LPCSTR lpString2, BOOLEAN CaseInSensitive);
-	DECL_EXTERN_API(BOOLEAN, StringContainsW, LPCWSTR lpString1, LPCWSTR lpString2, BOOLEAN CaseInSensitive);
-	DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, LPCSTR lpStringToConvert, LPWSTR lpStringOut, DWORD dwStringCount);
-	DECL_EXTERN_API(BOOLEAN, StringCopyConvertWtoA, LPCWSTR lpStringToConvert, LPSTR lpStringOut, DWORD dwStringCount);
+	/* 
+	** defined in string.c 
+	** 
+	** Use "Size" for when you need to define a strings count in bytes.
+	** Use "Length" for when you need to define a string count per character.
+	*/
+	DECL_EXTERN_API(LPSTR, StringAllocA, CONST IN DWORD dwLength);
+	DECL_EXTERN_API(LPWSTR, StringAllocW, CONST IN DWORD dwLength);
+	/* OPTIONAL = -1 */
+	DECL_EXTERN_API(BOOLEAN, StringSubtractA, IN LPCSTR lpStr, OUT LPSTR lpOutStr, CONST IN DWORD szStartIndex, IN DWORD szEndIndex OPTIONAL);
+	/* OPTIONAL = -1 */
+	DECL_EXTERN_API(BOOLEAN, StringSubtractW, IN LPCWSTR lpStr, OUT LPWSTR lpOutStr, CONST IN DWORD szStartIndex, IN DWORD szEndIndex OPTIONAL);
+	DECL_EXTERN_API(DWORD, StringIndexOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringLastIndexOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringLastIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringEndOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringEndOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(DWORD, StringLenA, IN LPCSTR lpString);
+	DECL_EXTERN_API(DWORD, StringLenW, IN LPCWSTR lpString);
+	DECL_EXTERN_API(DWORD, StringSizeA, IN LPCSTR lpString);
+	DECL_EXTERN_API(DWORD, StringSizeW, IN LPCWSTR lpString);
+	DECL_EXTERN_API(BOOLEAN, StringToLowerA, IN OUT LPSTR lpStr);
+	DECL_EXTERN_API(BOOLEAN, StringToLowerW, IN OUT LPWSTR lpStr);
+	DECL_EXTERN_API(BOOLEAN, StringToUpperA, IN OUT LPSTR lpStr);
+	DECL_EXTERN_API(BOOLEAN, StringToUpperW, IN OUT LPWSTR lpStr);
+	DECL_EXTERN_API(BOOLEAN, StringCompareContent, IN LPCVOID lpStr1, IN LPCVOID lpStr2, CONST IN DWORD dwLen);
+	DECL_EXTERN_API(BOOLEAN, StringCompareA, IN LPCSTR lpStr1, IN LPCSTR lpStr2);
+	DECL_EXTERN_API(BOOLEAN, StringCompareW, IN LPCWSTR lpStr1, IN LPCWSTR lpStr2);
+	DECL_EXTERN_API(BOOLEAN, StringEqualA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(BOOLEAN, StringEqualW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(LPSTR, StringWithinStringA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPWSTR, StringWithinStringW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPSTR, StringWithinStringLastA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(BOOLEAN, StringContainsA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(BOOLEAN, StringContainsW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
+	DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, IN LPCSTR lpStringToConvert, OUT LPWSTR lpStringOut, CONST IN DWORD dwStringCount);
+	DECL_EXTERN_API(BOOLEAN, StringCopyConvertWtoA, IN LPCWSTR lpStringToConvert, OUT LPSTR lpStringOut, CONST IN DWORD dwStringCount);
 	DECL_EXTERN_API(LPWSTR, StringConvertAtoW, IN LPCSTR lpStringConvert);
 	DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert);
-	DECL_EXTERN_API(BOOLEAN, StringCopyA, IN LPSTR szOut, LPCSTR szcIn, DWORD tSize);
-	DECL_EXTERN_API(BOOLEAN, StringCopyW, IN LPWSTR szOut, LPCWSTR szcIn, DWORD tSize);
+	DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL);
+	DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL);
 
-	/* defined in privilege.c */
+	/* defined in privilege.c
+	** @unimplemented
+	*/
 	DECL_EXTERN_API(PLUID, LookupPrivilegeValueW, LPCWSTR Name);
 	DECL_EXTERN_API(PLUID, LookupPrivilegeValueA, LPCSTR Name);
 	DECL_EXTERN_API(NTSTATUS, TokenIsElevated, _In_ HANDLE TokenHandle, _Out_ PBOOLEAN Elevated);
 
 	/* defined in virtual.c */
-	DECL_EXTERN_API(LPVOID, VirtualAllocEx, IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
-	DECL_EXTERN_API(LPVOID, VirtualAlloc, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flAllocationType, IN DWORD flProtect);
-	DECL_EXTERN_API(BOOL, VirtualFreeEx, IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
-	DECL_EXTERN_API(BOOL, VirtualFree, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD dwFreeType);
-	DECL_EXTERN_API(BOOL, VirtualProtect, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
-	DECL_EXTERN_API(BOOL, VirtualProtectEx, IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
-	DECL_EXTERN_API(BOOL, VirtualLock, IN LPVOID lpAddress, IN SIZE_T dwSize);
-	DECL_EXTERN_API(SIZE_T, VirtualQuery, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
-	DECL_EXTERN_API(SIZE_T, VirtualQueryEx, IN HANDLE hProcess, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, IN SIZE_T dwLength);
-	DECL_EXTERN_API(BOOL, VirtualUnlock, IN LPVOID lpAddress, IN SIZE_T dwSize);
-	DECL_EXTERN_API(PVOID, Alloc, IN SIZE_T Size);
-	DECL_EXTERN_API(VOID, Free, IN LPVOID lpAddress);
+	DECL_EXTERN_API(LPVOID, VirtualAllocEx, CONST IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
+	DECL_EXTERN_API(LPVOID, VirtualAlloc, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
+	DECL_EXTERN_API(BOOL, VirtualFreeEx, CONST IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD dwFreeType);
+	DECL_EXTERN_API(BOOL, VirtualFree, IN LPVOID lpAddress, CONST IN SIZE_T dwSize, CONST IN DWORD dwFreeType);
+	DECL_EXTERN_API(BOOL, VirtualProtect, IN LPVOID lpAddress, CONST IN SIZE_T dwSize, CONST IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
+	DECL_EXTERN_API(BOOL, VirtualProtectEx, CONST IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD flNewProtect, OUT PDWORD lpflOldProtect);
+	DECL_EXTERN_API(BOOL, VirtualLock, IN LPVOID lpAddress, CONST IN SIZE_T dwSize);
+	DECL_EXTERN_API(SIZE_T, VirtualQuery, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, CONST IN SIZE_T dwLength);
+	DECL_EXTERN_API(SIZE_T, VirtualQueryEx, CONST IN HANDLE hProcess, IN LPCVOID lpAddress, OUT PMEMORY_BASIC_INFORMATION lpBuffer, CONST IN SIZE_T dwLength);
+	DECL_EXTERN_API(BOOL, VirtualUnlock, IN LPVOID lpAddress, CONST IN SIZE_T dwSize);
+	DECL_EXTERN_API(LPVOID, Alloc32, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(PVOID, Alloc, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(VOID, Free, CONST IN LPVOID lpAddress);
 
 	/* defined in volume.c */
-	DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA, _In_opt_  LPCSTR lpRootPathName, _Out_opt_ LPSTR  lpVolumeNameBuffer,
-		_In_      DWORD   nVolumeNameSize,
-		_Out_opt_ LPDWORD lpVolumeSerialNumber,
-		_Out_opt_ LPDWORD lpMaximumComponentLength,
-		_Out_opt_ LPDWORD lpFileSystemFlags,
-		_Out_opt_ LPSTR  lpFileSystemNameBuffer,
-		_In_      DWORD   nFileSystemNameSize);
+	DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA, 
+		IN  LPCSTR	lpRootPathName OPTIONAL,
+		OUT LPSTR	lpVolumeNameBuffer OPTIONAL,
+		IN  DWORD   nVolumeNameSize,
+		OUT LPDWORD lpVolumeSerialNumber OPTIONAL,
+		OUT LPDWORD lpMaximumComponentLength OPTIONAL,
+		OUT LPDWORD lpFileSystemFlags OPTIONAL,
+		OUT LPSTR	lpFileSystemNameBuffer OPTIONAL,
+		IN  DWORD   nFileSystemNameSize);
 
 	DECL_EXTERN_API(BOOLEAN, VolumeGetInformationW, 
-		_In_opt_  LPCWSTR lpRootPathName,
-		_Out_opt_ LPWSTR  lpVolumeNameBuffer,
-		_In_      DWORD   nVolumeNameSize,
-		_Out_opt_ LPDWORD lpVolumeSerialNumber,
-		_Out_opt_ LPDWORD lpMaximumComponentLength,
-		_Out_opt_ LPDWORD lpFileSystemFlags,
-		_Out_opt_ LPWSTR  lpFileSystemNameBuffer,
-		_In_      DWORD   nFileSystemNameSize);
+		IN  LPCWSTR lpRootPathName OPTIONAL,
+		OUT LPWSTR  lpVolumeNameBuffer OPTIONAL,
+		IN  DWORD   nVolumeNameSize,
+		OUT LPDWORD lpVolumeSerialNumber OPTIONAL,
+		OUT LPDWORD lpMaximumComponentLength OPTIONAL,
+		OUT LPDWORD lpFileSystemFlags OPTIONAL,
+		OUT LPWSTR  lpFileSystemNameBuffer OPTIONAL,
+		IN  DWORD   nFileSystemNameSize);
 
 	/* defined in path.c, lpBuffer is expected to be allocated with MAX_PATH * sizeof, TCHAR) in any function that does not specify a size parameter. */
 	DECL_EXTERN_API(DWORD, PathGetFullPathNameA, IN LPCSTR lpFileName, OUT LPSTR lpBuffer);

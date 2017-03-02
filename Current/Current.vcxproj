@@ -333,6 +333,16 @@
     <ClInclude Include="public\wintype.h" />
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="private\wow64\wow64stdcall.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">2</CallingConvention>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">2</CallingConvention>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">2</CallingConvention>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">2</CallingConvention>
+    </MASM>
     <MASM Include="private\sys\asm\AcceptConnectPort.asm">
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>

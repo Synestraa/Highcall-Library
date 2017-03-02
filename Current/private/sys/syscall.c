@@ -6,7 +6,7 @@
 #define NT_SYMBOL "Nt"
 #define SYSINDEX_ASSERT(x) \
 { \
-	if (HcStringCompareContentA(lpCurrentFunction, NT_SYMBOL #x)) \
+	if (HcStringCompareA(lpCurrentFunction, NT_SYMBOL #x)) \
 	{\
 		sci##x = dwIndex;\
 		continue;\

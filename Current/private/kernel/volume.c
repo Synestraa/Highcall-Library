@@ -4,15 +4,15 @@
 #include "../../public/imports.h"
 
 DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA, 
-	_In_opt_  LPCSTR  lpRootPathName,
-	_Out_opt_ LPSTR   lpVolumeNameBuffer,
-	_In_      DWORD   nVolumeNameSize,
-	_Out_opt_ LPDWORD lpVolumeSerialNumber,
-	_Out_opt_ LPDWORD lpMaximumComponentLength,
-	_Out_opt_ LPDWORD lpFileSystemFlags,
-	_Out_opt_ LPSTR   lpFileSystemNameBuffer,
-	_In_      DWORD   nFileSystemNameSize
-) {
+	IN  LPCSTR	lpRootPathName OPTIONAL,
+	OUT LPSTR	lpVolumeNameBuffer OPTIONAL,
+	IN  DWORD   nVolumeNameSize,
+	OUT LPDWORD lpVolumeSerialNumber OPTIONAL,
+	OUT LPDWORD lpMaximumComponentLength OPTIONAL,
+	OUT LPDWORD lpFileSystemFlags OPTIONAL,
+	OUT LPSTR	lpFileSystemNameBuffer OPTIONAL,
+	IN  DWORD   nFileSystemNameSize)
+{
 	LPWSTR FileSystemNameU = NULL;
 	LPWSTR VolumeNameU = NULL;
 	PWCHAR RootPathNameW;
@@ -92,15 +92,15 @@ DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA,
 }
 
 DECL_EXTERN_API(BOOLEAN, VolumeGetInformationW, 
-	_In_opt_  LPCWSTR lpRootPathName,
-	_Out_opt_ LPWSTR  lpVolumeNameBuffer,
-	_In_      DWORD   nVolumeNameSize,
-	_Out_opt_ LPDWORD lpVolumeSerialNumber,
-	_Out_opt_ LPDWORD lpMaximumComponentLength,
-	_Out_opt_ LPDWORD lpFileSystemFlags,
-	_Out_opt_ LPWSTR  lpFileSystemNameBuffer,
-	_In_      DWORD   nFileSystemNameSize
-) {
+	IN  LPCWSTR lpRootPathName OPTIONAL,
+	OUT LPWSTR  lpVolumeNameBuffer OPTIONAL,
+	IN  DWORD   nVolumeNameSize,
+	OUT LPDWORD lpVolumeSerialNumber OPTIONAL,
+	OUT LPDWORD lpMaximumComponentLength OPTIONAL,
+	OUT LPDWORD lpFileSystemFlags OPTIONAL,
+	OUT LPWSTR  lpFileSystemNameBuffer OPTIONAL,
+	IN  DWORD   nFileSystemNameSize)
+{
 	HANDLE hFile;
 	NTSTATUS Status;
 	UCHAR Buffer[max(FS_VOLUME_BUFFER_SIZE, FS_ATTRIBUTE_BUFFER_SIZE)];

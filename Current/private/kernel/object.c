@@ -179,7 +179,7 @@ DECL_EXTERN_API(DWORD, ObjectWaitMultiple, IN DWORD nCount,
 	return Status;
 }
 
-DECL_EXTERN_API(DWORD, ObjectWait, HANDLE hObject, IN DWORD dwMiliseconds)
+DECL_EXTERN_API(DWORD, ObjectWait, IN HANDLE hObject, IN DWORD dwMiliseconds)
 {
 	PLARGE_INTEGER TimePtr;
 	LARGE_INTEGER Time;
@@ -203,7 +203,10 @@ DECL_EXTERN_API(DWORD, ObjectWait, HANDLE hObject, IN DWORD dwMiliseconds)
 	return Status;
 }
 
-DECL_EXTERN_API(VOID, ObjectClose, HANDLE hObject)
+DECL_EXTERN_API(VOID, ObjectClose, IN PHANDLE hObject)
 {
-	HcClose(hObject);
+	if (NT_SUCCESS(HcClose(*hObject)))
+	{
+		*hObject = INVALID_HANDLE;
+	}
 }

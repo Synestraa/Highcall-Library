@@ -219,7 +219,7 @@ VOID RelocateConditional(PBYTE lpAddress,
 	}
 }
 
-DECL_EXTERN_API(DWORD, HookAssertLength, LPVOID lpBaseAddress, DWORD MinimumLength)
+DECL_EXTERN_API(DWORD, HookAssertLength, IN LPCVOID lpBaseAddress, CONST IN DWORD MinimumLength)
 {
 	_CodeInfo Info;
 	_DInst* Instructions = NULL;
@@ -266,7 +266,7 @@ DECL_EXTERN_API(DWORD, HookAssertLength, LPVOID lpBaseAddress, DWORD MinimumLeng
 	return Size;
 }
 
-DECL_EXTERN_API(HStatus, HookRelocateCode, PBYTE Code, DWORD Size, PBYTE Source)
+DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, CONST IN PBYTE Source)
 {
 	_CodeInfo Info;
 	_DInst Instruction;
@@ -400,14 +400,14 @@ DECL_EXTERN_API(HStatus, HookRelocateCode, PBYTE Code, DWORD Size, PBYTE Source)
 	return HOOK_NO_ERR;
 }
 
-DECL_EXTERN_API(PVOID, HookCreateCave32, LPVOID lpBaseAddress, SIZE_T Size)
+DECL_EXTERN_API(PVOID, HookCreateCave32, IN LPVOID lpBaseAddress, CONST IN SIZE_T Size)
 {
 	return HcVirtualAlloc(lpBaseAddress, Size,
 		MEM_RESERVE | MEM_COMMIT,
 		PAGE_EXECUTE_READWRITE);
 }
 
-DECL_EXTERN_API(PVOID, HookCreateCave64, LPVOID lpBaseAddress, SIZE_T Size)
+DECL_EXTERN_API(PVOID, HookCreateCave64, IN LPVOID lpBaseAddress, CONST IN SIZE_T Size)
 {
 	LPVOID lpAddress = NULL;
 	MEMORY_BASIC_INFORMATION mbi;
@@ -449,7 +449,7 @@ DECL_EXTERN_API(PVOID, HookCreateCave64, LPVOID lpBaseAddress, SIZE_T Size)
 #define HcHookCreateCave(x, y) HcHookCreateCave64(x, y);
 #endif
 
-DECL_EXTERN_API(PVOID, HookRecreateCode, PBYTE lpBaseAddress, DWORD dwMinimumSize)
+DECL_EXTERN_API(PVOID, HookRecreateCode, CONST IN PBYTE lpBaseAddress, CONST IN DWORD dwMinimumSize)
 {
 	PVOID Recreated;
 	PBYTE Original;
@@ -520,7 +520,7 @@ DECL_EXTERN_API(PVOID, HookRecreateCode, PBYTE lpBaseAddress, DWORD dwMinimumSiz
 	return Recreated;
 }
 
-DECL_EXTERN_API(HStatus, HookDetour, PDetourContext Context)
+DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 {
 	DWORD ContinuedJumpSize;
 	DWORD DetourMethodSize;
@@ -677,7 +677,7 @@ DECL_EXTERN_API(HStatus, HookDetour, PDetourContext Context)
 	return HOOK_NO_ERR;
 }
 
-DECL_EXTERN_API(HStatus, HookDetourContextRestore, PDetourContext Context)
+DECL_EXTERN_API(HStatus, HookDetourContextRestore, CONST IN PDetourContext Context)
 {
 	DWORD dwProtection = PAGE_EXECUTE;
 	SIZE_T NumberofBytesToProtect;

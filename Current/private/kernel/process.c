@@ -3,6 +3,8 @@
 #include "../../public/imports.h"
 #include "../sys/syscall.h"
 
+#include <windows.h>
+
 DECL_EXTERN_API(DWORD, ProcessGetCurrentId, VOID)
 {
 	return HandleToUlong(NtCurrentTeb()->ClientId.UniqueProcess);
@@ -59,17 +61,15 @@ DECL_EXTERN_API(BOOLEAN, ProcessIsWow64Ex, CONST IN HANDLE hProcess)
 DECL_EXTERN_API(BOOLEAN, ProcessIsWow64, CONST IN DWORD dwProcessId)
 {
 	HANDLE hProcess;
-	BOOLEAN Result;
+	BOOLEAN Result = FALSE;
 
 	hProcess = HcProcessOpen(dwProcessId, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
-	if (!hProcess)
+	if (hProcess)
 	{
-		return FALSE;
+		Result = HcProcessIsWow64Ex(hProcess);
+		HcObjectClose(&hProcess);
 	}
 
-	Result = HcProcessIsWow64Ex(hProcess);
-
-	HcObjectClose(hProcess);
 	return Result;
 }
 
@@ -605,7 +605,8 @@ DECL_EXTERN_API(BOOLEAN, ProcessQueryInformationModule, CONST IN HANDLE hProcess
 
 DECL_EXTERN_API(HMODULE, ProcessGetModuleHandleByNameAdvW, 
 	CONST IN HANDLE ProcessHandle,
-	IN LPCWSTR lpModuleName OPTIONAL)
+	IN LPCWSTR lpModuleName,
+	IN BOOLEAN Bit32)
 {
 	BOOLEAN Continue;
 	MEMORY_BASIC_INFORMATION basicInfo;
@@ -660,31 +661,30 @@ DECL_EXTERN_API(HMODULE, ProcessGetModuleHandleByNameAdvW,
 
 			} while (basicInfo.AllocationBase == (PVOID)hModule);
 
-			if (HcProcessModuleFileName(ProcessHandle,
-				(PVOID)hModule,
-				lpFilePath,
-				MAX_PATH))
+
+			if ((ULONG_PTR)hModule <= USER_MAX_ADDRESS && Bit32 || !Bit32)
 			{
-				//
-				// Temporary.
-				// The name should be stripped from the path.
-				// The path should be resolved from native to dos.
-				//
-				DWORD lastIndex = HcStringLastIndexOfW(lpFilePath, L"\\", FALSE);
-				if (lastIndex != -1)
+				if (HcProcessModuleFileName(ProcessHandle, (PVOID)hModule, lpFilePath, MAX_PATH))
 				{
-					if (HcStringSubtractW(lpFilePath, lpModuleNameExtracted, lastIndex, -1))
+					//
+					// The path should be resolved from native to dos.
+					//
+					DWORD lastIndex = HcStringLastIndexOfW(lpFilePath, L"\\", FALSE);
+					if (lastIndex != -1)
 					{
-						if (HcStringEqualW(lpModuleName, lpModuleNameExtracted, TRUE))
+						if (HcStringSubtractW(lpFilePath, lpModuleNameExtracted, lastIndex, -1))
+						{
+							if (HcStringEqualW(lpModuleName, lpModuleNameExtracted, TRUE))
+							{
+								Success = TRUE;
+								break;
+							}
+						}
+						else if (HcStringContainsW(lpFilePath, lpModuleName, TRUE))
 						{
 							Success = TRUE;
 							break;
 						}
-					}
-					else if (HcStringContainsW(lpFilePath, lpModuleName, TRUE))
-					{
-						Success = TRUE;
-						break;
 					}
 				}
 			}
@@ -1355,7 +1355,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumHandles, HC_HANDLE_CALLBACKW callback, DWORD
 		{
 			if (hProcess != NULL)
 			{
-				HcObjectClose(hProcess);
+				HcObjectClose(&hProcess);
 			}
 
 			hProcess = HcProcessOpen(curHandle.UniqueProcessId, PROCESS_ALL_ACCESS);
@@ -1385,17 +1385,17 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumHandles, HC_HANDLE_CALLBACKW callback, DWORD
 		if (callback(hDuplicate, hProcess, lParam))
 		{
 			ReturnValue = TRUE;
-			HcObjectClose(hDuplicate);
+			HcObjectClose(&hDuplicate);
 			goto done;
 		}
 
-		HcObjectClose(hDuplicate);
+		HcObjectClose(&hDuplicate);
 	}
 
 done:
 	if (hProcess != NULL)
 	{
-		HcObjectClose(hProcess);
+		HcObjectClose(&hProcess);
 	}
 
 	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
@@ -1445,7 +1445,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	if (!pLuid)
 	{
 		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		HcObjectClose(hToken);
+		HcObjectClose(&hToken);
 		return FALSE;
 	}
 
@@ -1469,7 +1469,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
-		HcObjectClose(hToken);
+		HcObjectClose(&hToken);
 		return FALSE;
 	}
 
@@ -1500,11 +1500,11 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
-		HcObjectClose(hToken);
+		HcObjectClose(&hToken);
 		return FALSE;
 	}
 
-	HcObjectClose(hToken);
+	HcObjectClose(&hToken);
 	return TRUE;
 };
 

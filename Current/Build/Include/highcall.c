@@ -41,15 +41,15 @@ static HIGHCALL_STATUS InitializeModules(VOID)
 		}
 
 		/* Load anything we need from ntdll while we're at it. */
-		if (HcStringCompareContentW(L"ntdll.dll", pLdrDataTableEntry->FullModuleName.Buffer))
+		if (HcStringCompareW(L"ntdll.dll", pLdrDataTableEntry->FullModuleName.Buffer))
 		{
 			HcGlobal.HandleNtdll = (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
 		}
-		else if (HcStringCompareContentW(L"user32.dll", pLdrDataTableEntry->FullModuleName.Buffer))
+		else if (HcStringCompareW(L"user32.dll", pLdrDataTableEntry->FullModuleName.Buffer))
 		{
 			HcGlobal.HandleUser32 = (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
 		}
-		else if (HcStringCompareContentW(L"kernel32.dll", pLdrDataTableEntry->FullModuleName.Buffer))
+		else if (HcStringCompareW(L"kernel32.dll", pLdrDataTableEntry->FullModuleName.Buffer))
 		{
 			HcGlobal.HandleKernel32 = (HMODULE)pLdrDataTableEntry->InInitializationOrderLinks.Flink;
 		}
@@ -135,7 +135,7 @@ static VOID InitializeSecurity(VOID)
 	if (NT_SUCCESS(Status))
 	{
 		HcTokenIsElevated(hToken, &(HcGlobal.IsElevated));
-		HcObjectClose(hToken);
+		HcObjectClose(&hToken);
 	}
 }
 

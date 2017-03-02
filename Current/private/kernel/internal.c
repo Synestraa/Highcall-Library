@@ -5,11 +5,11 @@
 //
 #include "../distorm/include/distorm.h"
 
-DECL_EXTERN_API(BOOLEAN, InternalCompare, PBYTE pbFirst, PBYTE pbSecond, SIZE_T tLength)
+DECL_EXTERN_API(BOOLEAN, InternalCompare, IN PBYTE pbFirst, IN PBYTE pbSecond, IN SIZE_T tLength)
 {
 	for (; tLength--; pbFirst++, pbSecond++)
 	{
-		if ((*(BYTE*)pbFirst) != (*(BYTE*)pbSecond))
+		if (*pbFirst != *pbSecond)
 		{
 			return FALSE;
 		}
@@ -17,7 +17,7 @@ DECL_EXTERN_API(BOOLEAN, InternalCompare, PBYTE pbFirst, PBYTE pbSecond, SIZE_T 
 	return TRUE;
 }
 
-DECL_EXTERN_API(PVOID, InternalCopy, PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalCopy, IN PVOID pDst, CONST IN LPCVOID pSrc, CONST IN SIZE_T tCount)
 {
 	PVOID ret = pDst;
 	SIZE_T sz = tCount;
@@ -27,10 +27,11 @@ DECL_EXTERN_API(PVOID, InternalCopy, PVOID pDst, CONST LPCVOID pSrc, CONST SIZE_
 	{
 		*((PBYTE)pDst)++ = *((PBYTE)src)++;
 	}
-	return (ret);
+
+	return ret;
 }
 
-DECL_EXTERN_API(PVOID, InternalMove, PVOID pDst, PVOID pSrc, SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalMove, IN PVOID pDst, IN PVOID pSrc, IN SIZE_T tCount)
 {
 	PVOID ret = pDst;
 
@@ -64,7 +65,7 @@ DECL_EXTERN_API(PVOID, InternalMove, PVOID pDst, PVOID pSrc, SIZE_T tCount)
 	return(ret);
 }
 
-DECL_EXTERN_API(PVOID, InternalSet, PVOID pDst, BYTE bVal, SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalSet, IN PVOID pDst, CONST IN BYTE bVal, IN SIZE_T tCount)
 {
 	PVOID start = pDst;
 
@@ -76,7 +77,7 @@ DECL_EXTERN_API(PVOID, InternalSet, PVOID pDst, BYTE bVal, SIZE_T tCount)
 	return (start);
 }
 
-DECL_EXTERN_API(BOOLEAN, InternalValidate, LPCVOID lpcAddress)
+DECL_EXTERN_API(BOOLEAN, InternalValidate, IN LPCVOID lpcAddress)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 	SIZE_T ReturnedSize;
@@ -87,7 +88,7 @@ DECL_EXTERN_API(BOOLEAN, InternalValidate, LPCVOID lpcAddress)
 	return !(!ReturnedSize || (mbi.Protect & PAGE_NOACCESS) || (mbi.Protect & PAGE_GUARD));
 }
 
-DECL_EXTERN_API(LPVOID, InternalLocatePointer, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(LPVOID, InternalLocatePointer, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount)
 {
 	LPVOID CurrentAddress;
 	SIZE_T Index;
@@ -116,19 +117,19 @@ DECL_EXTERN_API(LPVOID, InternalLocatePointer, LPCVOID lpcAddress, PSIZE_T ptOff
 	return HcInternalValidate(CurrentAddress) ? (LPVOID)((SIZE_T)CurrentAddress + ptOffsets[tCount - 1]) : NULL;
 }
 
-DECL_EXTERN_API(INT, InternalReadIntEx32, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(INT, InternalReadIntEx32, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount)
 {
 	LPVOID lpPtr = HcInternalLocatePointer(lpcAddress, ptOffsets, tCount);
 	return HcInternalValidate(lpPtr) ? *(DWORD*)lpPtr : 0;
 }
 
-DECL_EXTERN_API(INT64, InternalReadIntEx64, LPCVOID lpcAddress, PSIZE_T ptOffsets, SIZE_T tCount)
+DECL_EXTERN_API(INT64, InternalReadIntEx64, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount)
 {
 	LPVOID lpPtr = HcInternalLocatePointer(lpcAddress, ptOffsets, tCount);
 	return HcInternalValidate(lpPtr) ? *(DWORD64*)lpPtr : 0;
 }
 
-DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, LPVOID lpAddress, SIZE_T tLength, PBYTE pbNew)
+DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, IN LPVOID lpAddress, IN SIZE_T tLength, CONST IN PBYTE pbNew)
 {
 	DWORD dwProtection = PAGE_EXECUTE;
 
@@ -151,7 +152,7 @@ DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, LPVOID lpAddress, SIZE_T tLength, 
 	return FALSE;
 }
 
-DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, PVOID pAddress)
+DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, IN LPVOID pAddress)
 {
 	_CodeInfo ci;
 	_DInst di;
@@ -191,14 +192,14 @@ DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, PVOID pAddress)
 	return FALSE;
 }
 
-DECL_EXTERN_API(LPBYTE, InternalPatternFind, LPCSTR szcPattern, LPCSTR szcMask, PHC_MODULE_INFORMATIONW pmInfo)
+DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PHC_MODULE_INFORMATIONW pmInfo)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;
 	SIZE_T MaskSize; 
 
 	MaskSize = HcStringLenA(szcMask);
-	if (!MaskSize || !HcStringLenA(szcPattern))
+	if (!MaskSize || HcStringLenA(szcPattern) != MaskSize)
 	{
 		return 0;
 	}
@@ -233,7 +234,7 @@ DECL_EXTERN_API(LPBYTE, InternalPatternFind, LPCSTR szcPattern, LPCSTR szcMask, 
 	return NULL;
 }
 
-DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, LPCSTR szcPattern, LPCSTR szcMask, LPBYTE lpBuffer, SIZE_T Size)
+DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LPCSTR szcMask, IN LPBYTE lpBuffer, CONST IN SIZE_T Size)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;

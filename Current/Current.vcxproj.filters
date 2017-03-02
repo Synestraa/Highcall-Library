@@ -1490,6 +1490,7 @@
     <MASM Include="private\sys\asm\Wow64WriteVirtualMemory64.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
+    <MASM Include="private\wow64\wow64stdcall.asm" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">

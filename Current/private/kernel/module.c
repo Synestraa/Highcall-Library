@@ -2,7 +2,67 @@
 
 #include "../../public/imports.h"
 
-DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName)
+DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInSensitive)
+{
+	PPEB pPeb = NtCurrentPeb();
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
+	PLIST_ENTRY pListHead, pListEntry;
+	ULONG_PTR Cookie = 0;
+
+	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+
+	/* Get the module list in load order */
+	pListHead = &(pPeb->LoaderData->InLoadOrderModuleList);
+
+	/* Loop through entry list till we find a match for the module's name */
+	for (pListEntry = pListHead->Flink; pListEntry != pListHead;)
+	{
+		pLdrDataTableEntry = (PLDR_DATA_TABLE_ENTRY)pListEntry;
+
+		/* Important note is that this is strict to the entire name */
+		if (!lpModuleName || HcStringEqualW(lpModuleName, pLdrDataTableEntry->BaseModuleName.Buffer, CaseInSensitive))
+		{
+			return pLdrDataTableEntry;
+		}
+
+		pListEntry = pLdrDataTableEntry->InLoadOrderLinks.Flink;
+	}
+
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
+	return NULL;
+}
+
+DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryBaseW, CONST IN HMODULE hModule)
+{
+	PPEB pPeb = NtCurrentPeb();
+	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
+	PLIST_ENTRY pListHead, pListEntry;
+	ULONG_PTR Cookie = 0;
+
+	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
+
+	/* Get the module list in load order */
+	pListHead = &(pPeb->LoaderData->InLoadOrderModuleList);
+
+	/* Loop through entry list till we find a match for the module's name */
+	for (pListEntry = pListHead->Flink; pListEntry != pListHead;)
+	{
+		pLdrDataTableEntry = (PLDR_DATA_TABLE_ENTRY)pListEntry;
+
+		/* Important note is that this is strict to the entire name */
+		if (!hModule || pLdrDataTableEntry->ModuleBase == hModule)
+		{
+			return pLdrDataTableEntry;
+		}
+
+		pListEntry = pLdrDataTableEntry->InLoadOrderLinks.Flink;
+	}
+
+	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
+	return NULL;
+}
+
+DECL_EXTERN_API(DWORD, ModuleFileNameA, CONST IN HANDLE hModule, OUT LPSTR lpModuleFileName)
 {
 	LPWSTR lpTemp = HcStringAllocW(MAX_PATH);
 	DWORD Length;
@@ -17,60 +77,34 @@ DECL_EXTERN_API(DWORD, ModuleFileNameA, HANDLE hModule, LPSTR lpModuleFileName)
 	return Length;
 }
 
-DECL_EXTERN_API(DWORD, ModuleFileNameW, HANDLE hModule, LPWSTR lpModuleFileName)
+DECL_EXTERN_API(DWORD, ModuleFileNameW, CONST IN HANDLE hModule, OUT LPWSTR lpModuleFileName)
 {
-	PLIST_ENTRY ModuleListHead, Entry;
 	PLDR_DATA_TABLE_ENTRY Module;
 	ULONG Length = 0;
-	ULONG_PTR Cookie = 0;
 
-	if (!hModule)
+	Module = HcModuleEntryBaseW(hModule);
+	if (Module)
 	{
-		hModule = (HANDLE)NtCurrentPeb()->ImageBaseAddress;
-		if (!hModule)
+		Length = Module->FullModuleName.Length;
+
+		if (Module->FullModuleName.Buffer != NULL && Length > 0)
 		{
-			return 0;
-		}
-	}
-
-	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
-
-	/* Traverse the module list */
-	ModuleListHead = &NtCurrentPeb()->LoaderData->InLoadOrderModuleList;
-	Entry = ModuleListHead->Flink;
-
-	while (Entry != ModuleListHead)
-	{
-		Module = CONTAINING_RECORD(Entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
-
-		/* Check if this is the requested module */
-		if (Module->ModuleBase == hModule)
-		{
-			Length = Module->FullModuleName.Length / sizeof(WCHAR);
-
-			if (Module->FullModuleName.Buffer == NULL || Length == 0)
-			{
-				break;
-			}
-
 			/* Copy contents */
 			HcStringCopyW(lpModuleFileName, Module->FullModuleName.Buffer, Length);
-
-			/* Break out of the loop */
-			break;
 		}
-
-		/* Advance to the next entry */
-		Entry = Entry->Flink;
 	}
-
-	/* Release the loader lock */
-	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 
 	return Length;
 }
 
-DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, ULONG64 hModule, LPCSTR lpProcedureName)
+
+DECL_EXTERN_API(DWORD, ModuleNameA, CONST IN HMODULE hModule, OUT LPSTR lpModuleFileName);
+DECL_EXTERN_API(DWORD, ModuleNameW, CONST IN HMODULE hModule, OUT LPWSTR lpModuleFileName);
+DECL_EXTERN_API(ULONG_PTR, ModuleChecksum, CONST IN HMODULE hModule);
+DECL_EXTERN_API(ULONG_PTR, ModuleEntryPoint, CONST IN HMODULE hModule);
+DECL_EXTERN_API(ULONG_PTR, ModuleSize, CONST IN HMODULE hModule);
+
+DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, CONST IN ULONG64 hModule, IN LPCSTR lpProcedureName)
 {
 	PIMAGE_EXPORT_DIRECTORY pExports;
 	PDWORD pExportNames;
@@ -102,7 +136,7 @@ DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, ULONG64 hModule, LPCSTR lpPr
 			continue;
 		}
 		
-		if (HcStringCompareContentA(lpCurrentFunction, lpProcedureName))
+		if (HcStringCompareA(lpCurrentFunction, lpProcedureName))
 		{
 			pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + hModule);
 			pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + hModule);
@@ -114,28 +148,22 @@ DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64A, ULONG64 hModule, LPCSTR lpPr
 	return 0;
 }
 
-DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64W, ULONG64 hModule, LPCWSTR lpProcedureName)
+DECL_EXTERN_API(ULONG64, ModuleProcedureAddress64W, CONST IN ULONG64 hModule, IN LPCWSTR lpProcedureName)
 {
-	SIZE_T Size;
-	ULONG64 ReturnValue;
+	ULONG64 ReturnValue = 0;
 	LPSTR lpConvertedName;
 
-	Size = HcStringLenW(lpProcedureName);
-	if (!Size)
+	lpConvertedName = HcStringConvertWtoA(lpProcedureName);
+	if (lpConvertedName)
 	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		return 0;
+		ReturnValue = HcModuleProcedureAddress64A(hModule, lpConvertedName);
+		HcFree(lpConvertedName);
 	}
 
-	lpConvertedName = HcStringConvertWtoA(lpProcedureName);
-
-	ReturnValue = HcModuleProcedureAddress64A(hModule, lpConvertedName);
-
-	HcFree(lpConvertedName);
 	return ReturnValue;
 }
 
-DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, ULONG_PTR hModule, LPCSTR lpProcedureName)
+DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, CONST IN ULONG_PTR hModule, IN LPCSTR lpProcedureName)
 {
 	PIMAGE_EXPORT_DIRECTORY pExports;
 	PDWORD pExportNames;
@@ -167,7 +195,7 @@ DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, ULONG_PTR hModule, LPCSTR 
 			continue;
 		}
 
-		if (HcStringCompareContentA(lpCurrentFunction, lpProcedureName))
+		if (HcStringEqualA(lpCurrentFunction, lpProcedureName, TRUE))
 		{
 			pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + hModule);
 			pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + hModule);
@@ -179,106 +207,89 @@ DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32A, ULONG_PTR hModule, LPCSTR 
 	return 0;
 }
 
-DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32W, ULONG_PTR hModule, LPCWSTR lpProcedureName)
+DECL_EXTERN_API(ULONG_PTR, ModuleProcedureAddress32W, CONST IN ULONG_PTR hModule, IN LPCWSTR lpProcedureName)
 {
-	SIZE_T Size;
-	ULONG_PTR ReturnValue;
+	ULONG_PTR ReturnValue = 0;
 	LPSTR lpConvertedName;
 
-	Size = HcStringLenW(lpProcedureName);
-	if (!Size)
+	lpConvertedName = HcStringConvertWtoA(lpProcedureName);
+	if (lpConvertedName)
 	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		return 0;
+		ReturnValue = HcModuleProcedureAddress32A(hModule, lpConvertedName);
+		HcFree(lpConvertedName);
 	}
 
-	lpConvertedName = HcStringConvertWtoA(lpProcedureName);
-
-	ReturnValue = HcModuleProcedureAddress32A(hModule, lpConvertedName);
-
-	HcFree(lpConvertedName);
 	return ReturnValue;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleW, LPCWSTR lpModuleName)
+DECL_EXTERN_API(HMODULE, ModuleHandleA, IN LPCSTR lpModuleName)
+{
+	LPWSTR lpConvertedName;
+	HMODULE hReturn = NULL;
+
+	lpConvertedName = HcStringConvertAtoW(lpModuleName);
+	if (lpConvertedName)
+	{
+		hReturn = HcModuleHandleW(lpConvertedName);
+		HcFree(lpConvertedName);
+	}
+
+	return hReturn;
+}
+
+DECL_EXTERN_API(HMODULE, ModuleHandleW, IN LPCWSTR lpModuleName)
+{
+	return HcModuleHandleExW(lpModuleName, TRUE);
+}
+
+DECL_EXTERN_API(HMODULE, ModuleHandleExW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInSensitive)
 {
 	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
-	PLIST_ENTRY pListHead, pListEntry;
-	ULONG_PTR Cookie = 0;
-	HMODULE hReturn = NULL;
 
 	/* if there is no name specified, return base address of main module */
 	if (!lpModuleName)
 	{
-		return ((HMODULE)pPeb->ImageBaseAddress);
+		return (HMODULE)pPeb->ImageBaseAddress;
 	}
 
-	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
-
-	/* Get the module list in load order */
-	pListHead = &(pPeb->LoaderData->InMemoryOrderModuleList);
-
-	/* Loop through entry list till we find a match for the module's name */
-	for (pListEntry = pListHead->Flink; pListEntry != pListHead; pListEntry = pListEntry->Flink)
+	pLdrDataTableEntry = HcModuleEntryW(lpModuleName, CaseInSensitive);
+	if (!pLdrDataTableEntry)
 	{
-		pLdrDataTableEntry = (PLDR_DATA_TABLE_ENTRY)pListEntry;
-
-		/* Important note is that this is strict to the entire name */
-		if (HcStringEqualW(lpModuleName, pLdrDataTableEntry->FullModuleName.Buffer, TRUE))
-		{
-			hReturn = (HMODULE) pLdrDataTableEntry->InInitializationOrderLinks.Flink;
-			break;
-		}
+		return NULL;
 	}
 
-	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
-	return hReturn;
+	return pLdrDataTableEntry->ModuleBase;
 }
 
-DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALLBACK callback, LPARAM lpParam)
+DECL_EXTERN_API(HMODULE, ModuleHandleWow64W, IN LPCWSTR lpModuleName)
 {
-	PIMAGE_EXPORT_DIRECTORY pExports;
-	PDWORD pExportNames;
-	LPSTR lpCurrentFunction;
-	LPBYTE lpbModule;
+	HMODULE hReturn = NULL;
+#ifndef _WIN64
+	PTEB32 pTeb32 = (PTEB32) (LPBYTE) NtCurrentTeb() + 0x2000;
+	PPEB32 pPeb32 = POINTER32_HARDCODED(PPEB32) pTeb32->ProcessEnvironmentBlock;
+	PPEB_LDR_DATA32 pLdr32 = POINTER32_HARDCODED(PPEB_LDR_DATA32) pPeb32->Ldr;
+	PLIST_ENTRY32 pListHead = POINTER32_HARDCODED(PLIST_ENTRY32) &pLdr32->InLoadOrderModuleList;
+	PLIST_ENTRY32 pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pListHead->Flink;
+	PLDR_DATA_TABLE_ENTRY32 pLdrDataTableEntry;
 
-	if (!hModule)
+	/* Loop through entry list till we find a match for the module's name */
+	for (; pListEntry != pListHead; )
 	{
-		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
-	}
+		pLdrDataTableEntry = (PLDR_DATA_TABLE_ENTRY32)pListEntry;
 
-	lpbModule = (LPBYTE)hModule;
-
-	pExports = HcPEGetExportDirectory(hModule);
-	if (!pExports)
-	{
-		return FALSE;
-	}
-
-	/* Get the address containg null terminated export names, in ASCII */
-	pExportNames = (PDWORD)(lpbModule + pExports->AddressOfNames);
-	if (!pExportNames)
-	{
-		return FALSE;
-	}
-
-	/* List through functions */
-	for (unsigned int i = 0; i < pExports->NumberOfNames; i++)
-	{
-		lpCurrentFunction = (LPSTR)(lpbModule + pExportNames[i]);
-		if (!lpCurrentFunction)
+		/* Important note is that this is strict to the entire name */
+		if (HcStringEqualW(lpModuleName, POINTER32_HARDCODED(LPWSTR) pLdrDataTableEntry->BaseDllName.Buffer, TRUE))
 		{
-			continue;
+			hReturn = POINTER32_HARDCODED(HMODULE) pLdrDataTableEntry->DllBase;
+			break;
 		}
 
-		if (callback(lpCurrentFunction, lpParam))
-		{
-			return TRUE;
-		}
+		pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pLdrDataTableEntry->InLoadOrderLinks.Flink;
 	}
+#endif
 
-	return TRUE;
+	return hReturn;
 }
 
 #define RemoveEntryList(x) (x).Blink->Flink = (x).Flink; \
@@ -286,50 +297,28 @@ DECL_EXTERN_API(BOOLEAN, ModuleListExports, HMODULE hModule, HC_EXPORT_LIST_CALL
 
 DECL_EXTERN_API(BOOLEAN, ModuleHide, CONST IN HMODULE hModule)
 {
-	PPEB pPeb = NtCurrentPeb();
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry;
-	PLIST_ENTRY pListHead, pListEntry;
 	BOOLEAN bReturn = FALSE;
-	ULONG_PTR Cookie = 0;
 
-	/* if there is no name specified, return base address of main module */
-	if (!hModule)
+	pLdrDataTableEntry = HcModuleEntryBaseW(hModule);
+	if (pLdrDataTableEntry)
 	{
-		/* we shouldn't unlink ourselves imo */
-		return FALSE;
+		HcInternalSet(pLdrDataTableEntry->FullModuleName.Buffer, 0, pLdrDataTableEntry->FullModuleName.Length);
+		*(&pLdrDataTableEntry->FullModuleName.Length) = 0;
+		*(&pLdrDataTableEntry->FullModuleName.MaximumLength) = 0;
+
+		RemoveEntryList(pLdrDataTableEntry->InMemoryOrderLinks);
+		RemoveEntryList(pLdrDataTableEntry->InInitializationOrderLinks);
+		RemoveEntryList(pLdrDataTableEntry->InLoadOrderLinks);
+		RemoveEntryList(pLdrDataTableEntry->HashLinks);
+
+		bReturn = TRUE;
 	}
 
-	LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, NULL, &Cookie);
-
-	/* Get the module list in load order */
-	pListHead = &(pPeb->LoaderData->InInitializationOrderModuleList);
-
-	/* Loop through entry list till we find a match for the module's name */
-	for (pListEntry = pListHead->Blink; pListEntry != pListHead; pListEntry = pListEntry->Blink)
-	{
-		pLdrDataTableEntry = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InInitializationOrderLinks);
-
-		if (pLdrDataTableEntry->ModuleBase == hModule)
-		{
-			HcInternalSet(pLdrDataTableEntry->FullModuleName.Buffer, 0, pLdrDataTableEntry->FullModuleName.Length);
-			*(&pLdrDataTableEntry->FullModuleName.Length) = 0;
-			*(&pLdrDataTableEntry->FullModuleName.MaximumLength) = 0;
-
-			RemoveEntryList(pLdrDataTableEntry->InMemoryOrderLinks);
-			RemoveEntryList(pLdrDataTableEntry->InInitializationOrderLinks);
-			RemoveEntryList(pLdrDataTableEntry->InLoadOrderLinks);
-			RemoveEntryList(pLdrDataTableEntry->HashLinks);
-
-			bReturn = TRUE;
-			break;
-		}
-	}
-
-	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 	return bReturn;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath)
+DECL_EXTERN_API(HMODULE, ModuleLoadA, IN LPCSTR lpPath)
 {
 	NTSTATUS Status;
 	UNICODE_STRING Path;
@@ -358,7 +347,7 @@ DECL_EXTERN_API(HMODULE, ModuleLoadA, LPCSTR lpPath)
 	return (HMODULE)hModule;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath)
+DECL_EXTERN_API(HMODULE, ModuleLoadW, IN LPCWSTR lpPath)
 {
 	NTSTATUS Status;
 	UNICODE_STRING Path;
@@ -377,18 +366,18 @@ DECL_EXTERN_API(HMODULE, ModuleLoadW, LPCWSTR lpPath)
 	return (HMODULE)hModule;
 }
 
-DECL_EXTERN_API(BOOLEAN, ModuleUnload, HMODULE hModule)
+DECL_EXTERN_API(BOOLEAN, ModuleUnload, CONST IN HMODULE hModule)
 {
+	/* TODO: rewrite to avoi dmany of the "alerting" mechanisms of windows. */
 	return NT_SUCCESS(LdrUnloadDll(hModule));
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvW, LPCWSTR lpModuleName)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdv32W, IN LPCWSTR lpModuleName)
 {
-	return HcProcessGetModuleHandleByNameAdvW(NtCurrentProcess, lpModuleName);
+	return HcProcessGetModuleHandleByNameAdvW(NtCurrentProcess, lpModuleName, TRUE);
 }
 
-
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvA, LPCSTR lpModuleName)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdv32A, IN LPCSTR lpModuleName)
 {
 	HMODULE hReturn = NULL;
 	LPWSTR lpConverted;
@@ -399,7 +388,29 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvA, LPCSTR lpModuleName)
 		return hReturn;
 	}
 
-	hReturn = HcModuleHandleAdvW(lpConverted);
+	hReturn = HcModuleHandleAdv32W(lpConverted);
+
+	HcFree(lpConverted);
+	return hReturn;
+}
+
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32)
+{
+	return HcProcessGetModuleHandleByNameAdvW(NtCurrentProcess, lpModuleName, bBit32);
+}
+
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32)
+{
+	HMODULE hReturn = NULL;
+	LPWSTR lpConverted;
+
+	lpConverted = HcStringConvertAtoW(lpModuleName);
+	if (!lpConverted)
+	{
+		return hReturn;
+	}
+
+	hReturn = HcModuleHandleAdvW(lpConverted, bBit32);
 	
 	HcFree(lpConverted);
 	return hReturn;
