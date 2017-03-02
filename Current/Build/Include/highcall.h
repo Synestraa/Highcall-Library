@@ -1150,8 +1150,6 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, StringLastIndexOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringLastIndexOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringEndOfA, IN LPCSTR lpStr, IN LPCSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(DWORD, StringEndOfW, IN LPCWSTR lpStr, IN LPCWSTR lpDelimiter, CONST IN BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(DWORD, StringLenA, IN LPCSTR lpString);
 	DECL_EXTERN_API(DWORD, StringLenW, IN LPCWSTR lpString);
 	DECL_EXTERN_API(DWORD, StringSizeA, IN LPCSTR lpString);
@@ -1165,10 +1163,8 @@ extern "C" {
 	DECL_EXTERN_API(BOOLEAN, StringCompareW, IN LPCWSTR lpStr1, IN LPCWSTR lpStr2);
 	DECL_EXTERN_API(BOOLEAN, StringEqualA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(BOOLEAN, StringEqualW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
-	DECL_EXTERN_API(LPSTR, StringWithinStringA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPWSTR, StringWithinStringW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPSTR, StringWithinStringLastA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
-	DECL_EXTERN_API(LPWSTR, StringWithinStringLastW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPSTR, StringWithinStringA, IN LPCSTR szStr, IN LPCSTR szToFind, CONST IN BOOLEAN bStopFirst, CONST IN BOOLEAN CaseInsensitive);
+	DECL_EXTERN_API(LPWSTR, StringWithinStringW, IN LPCWSTR szStr, IN LPCWSTR szToFind, CONST IN BOOLEAN bStopFirst, CONST IN BOOLEAN CaseInsensitive);
 	DECL_EXTERN_API(BOOLEAN, StringContainsA, IN LPCSTR lpString1, IN LPCSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(BOOLEAN, StringContainsW, IN LPCWSTR lpString1, IN LPCWSTR lpString2, CONST IN BOOLEAN CaseInSensitive);
 	DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, IN LPCSTR lpStringToConvert, OUT LPWSTR lpStringOut, CONST IN DWORD dwStringCount);

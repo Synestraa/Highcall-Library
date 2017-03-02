@@ -85,7 +85,7 @@ DECL_EXTERN_API(DWORD, ModuleFileNameW, CONST IN HANDLE hModule, OUT LPWSTR lpMo
 	Module = HcModuleEntryBaseW(hModule);
 	if (Module)
 	{
-		Length = Module->FullModuleName.Length;
+		Length = Module->FullModuleName.Length / sizeof(WCHAR);
 
 		if (Module->FullModuleName.Buffer != NULL && Length > 0)
 		{
@@ -265,11 +265,11 @@ DECL_EXTERN_API(HMODULE, ModuleHandleExW, IN LPCWSTR lpModuleName, CONST IN BOOL
 DECL_EXTERN_API(HMODULE, ModuleHandleWow64W, IN LPCWSTR lpModuleName)
 {
 	HMODULE hReturn = NULL;
-#ifndef _WIN64
-	PTEB32 pTeb32 = (PTEB32) (LPBYTE) NtCurrentTeb() + 0x2000;
+#ifdef _WIN64
+	PTEB32 pTeb32 = (PTEB32) ((LPBYTE) NtCurrentTeb() + 0x2000);
 	PPEB32 pPeb32 = POINTER32_HARDCODED(PPEB32) pTeb32->ProcessEnvironmentBlock;
 	PPEB_LDR_DATA32 pLdr32 = POINTER32_HARDCODED(PPEB_LDR_DATA32) pPeb32->Ldr;
-	PLIST_ENTRY32 pListHead = POINTER32_HARDCODED(PLIST_ENTRY32) &pLdr32->InLoadOrderModuleList;
+	PLIST_ENTRY32 pListHead = POINTER32_HARDCODED(PLIST_ENTRY32) &(pLdr32->InLoadOrderModuleList);
 	PLIST_ENTRY32 pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pListHead->Flink;
 	PLDR_DATA_TABLE_ENTRY32 pLdrDataTableEntry;
 
@@ -285,7 +285,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleWow64W, IN LPCWSTR lpModuleName)
 			break;
 		}
 
-		pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pLdrDataTableEntry->InLoadOrderLinks.Flink;
+		pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pListEntry->Flink;
 	}
 #endif
 
