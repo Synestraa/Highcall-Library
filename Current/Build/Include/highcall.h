@@ -922,6 +922,98 @@ typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
 
 #pragma endregion
 
+#pragma region UTILS definitions
+
+typedef struct {
+	WCHAR sLanguage[80];
+	WCHAR iCountry[80];
+	WCHAR sCountry[80];
+	WCHAR sList[80];
+	WCHAR iMeasure[80];
+	WCHAR iPaperSize[80];
+	WCHAR sDecimal[80];
+	WCHAR sThousand[80];
+	WCHAR sGrouping[80];
+	WCHAR iDigits[80];
+	WCHAR iLZero[80];
+	WCHAR iNegNumber[80];
+	WCHAR sNativeDigits[80];
+	WCHAR NumShape[80];
+	WCHAR sCurrency[80];
+	WCHAR sMonDecSep[80];
+	WCHAR sMonThouSep[80];
+	WCHAR sMonGrouping[80];
+	WCHAR iCurrDigits[80];
+	WCHAR iCurrency[80];
+	WCHAR iNegCurr[80];
+	WCHAR sPositiveSign[80];
+	WCHAR sNegativeSign[80];
+	WCHAR sTimeFormat[80];
+	WCHAR sTime[80];
+	WCHAR iTime[80];
+	WCHAR iTLZero[80];
+	WCHAR iTimePrefix[80];
+	WCHAR s1159[80];
+	WCHAR s2359[80];
+	WCHAR sShortDate[80];
+	WCHAR sDate[80];
+	WCHAR iDate[80];
+	WCHAR sYearMonth[80];
+	WCHAR sLongDate[80];
+	WCHAR iCalType[80];
+	WCHAR iFirstDayOfWeek[80];
+	WCHAR iFirstWeekOfYear[80];
+	WCHAR Locale[80];
+	LCID UserLocaleId;
+	LUID InteractiveUserLuid;
+	ULONG ulCacheUpdateCount;
+} NLS_USER_INFO, *PNLS_USER_INFO;
+
+// Class 3
+typedef struct {
+	LARGE_INTEGER BootTime;
+	LARGE_INTEGER CurrentTime;
+	LARGE_INTEGER TimeZoneBias;
+	ULONG TimeZoneId;
+	ULONG Reserved;
+#if (NTDDI_VERSION >= NTDDI_WIN2K)
+	ULONGLONG BootTimeBias;
+	ULONGLONG SleepTimeBias;
+#endif
+} SYSTEM_TIMEOFDAY_INFORMATION, *PSYSTEM_TIMEOFDAY_INFORMATION;
+
+typedef struct {
+	ULONG LowPart;
+	LONG High1Time;
+	LONG High2Time;
+} KSYSTEM_TIME, *PKSYSTEM_TIME;
+
+typedef struct {
+	UNICODE_STRING WindowsDirectory;
+	UNICODE_STRING WindowsSystemDirectory;
+	UNICODE_STRING NamedObjectDirectory;
+	USHORT WindowsMajorVersion;
+	USHORT WindowsMinorVersion;
+	USHORT BuildNumber;
+	USHORT CSDNumber;
+	USHORT RCNumber;
+	WCHAR CSDVersion[128];
+	SYSTEM_BASIC_INFORMATION SysInfo;
+	SYSTEM_TIMEOFDAY_INFORMATION TimeOfDay;
+	PVOID IniFileMapping;
+	NLS_USER_INFO NlsUserInfo;
+	BOOLEAN DefaultSeparateVDM;
+	BOOLEAN IsWowTaskReady;
+	UNICODE_STRING WindowsSys32x86Directory;
+	BOOLEAN fTermsrvAppInstallMode;
+	TIME_ZONE_INFORMATION tziTermsrvClientTimeZone;
+	KSYSTEM_TIME ktTermsrvClientBias;
+	ULONG TermsrvClientTimeZoneId;
+	BOOLEAN LUIDDeviceMapsEnabled;
+	ULONG TermsrvClientTimeZoneChangeNum;
+} BASE_STATIC_SERVER_DATA, *PBASE_STATIC_SERVER_DATA;
+#pragma endregion
+
 #pragma region Globals
 
 typedef enum
@@ -951,9 +1043,19 @@ typedef struct _HcGlobalEnv
 	/* The base of user32.dll */
 	HMODULE HandleUser32;
 
+	/* our HMODULE */
+	HMODULE HandleCurrent;
+
+	/* CSRSS */
+	PBASE_STATIC_SERVER_DATA BaseStaticServerData;
+	HANDLE BaseNamedObjectDirectory;
+
 } HcGlobalEnv, *PHcGlobalEnv;
 
 HC_GLOBAL HcGlobalEnv HcGlobal;
+
+#define INITIALIZATION_ROUTINE __stdcall
+
 #pragma endregion
 
 //
@@ -973,11 +1075,11 @@ extern "C" {
 #endif
 
 	/* implemented in highcall.c */
-	HIGHCALL_STATUS HCAPI HcInitialize();
+	NTSTATUS INITIALIZATION_ROUTINE HcInitialize();
 
 #ifdef _WIN64
 	/* implemented in wow64stdcall.asm */
-	HC_EXTERN_API DWORD64 Wow64StdCall(LPCVOID lpRoutine, DWORD64 dwArgCount, DWORD64 unused_0, DWORD64 unused_1, ...);
+	HC_EXTERN_API DWORD64 Wow64StdCall(LPCVOID lpRoutine, DWORD64 dwArgCount, DWORD64, DWORD64, ...);
 #else
 	HC_EXTERN_API DWORD64 FORCEINLINE __declspec(deprecated) Wow64StdCall(LPCVOID lpRoutine, DWORD64 dwArgCount, DWORD64 unused_0, DWORD64 unused_1, ...) { return 0; }
 #endif
@@ -1029,7 +1131,7 @@ extern "C" {
 	DECL_EXTERN_API(PVOID, HookRecreateCode, CONST IN PBYTE lpBaseAddress, CONST IN DWORD dwMinimumSize);
 
 	/* defined in inject.c */
-	DECL_EXTERN_API(BOOLEAN, InjectManualMapW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
 	DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
 
 	/* defined in process.c */
@@ -1173,6 +1275,16 @@ extern "C" {
 	DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert);
 	DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL);
 	DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL);
+	DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrA, IN LPSTR lpString);
+	DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrW, IN LPWSTR lpString);
+	DECL_EXTERN_API(VOID, StringUInt32ToStringW, ULONG value, LPWSTR buffer);
+	DECL_EXTERN_API(VOID, StringUInt32ToStringA, ULONG value, LPSTR buffer);
+	DECL_EXTERN_API(VOID, StringInt32ToStringW, LONG value, LPWSTR buffer);
+	DECL_EXTERN_API(VOID, StringInt32ToStringA, LONG value, LPSTR buffer);
+	DECL_EXTERN_API(VOID, StringUInt64ToStringW, ULONG64 value, LPWSTR buffer);
+	DECL_EXTERN_API(VOID, StringUInt64ToStringA, ULONG64 value, LPSTR buffer);
+	DECL_EXTERN_API(VOID, StringInt64ToStringW, LONG64 value, LPWSTR buffer);
+	DECL_EXTERN_API(VOID, StringInt64ToStringA, LONG64 value, LPSTR buffer);
 
 	/* defined in privilege.c
 	** @unimplemented
@@ -1222,6 +1334,31 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, PathGetFullPathNameW, IN LPCWSTR lpFileName, OUT LPWSTR lpBuffer);
 	DECL_EXTERN_API(DWORD, PathGetTempFolderW, IN LPWSTR lpBuffer);
 	DECL_EXTERN_API(DWORD, PathGetTempFolderA, IN LPWSTR lpBuffer);
+
+	/* defined in thread.c */
+	DECL_EXTERN_API(BOOLEAN, ThreadExitCode, IN CONST HANDLE hThread, OUT PULONG lpExitCode);
+	DECL_EXTERN_API(HANDLE, ThreadOpen, IN DWORD dwThreadId, IN DWORD dwDesiredAccess);
+	DECL_EXTERN_API(DWORD, ThreadCurrentId);
+	DECL_EXTERN_API(DWORD, ThreadSuspend, IN HANDLE hThread);
+	DECL_EXTERN_API(BOOLEAN, ThreadResume, IN HANDLE hThread);
+
+	/* defined in deviceio.c */
+	DECL_EXTERN_API(BOOLEAN, DeviceIoControl,
+		IN HANDLE hDevice,
+		IN DWORD dwIoControlCode,
+		IN LPVOID lpInBuffer OPTIONAL,
+		IN DWORD nInBufferSize OPTIONAL,
+		OUT LPVOID lpOutBuffer OPTIONAL,
+		IN DWORD nOutBufferSize OPTIONAL,
+		OUT PULONG_PTR lpBytesReturned OPTIONAL,
+		IN LPOVERLAPPED lpOverlapped OPTIONAL);
+
+	/* defined in util.c */
+	DECL_EXTERN_API(POBJECT_ATTRIBUTES, UtilFormatObjectAttributes, OUT POBJECT_ATTRIBUTES ObjectAttributes, IN PSECURITY_ATTRIBUTES SecurityAttributes OPTIONAL, IN PUNICODE_STRING ObjectName);
+
+	/* defined in event.c */
+	DECL_EXTERN_API(HANDLE, EventCreateW, IN LPSECURITY_ATTRIBUTES lpEventAttributes OPTIONAL, IN BOOL bManualReset, IN BOOL bInitialState, IN LPCWSTR lpName OPTIONAL);
+	DECL_EXTERN_API(HANDLE, EventCreateA, IN LPSECURITY_ATTRIBUTES lpEventAttributes OPTIONAL, IN BOOL bManualReset, IN BOOL bInitialState, IN LPCSTR lpName OPTIONAL);
 
 #if defined (__cplusplus)
 }

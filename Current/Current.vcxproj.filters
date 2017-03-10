@@ -82,6 +82,10 @@
     <ClCompile Include="private\kernel\common.c">
       <Filter>private</Filter>
     </ClCompile>
+    <ClCompile Include="private\kernel\thread.c" />
+    <ClCompile Include="private\kernel\deviceio.c" />
+    <ClCompile Include="private\kernel\event.c" />
+    <ClCompile Include="private\kernel\util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">

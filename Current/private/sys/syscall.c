@@ -26,6 +26,8 @@ sciQueryInformationThread = SYSI_INVALID,
 sciCreateThread = SYSI_INVALID,
 sciFlushInstructionCache = SYSI_INVALID,
 sciOpenProcess = SYSI_INVALID,
+sciOpenThread = SYSI_INVALID,
+sciSuspendThread = SYSI_INVALID,
 sciProtectVirtualMemory = SYSI_INVALID,
 sciReadVirtualMemory = SYSI_INVALID,
 sciWriteVirtualMemory = SYSI_INVALID,
@@ -51,10 +53,12 @@ sciTerminateProcess = SYSI_INVALID,
 sciDeviceIoControlFile,
 sciCreateEvent = SYSI_INVALID,
 sciSetInformationFile = SYSI_INVALID,
+sciOpenThreadToken = SYSI_INVALID,
 sciReadFile = SYSI_INVALID,
 sciWow64QueryInformationProcess64 = SYSI_INVALID,
 sciWow64ReadVirtualMemory64 = SYSI_INVALID,
 sciWow64WriteVirtualMemory64 = SYSI_INVALID,
+sciFsControlFile = SYSI_INVALID,
 sciDuplicateObject = SYSI_INVALID;
 #pragma endregion
 
@@ -153,6 +157,8 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			SYSINDEX_ASSERT(AllocateVirtualMemory);
 			SYSINDEX_ASSERT(FreeVirtualMemory);
 			SYSINDEX_ASSERT(ResumeThread);
+			SYSINDEX_ASSERT(OpenThread);
+			SYSINDEX_ASSERT(SuspendThread);
 			SYSINDEX_ASSERT(QueryInformationThread);
 			SYSINDEX_ASSERT(CreateThread);
 			SYSINDEX_ASSERT(FlushInstructionCache);
@@ -180,7 +186,9 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			SYSINDEX_ASSERT(WriteFile);
 			SYSINDEX_ASSERT(TerminateProcess);
 			SYSINDEX_ASSERT(DeviceIoControlFile);
+			SYSINDEX_ASSERT(FsControlFile);
 			SYSINDEX_ASSERT(CreateEvent);
+			SYSINDEX_ASSERT(OpenThreadToken);
 			SYSINDEX_ASSERT(DuplicateObject);
 			SYSINDEX_ASSERT(SetInformationFile);
 			SYSINDEX_ASSERT(ReadFile);
@@ -328,6 +336,7 @@ HcSysInitializeNativeSystem()
 		HcFree(lpBuffer);
 		return FALSE;
 	}
+
 
 	NtClose(hFile);
 

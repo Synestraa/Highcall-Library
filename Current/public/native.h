@@ -8,6 +8,8 @@
 #define PTR_64(Type) ULONGLONG
 #define PTR_32(Type) ULONG
 
+#define RTL_CONSTANT_STRING(s) { sizeof(s) - sizeof((s)[0]), sizeof(s), s }
+
 #define THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER	0x00000004
 #define THREAD_CREATE_FLAGS_CREATE_SUSPENDED 0x00000001
 #define THREAD_CREATE_FLAGS_SKIP_THREAD_ATTACH 0x00000002
@@ -108,6 +110,17 @@
 #else
 #define GDI_HANDLE_BUFFER_SIZE GDI_HANDLE_BUFFER_SIZE64
 #endif
+
+//
+// Object Manager Directory Specific Access Rights.
+//
+
+#define DIRECTORY_QUERY                 (0x0001)
+#define DIRECTORY_TRAVERSE              (0x0002)
+#define DIRECTORY_CREATE_OBJECT         (0x0004)
+#define DIRECTORY_CREATE_SUBDIRECTORY   (0x0008)
+
+#define DIRECTORY_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | 0xF)
 
 typedef enum _KTHREAD_STATE
 {

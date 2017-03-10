@@ -11,19 +11,24 @@
 #include "../../public/imports.h"
 #include "../../private/sys/syscall.h"
 
+#define BASESRV_SERVERDLL_INDEX     1
+#define BASESRV_FIRST_API_NUMBER    0
+
+UNICODE_STRING Restricted = RTL_CONSTANT_STRING(L"Restricted");
+
 HcGlobalEnv HcGlobal;
 
-static HIGHCALL_STATUS InitializeModules(VOID)
+static NTSTATUS INITIALIZATION_ROUTINE InitializeModules(VOID)
 {
 	PPEB pPeb = NtCurrentPeb();
 	if (pPeb == NULL)
 	{
-		return HIGHCALL_FAILED;
+		return STATUS_FAIL_CHECK;
 	}
 
 	if (pPeb->LoaderData == NULL)
 	{
-		return HIGHCALL_FAILED;
+		return STATUS_FAIL_CHECK;
 	}
 
 	PLDR_DATA_TABLE_ENTRY pLdrDataTableEntry = NULL;
@@ -57,15 +62,15 @@ static HIGHCALL_STATUS InitializeModules(VOID)
 
 	if (!HcGlobal.HandleNtdll)
 	{
-		return HIGHCALL_FAILED;
+		return STATUS_INVALID_ADDRESS;
 	}
 
-	return HIGHCALL_SUCCESS;
+	return STATUS_SUCCESS;
 }
 
-static HIGHCALL_STATUS InitializeVersion(VOID)
+static NTSTATUS INITIALIZATION_ROUTINE InitializeVersion(VOID)
 {
-	HIGHCALL_STATUS HcStatus = HIGHCALL_SUCCESS;
+	NTSTATUS Status = STATUS_SUCCESS;
 	RTL_OSVERSIONINFOEXW versionInfo;
 	ULONG majorVersion;
 	ULONG minorVersion;
@@ -73,11 +78,11 @@ static HIGHCALL_STATUS InitializeVersion(VOID)
 	ZERO(&versionInfo);
 	versionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 
-	if (!NT_SUCCESS(
-		RtlGetVersion((PRTL_OSVERSIONINFOW)&versionInfo)))
+	Status = RtlGetVersion((PRTL_OSVERSIONINFOW) &versionInfo);
+	if (!NT_SUCCESS(Status))
 	{
 		HcGlobal.WindowsVersion = WINDOWS_NOT_DEFINED;
-		return HIGHCALL_WINDOWS_UNDEFINED;
+		return Status;
 	}
 
 	HcGlobal.IsWow64 = HcIsWow64();
@@ -109,19 +114,19 @@ static HIGHCALL_STATUS InitializeVersion(VOID)
 	{
 		/* We dont support anything else. */
 		HcGlobal.WindowsVersion = WINDOWS_NOT_SUPPORTED;
-		HcStatus = HIGHCALL_WINDOWS_UNDEFINED;
+		Status = STATUS_INVALID_OWNER;
 	}
 
-	return HcStatus;
+	return Status;
 }
 
 
-static HIGHCALL_STATUS InitializeSyscall(VOID)
+static NTSTATUS InitializeSyscall(VOID)
 {
-	return HcSysInitializeNativeSystem() ? HIGHCALL_SUCCESS : HIGHCALL_FAILED;
+	return HcSysInitializeNativeSystem() ? STATUS_SUCCESS : STATUS_FAIL_CHECK;
 }
 
-static VOID InitializeSecurity(VOID)
+static NTSTATUS INITIALIZATION_ROUTINE InitializeSecurity(VOID)
 {
 	HANDLE hToken = NULL;
 	NTSTATUS Status;
@@ -137,38 +142,151 @@ static VOID InitializeSecurity(VOID)
 		HcTokenIsElevated(hToken, &(HcGlobal.IsElevated));
 		HcObjectClose(&hToken);
 	}
+
+	if (NtCurrentPeb()->ReadOnlyStaticServerData == NULL)
+	{
+		return STATUS_INVALID_ADDRESS;
+	}
+
+	HcGlobal.BaseStaticServerData = (PBASE_STATIC_SERVER_DATA) NtCurrentPeb()->ReadOnlyStaticServerData[BASESRV_SERVERDLL_INDEX];
+
+	return Status;
 }
 
-HIGHCALL_STATUS HCAPI HcInitialize()
+static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
 {
-	HIGHCALL_STATUS Status;
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	NTSTATUS Status;
+	HANDLE DirHandle, BnoHandle, Token, NewToken;
+
+	if (NtCurrentTeb()->IsImpersonating)
+	{
+		Status = HcOpenThreadToken(
+			NtCurrentThread,
+			TOKEN_IMPERSONATE,
+			TRUE,
+			&Token);
+
+		if (!NT_SUCCESS(Status))
+		{
+			return Status;
+		}
+
+		NewToken = NULL;
+
+		Status = HcSetInformationThread(
+			NtCurrentThread,
+			ThreadImpersonationToken,
+			&NewToken,
+			sizeof(HANDLE));
+
+		if (!NT_SUCCESS(Status))
+		{
+			HcClose(Token);
+			return Status;
+		}
+	}
+	else
+	{
+		Token = NULL;
+	}
+
+	RtlAcquirePebLock();
+
+	InitializeObjectAttributes(
+		&ObjectAttributes,
+		&HcGlobal.BaseStaticServerData->NamedObjectDirectory,
+		OBJ_CASE_INSENSITIVE,
+		NULL,
+		NULL);
+
+	Status = HcOpenDirectoryObject(
+		&BnoHandle,
+		DIRECTORY_QUERY |
+		DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT |
+		DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjectAttributes);
+
+	if (!NT_SUCCESS(Status))
+	{
+		Status = HcOpenDirectoryObject(&DirHandle,
+			DIRECTORY_TRAVERSE,
+			&ObjectAttributes);
+
+		if (NT_SUCCESS(Status))
+		{
+			InitializeObjectAttributes(
+				&ObjectAttributes,
+				(PUNICODE_STRING) &Restricted,
+				OBJ_CASE_INSENSITIVE,
+				DirHandle,
+				NULL);
+
+			Status = HcOpenDirectoryObject(&BnoHandle,
+				DIRECTORY_QUERY |
+				DIRECTORY_TRAVERSE |
+				DIRECTORY_CREATE_OBJECT |
+				DIRECTORY_CREATE_SUBDIRECTORY,
+				&ObjectAttributes);
+
+			HcClose(DirHandle);
+		}
+	}
+
+	if (NT_SUCCESS(Status))
+	{
+		HcGlobal.BaseNamedObjectDirectory = BnoHandle;
+	}
+
+	RtlReleasePebLock();
+
+	if (Token)
+	{
+		HcSetInformationThread(NtCurrentThread,
+			ThreadImpersonationToken,
+			&Token,
+			sizeof(Token));
+
+		HcClose(Token);
+	}
+
+	return Status;
+}
+
+NTSTATUS INITIALIZATION_ROUTINE HcInitialize()
+{
+	NTSTATUS Status;
 
 	/* Mandatory modules */
 	Status = InitializeModules(); 
-	if (!HIGHCALL_ADVANCE(Status))
+	if (!NT_SUCCESS(Status))
 	{
 		return Status;
 	}
 
 	/* Initialize windows version to identify some mandatory syscall identifiers. */
 	Status = InitializeVersion();
-	if (!HIGHCALL_ADVANCE(Status))
+	if (!NT_SUCCESS(Status))
 	{
 		return Status;
 	}
 
 	/* Initialize all syscalls */
 	Status = InitializeSyscall();
-	if (!HIGHCALL_ADVANCE(Status))
+	if (!NT_SUCCESS(Status))
 	{
 		return Status;
 	}
 
-	InitializeSecurity();
+	Status = InitializeSecurity();
+	Status = InitializeNamedObjectDirectory();
 
 	/* Set debug privilege, convenience. */
 	HcProcessSetPrivilegeW(NtCurrentProcess, SE_DEBUG_NAME, TRUE);
-	return HIGHCALL_SUCCESS;
+
+	HcErrorSetNtStatus(Status);
+	return STATUS_SUCCESS;
 }
 
 #ifdef _WINDLL
@@ -186,10 +304,10 @@ BOOL WINAPI DllMain(
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			HIGHCALL_STATUS Status = HcInitialize();
+			NTSTATUS Status = HcInitialize();
 
 			/* Check if we failed. */
-			if (!HIGHCALL_ADVANCE(Status))
+			if (!NT_SUCCESS(Status))
 			{
 				char errornote[1024];
 				HcErrorGetNoteA(errornote);

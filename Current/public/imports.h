@@ -23,8 +23,11 @@ typedef enum _RTL_PATH_TYPE
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_DRIVE       (0x00000003)
 #define RTL_NT_PATH_NAME_TO_DOS_PATH_NAME_ALREADY_DOS (0x00000004)
 
-/* LDR AND RTL FUNCTIONS */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+/* LDR AND RTL FUNCTIONS */
 NTSYSAPI
 NTSTATUS
 NTAPI RtlNtPathNameToDosPathName(
@@ -171,5 +174,57 @@ NTSYSAPI NTSTATUS NTAPI NtQueryVirtualMemory(IN HANDLE ProcessHandle,
 	OUT LPVOID MemoryInformation,
 	IN SIZE_T MemoryInformationLength,
 	OUT PSIZE_T ReturnLength);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtResumeThread(
+	IN HANDLE ThreadHandle,
+	OUT PULONG PreviousSuspendCount OPTIONAL
+);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlDestroyProcessParameters(
+	PRTL_USER_PROCESS_PARAMETERS ProcessParameters
+);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlCreateUserProcess(
+	PUNICODE_STRING NtImagePathName,
+	ULONG Attributes,
+	PRTL_USER_PROCESS_PARAMETERS ProcessParameters,
+	PSECURITY_DESCRIPTOR ProcessSecurityDescriptor,
+	PSECURITY_DESCRIPTOR ThreadSecurityDescriptor,
+	HANDLE ParentProcess,
+	BOOLEAN InheritHandles,
+	HANDLE DebugPort,
+	HANDLE ExceptionPort,
+	PRTL_USER_PROCESS_INFORMATION ProcessInformation
+);
+
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlCreateProcessParameters(
+	PRTL_USER_PROCESS_PARAMETERS *ProcessParameters,
+	PUNICODE_STRING ImagePathName,
+	PUNICODE_STRING DllPath,
+	PUNICODE_STRING CurrentDirectory,
+	PUNICODE_STRING CommandLine,
+	PVOID Environment,
+	PUNICODE_STRING WindowTitle,
+	PUNICODE_STRING DesktopInfo,
+	PUNICODE_STRING ShellInfo,
+	PUNICODE_STRING RuntimeData
+);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
