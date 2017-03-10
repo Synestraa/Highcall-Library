@@ -33,7 +33,7 @@ DECL_EXTERN_API(HANDLE, EventCreateW,
     {    
 		if (Status == STATUS_OBJECT_NAME_EXISTS)
 		{
-			SetLastError(ERROR_ALREADY_EXISTS);
+			HcErrorSetDosError(ERROR_ALREADY_EXISTS);
 		}
 		else
 		{

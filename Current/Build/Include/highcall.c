@@ -148,7 +148,8 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeSecurity(VOID)
 		return STATUS_INVALID_ADDRESS;
 	}
 
-	HcGlobal.BaseStaticServerData = (PBASE_STATIC_SERVER_DATA) NtCurrentPeb()->ReadOnlyStaticServerData[BASESRV_SERVERDLL_INDEX];
+	/* need to connect to csrss before this makes any sense */
+	//HcGlobal.BaseStaticServerData = (PBASE_STATIC_SERVER_DATA) NtCurrentPeb()->ReadOnlyStaticServerData[BASESRV_SERVERDLL_INDEX];
 
 	return Status;
 }
@@ -280,7 +281,9 @@ NTSTATUS INITIALIZATION_ROUTINE HcInitialize()
 	}
 
 	Status = InitializeSecurity();
-	Status = InitializeNamedObjectDirectory();
+
+	/* will need to initialize with csrss before this makes any sense */
+	//Status = InitializeNamedObjectDirectory(); 
 
 	/* Set debug privilege, convenience. */
 	HcProcessSetPrivilegeW(NtCurrentProcess, SE_DEBUG_NAME, TRUE);
