@@ -210,3 +210,276 @@ DECL_EXTERN_API(VOID, ObjectClose, IN PHANDLE hObject)
 		*hObject = INVALID_HANDLE;
 	}
 }
+
+DECL_EXTERN_API(HANDLE, ObjectCreateEventW,
+	IN LPSECURITY_ATTRIBUTES lpEventAttributes OPTIONAL,
+	IN BOOL bManualReset,
+	IN BOOL bInitialState,
+	IN LPCWSTR lpName OPTIONAL)
+{
+	NTSTATUS Status;
+	HANDLE Handle = NULL;
+	UNICODE_STRING ObjectName;
+	OBJECT_ATTRIBUTES LocalAttributes;
+	POBJECT_ATTRIBUTES ObjectAttributes = &LocalAttributes;
+
+	if (lpName)
+	{
+		RtlInitUnicodeString(&ObjectName, lpName);
+	}
+
+	ObjectAttributes = HcUtilFormatObjectAttributes(
+		&LocalAttributes,
+		lpEventAttributes,
+		lpName ? &ObjectName : NULL);
+
+	Status = HcCreateEvent(
+		&Handle,
+		EVENT_ALL_ACCESS,
+		ObjectAttributes,
+		bManualReset ? NotificationEvent : SynchronizationEvent,
+		bInitialState);
+
+	if (NT_SUCCESS(Status))
+	{
+		if (Status == STATUS_OBJECT_NAME_EXISTS)
+		{
+			HcErrorSetDosError(ERROR_ALREADY_EXISTS);
+		}
+		else
+		{
+			HcErrorSetDosError(ERROR_SUCCESS);
+		}
+		return Handle;
+	}
+
+	HcErrorSetNtStatus(Status);
+	return NULL;
+}
+
+
+DECL_EXTERN_API(HANDLE, ObjectCreateEventA,
+	IN LPSECURITY_ATTRIBUTES lpEventAttributes OPTIONAL,
+	IN BOOL bManualReset,
+	IN BOOL bInitialState,
+	IN LPCSTR lpName OPTIONAL)
+{
+	LPWSTR lpConverted;
+	HANDLE hReturn = NULL;
+
+	if (lpName)
+	{
+		lpConverted = HcStringConvertAtoW(lpName);
+		if (lpConverted)
+		{
+			hReturn = HcObjectCreateEventW(lpEventAttributes, bManualReset, bInitialState, lpConverted);
+			HcFree(lpConverted);
+		}
+	}
+	else
+	{
+		hReturn = HcObjectCreateEventW(lpEventAttributes, bManualReset, bInitialState, NULL);
+	}
+
+	return hReturn;
+}
+
+DECL_EXTERN_API(HANDLE, ObjectCreateMutexW, 
+	IN LPSECURITY_ATTRIBUTES lpMutexAttributes OPTIONAL, 
+	IN BOOLEAN bInitialOwner, 
+	IN LPCWSTR lpName OPTIONAL)
+{
+	NTSTATUS Status;
+	HANDLE Handle = NULL;
+	UNICODE_STRING ObjectName;
+	OBJECT_ATTRIBUTES LocalAttributes;
+	POBJECT_ATTRIBUTES ObjectAttributes = &LocalAttributes;
+
+	if (lpName)
+	{
+		RtlInitUnicodeString(&ObjectName, lpName);
+	}
+
+	ObjectAttributes = HcUtilFormatObjectAttributes	(
+		&LocalAttributes,
+		lpMutexAttributes,
+		lpName ? &ObjectName : NULL);
+
+	Status = HcCreateMutant(&Handle, MUTANT_ALL_ACCESS, ObjectAttributes, bInitialOwner);
+
+	if (NT_SUCCESS(Status))
+	{
+		if (Status == STATUS_OBJECT_NAME_EXISTS)
+		{
+			HcErrorSetDosError(ERROR_ALREADY_EXISTS);
+		}
+		else
+		{
+			HcErrorSetDosError(ERROR_SUCCESS);
+		}
+		return Handle;
+	}
+
+	HcErrorSetNtStatus(Status);
+	return NULL;
+}
+
+DECL_EXTERN_API(HANDLE, ObjectCreateMutexA,
+	IN LPSECURITY_ATTRIBUTES lpMutexAttributes OPTIONAL,
+	IN BOOLEAN bInitialOwner,
+	IN LPCSTR lpName OPTIONAL)
+{
+	LPWSTR lpConverted;
+	HANDLE hReturn = NULL;
+
+	if (lpName)
+	{
+		lpConverted = HcStringConvertAtoW(lpName);
+		if (lpConverted)
+		{
+			hReturn = HcObjectCreateMutexW(lpMutexAttributes, bInitialOwner, lpConverted);
+			HcFree(lpConverted);
+		}
+	}
+	else
+	{
+		hReturn = HcObjectCreateMutexW(lpMutexAttributes, bInitialOwner, NULL);
+	}
+
+	return hReturn;
+}
+
+static HC_EXTERN_API NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
+{
+	// @defineme 0xffff USHRT_MAX
+
+	NTSTATUS Status;
+	ULONG dataLength = 0xffff;
+
+	for (;;)
+	{
+		*handleList = (PSYSTEM_HANDLE_INFORMATION) HcVirtualAlloc(NULL, dataLength, MEM_COMMIT, PAGE_READWRITE);
+
+		Status = HcQuerySystemInformation(SystemHandleInformation, *handleList, dataLength, &dataLength);
+		if (!NT_SUCCESS(Status))
+		{
+			if (Status != STATUS_INFO_LENGTH_MISMATCH)
+			{
+				return Status;
+			}
+
+			HcVirtualFree(*handleList, 0, MEM_RELEASE);
+			dataLength += 0xffff;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	return Status;
+}
+
+DECL_EXTERN_API(BOOLEAN, ObjectEnumHandleEntries, HandleEntryCallback callback, LPARAM lParam)
+{
+	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
+	NTSTATUS Status;
+	BOOLEAN ReturnValue = FALSE;
+
+	Status = GetHandleEntries(&handleInfo);
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	for (DWORD i = handleInfo->NumberOfHandles; i > 0; i--)
+	{
+		SYSTEM_HANDLE_TABLE_ENTRY_INFO curHandle = handleInfo->Handles[i];
+
+		if (callback(&curHandle, lParam))
+		{
+			ReturnValue = TRUE;
+			break;
+		}
+	}
+
+	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
+	return ReturnValue;
+}
+
+DECL_EXTERN_API(BOOLEAN, ObjectEnumHandles, HandleCallback callback, DWORD dwTypeIndex, LPARAM lParam)
+{
+	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
+	NTSTATUS Status;
+	BOOLEAN ReturnValue = FALSE;
+	HANDLE hProcess = NULL;
+	DWORD dwLastProcess = 0;
+	HANDLE hDuplicate;
+	DWORD currentProcessId = HcProcessGetCurrentId();
+
+	Status = GetHandleEntries(&handleInfo);
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	for (DWORD i = handleInfo->NumberOfHandles; i > 0; i--)
+	{
+		const SYSTEM_HANDLE_TABLE_ENTRY_INFO curHandle = handleInfo->Handles[i];
+		if (curHandle.ObjectTypeIndex != dwTypeIndex && dwTypeIndex != OBJECT_TYPE_ANY)
+		{
+			continue;
+		}
+
+		if (dwLastProcess != curHandle.UniqueProcessId && curHandle.UniqueProcessId != currentProcessId)
+		{
+			if (hProcess != NULL)
+			{
+				HcObjectClose(&hProcess);
+			}
+
+			hProcess = HcProcessOpen(curHandle.UniqueProcessId, PROCESS_DUP_HANDLE);
+			if (!hProcess)
+			{
+				// report
+				continue;
+			}
+
+			dwLastProcess = curHandle.UniqueProcessId;
+		}
+
+		Status = HcDuplicateObject(hProcess,
+			(HANDLE) curHandle.HandleValue,
+			NtCurrentProcess,
+			&hDuplicate,
+			0,
+			FALSE,
+			DUPLICATE_SAME_ACCESS);
+
+		if (!NT_SUCCESS(Status))
+		{
+			// report error
+			continue;
+		}
+
+		if (callback(hDuplicate, hProcess, lParam))
+		{
+			ReturnValue = TRUE;
+			HcObjectClose(&hDuplicate);
+			goto done;
+		}
+
+		HcObjectClose(&hDuplicate);
+	}
+
+done:
+	if (hProcess != NULL)
+	{
+		HcObjectClose(&hProcess);
+	}
+
+	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
+	return ReturnValue;
+}

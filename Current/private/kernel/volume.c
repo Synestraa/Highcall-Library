@@ -115,7 +115,7 @@ DECL_EXTERN_API(BOOLEAN, VolumeGetInformationW,
 
 	if (HcStringIsNullOrEmpty(lpRootPathName))
 	{
-		HcFileGetCurrentDirectoryW(RootPathName);
+		HcFileCurrentDirectoryW(RootPathName);
 	}
 	else
 	{

@@ -376,7 +376,6 @@ DECL_EXTERN_API(DWORD, FileSizeW, IN LPCWSTR lpPath)
 
 	FileSize = HcFileSize(hFile);
 
-	/* Close handle and return */
 	HcClose(hFile);
 	return FileSize; 
 }
@@ -384,31 +383,23 @@ DECL_EXTERN_API(DWORD, FileSizeW, IN LPCWSTR lpPath)
 DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, IN HMODULE hModule OPTIONAL, IN LPCSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	DWORD RelativeVirtualAddress;
 	LPBYTE VirtualAddress;
 
 	if (!hModule)
 	{
-		hModule = ((HMODULE)NtCurrentPeb()->ImageBaseAddress);
+		hModule = NtCurrentPeb()->ImageBaseAddress;
 	}
 
-	pHeaderNT = HcPEGetNtHeader(hModule);
+	pHeaderNT = HcImageGetNtHeader(hModule);
 	if (!pHeaderNT)
 	{
 		return 0;
 	}
 
-	//
-	// Get the absolute address of requested export, subtract the module's base,
-	// pass to the PE handler function.
-	//
 	VirtualAddress = HcModuleProcedureA(hModule, lpExportName);
 	if (VirtualAddress)
 	{
-		/* Calculate the relative offset */
-		RelativeVirtualAddress = (DWORD) ((ULONG_PTR) VirtualAddress - (ULONG_PTR) hModule);
-
-		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+		return HcImageOffsetFromRVA(pHeaderNT, HcImageVaToRva(hModule, VirtualAddress));
 	}
 
 	return 0;
@@ -417,31 +408,23 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameA, IN HMODULE hModule OPTIONAL, IN 
 DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, IN HMODULE hModule OPTIONAL, IN LPCWSTR lpExportName)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	DWORD RelativeVirtualAddress;
 	LPBYTE VirtualAddress;
 
 	if (!hModule)
 	{
-		hModule = (HMODULE)NtCurrentPeb()->ImageBaseAddress;
+		hModule = NtCurrentPeb()->ImageBaseAddress;
 	}
 
-	pHeaderNT = HcPEGetNtHeader(hModule);
+	pHeaderNT = HcImageGetNtHeader(hModule);
 	if (!pHeaderNT)
 	{
 		return 0;
 	}
 
-	//
-	// Get the absolute address of requested export, subtract the module's base,
-	// pass to the PE handler function.
-	//
 	VirtualAddress = (LPBYTE)HcModuleProcedureW(hModule, lpExportName);
 	if (VirtualAddress)
 	{
-		/* Calculate the relative offset */
-		RelativeVirtualAddress = (DWORD) ((ULONG_PTR)VirtualAddress - (ULONG_PTR)hModule);
-
-		return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+		return HcImageOffsetFromRVA(pHeaderNT, HcImageVaToRva(hModule, VirtualAddress));
 	}
 
 	return 0;
@@ -450,8 +433,6 @@ DECL_EXTERN_API(ULONG, FileOffsetByExportNameW, IN HMODULE hModule OPTIONAL, IN 
 DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, IN LPCVOID lpAddress)
 {
 	PIMAGE_NT_HEADERS pHeaderNT;
-	DWORD RelativeVirtualAddress;
-	PBYTE lpModule;
 	MEMORY_BASIC_INFORMATION memInfo;
 	HMODULE hModule;
 
@@ -472,87 +453,92 @@ DECL_EXTERN_API(ULONG, FileOffsetByVirtualAddress, IN LPCVOID lpAddress)
 		return 0;
 	}
 
-	lpModule = (PBYTE)hModule;
-
-	pHeaderNT = HcPEGetNtHeader(hModule);
+	pHeaderNT = HcImageGetNtHeader(hModule);
 	if (!pHeaderNT)
 	{
 		return 0;
 	}
 
-	/* Calculate the relative offset */
-	RelativeVirtualAddress = (DWORD) ((PBYTE)lpAddress - lpModule);
-
-	return HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+	return HcImageOffsetFromRVA(pHeaderNT, HcImageVaToRva(hModule, lpAddress));
 }
 
 
 DECL_EXTERN_API(DWORD, FileReadModuleA, CONST IN HMODULE hModule, IN LPCSTR lpExportName, IN OUT PBYTE lpBuffer, CONST IN DWORD dwCount)
 {
-	DWORD dwRead;
-	LPWSTR lpExportConverted = HcStringConvertAtoW(lpExportName);
+	DWORD dwRead = 0;
+	LPWSTR lpExportConverted;
 
-	dwRead = HcFileReadModuleW(hModule, lpExportConverted, lpBuffer, dwCount);
+	lpExportConverted = HcStringConvertAtoW(lpExportName);
+	if (lpExportConverted)
+	{
+		dwRead = HcFileReadModuleW(hModule, lpExportConverted, lpBuffer, dwCount);
+		HcFree(lpExportConverted);
+	}
 
-	HcFree(lpExportConverted);
 	return dwRead;
 }
 
 DECL_EXTERN_API(DWORD, FileReadModuleW, CONST IN HMODULE hModule, IN LPCWSTR lpExportName, IN OUT PBYTE lpBuffer, CONST IN DWORD dwCount)
 {
-	HANDLE hFile;
-	DWORD tBytesRead;
-	LPWSTR lpModulePath = HcStringAllocW(MAX_PATH);
-	ULONG_PTR dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
+	HANDLE hFile = INVALID_HANDLE;
+	DWORD tBytesRead = 0;
+	LPWSTR lpModulePath = NULL;
+	ULONG_PTR dwFileOffset;
 
-	if (!dwFileOffset || !lpModulePath)
+	dwFileOffset = HcFileOffsetByExportNameW(hModule, lpExportName);
+	if (!dwFileOffset)
 	{
-		return 0;
+		goto done;
+	}
+
+	lpModulePath = HcStringAllocW(MAX_PATH);
+	if (!lpModulePath)
+	{
+		goto done;
 	}
 
 	/* Acquire path of targetted module. */
-	if (!HcProcessModuleFileName(NtCurrentProcess, hModule, lpModulePath, MAX_PATH))
+	if (!HcModulePathW(hModule, lpModulePath))
 	{
-		return 0;
+		goto done;
 	}
 
 	/* Open it up */
 	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
 	if (!hFile)
 	{
-		HcFree(lpModulePath);
-		return 0;
+		goto done;
 	}
 
 	/* Run to the offset */
 	if (!HcFileSetCurrent(hFile, (LONG) dwFileOffset, FILE_BEGIN))
 	{
-		HcFree(lpModulePath);
-		HcObjectClose(&hFile);
-		return 0;
+		goto done;
 	}
 
 	/* Snatch the data */
 	tBytesRead = HcFileRead(hFile, lpBuffer, dwCount);
-	if (tBytesRead != dwCount)
+
+done:
+	if (lpModulePath)
 	{
 		HcFree(lpModulePath);
-		HcObjectClose(&hFile);
-		return 0;
 	}
 
-	/* Fuck off */
-	HcFree(lpModulePath);
-	HcObjectClose(&hFile);
+	if (hFile == INVALID_HANDLE)
+	{
+		HcObjectClose(&hFile);
+	}
+
 	return tBytesRead;
 }
 
 DECL_EXTERN_API(DWORD, FileReadAddress, IN LPCVOID lpBaseAddress, OUT PBYTE lpBufferOut, CONST IN DWORD dwCountToRead)
 {
 	DWORD dwFileOffset;
-	LPWSTR lpModulePath;
-	HANDLE hFile;
-	DWORD tBytesRead;
+	LPWSTR lpModulePath = NULL;
+	HANDLE hFile = INVALID_HANDLE;
+	DWORD tBytesRead = 0;
 	HMODULE hModule;
 	MEMORY_BASIC_INFORMATION memInfo;
 
@@ -563,21 +549,21 @@ DECL_EXTERN_API(DWORD, FileReadAddress, IN LPCVOID lpBaseAddress, OUT PBYTE lpBu
 		&memInfo,
 		sizeof(memInfo)))
 	{
-		return 0;
+		goto done;
 	}
 
 	/* Take the module */
 	hModule = (HMODULE)memInfo.AllocationBase;
 	if (!hModule)
 	{
-		return 0;
+		goto done;
 	}
 
 	/* Get the file offset */
 	dwFileOffset = HcFileOffsetByVirtualAddress(lpBaseAddress);
 	if (!dwFileOffset)
 	{
-		return 0;
+		goto done;
 	}
 
 	/* Allocate for the path of the module */
@@ -585,49 +571,76 @@ DECL_EXTERN_API(DWORD, FileReadAddress, IN LPCVOID lpBaseAddress, OUT PBYTE lpBu
 	if (!lpModulePath)
 	{
 		HcErrorSetDosError(STATUS_INSUFFICIENT_RESOURCES);
-		return 0;
+		goto done;
 	}
 
 	/* Acquire path of targetted module. */
-	if (!HcProcessModuleFileName(NtCurrentProcess, hModule, lpModulePath, MAX_PATH))
+	if (!HcModulePathW(hModule, lpModulePath))
 	{
-		HcFree(lpModulePath);
-		return 0;
+		goto done;
 	}
 
 	/* Open the file */
 	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
 	if (!hFile)
 	{
-		HcFree(lpModulePath);
-		return 0;
+		goto done;
 	}
 
 	/* Go to the offset */
 	if (!HcFileSetCurrent(hFile, dwFileOffset, FILE_BEGIN))
 	{
-		HcFree(lpModulePath);
-		HcClose(hFile);
-		return 0;
+		goto done;
 	}
 
 	/* Read it */
 	tBytesRead = HcFileRead(hFile, lpBufferOut, dwCountToRead);
 	if (tBytesRead != dwCountToRead)
 	{
-		HcFree(lpModulePath);
-		HcClose(hFile);
-
 		HcErrorSetDosError(ERROR_PARTIAL_COPY);
-		return 0;
 	}
 
-	HcFree(lpModulePath);
-	HcClose(hFile);
+done:
+	if (lpModulePath)
+	{
+		HcFree(lpModulePath);
+	}
+
+	if (hFile == INVALID_HANDLE)
+	{
+		HcObjectClose(&hFile);
+	}
+
 	return tBytesRead;
 }
 
-DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, IN LPWSTR lpBuffer)
+
+DECL_EXTERN_API(DWORD, FileCurrentDirectoryA, IN LPSTR lpBuffer)
+{
+	DWORD Length = 0;
+	LPWSTR lpTemp;
+
+	lpTemp = HcStringAllocW(MAX_PATH);
+	if (lpTemp)
+	{
+		Length = HcFileCurrentDirectoryW(lpTemp);
+		if (Length)
+		{
+			if (HcStringCopyConvertWtoA(lpTemp, lpBuffer, Length))
+			{
+				return Length;
+			}
+
+			Length = 0;
+		}
+
+		HcFree(lpTemp);
+	}
+
+	return Length;
+}
+
+DECL_EXTERN_API(DWORD, FileCurrentDirectoryW, IN LPWSTR lpBuffer)
 {
 	PUNICODE_STRING UsCurDir;
 	ULONG ULen;
@@ -637,7 +650,7 @@ DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, IN LPWSTR lpBuffer)
 	UsCurDir = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
 	ULen = UsCurDir->Length / sizeof(WCHAR);
 
-	if (UsCurDir->Buffer[ULen - 1] == '\\' && UsCurDir->Buffer[ULen - 2] != ':')
+	if (UsCurDir->Buffer[ULen - 1] == L'\\' && UsCurDir->Buffer[ULen - 2] != L':')
 	{
 		ULen--;
 	}
@@ -645,7 +658,7 @@ DECL_EXTERN_API(SIZE_T, FileGetCurrentDirectoryW, IN LPWSTR lpBuffer)
 	HcStringCopyW(lpBuffer, UsCurDir->Buffer, ULen);
 
 	RtlReleasePebLock();
-	return ULen * sizeof(WCHAR);
+	return ULen;
 }
 
 DECL_EXTERN_API(DWORD, FileWrite, CONST IN HANDLE hFile, IN LPCVOID lpBuffer, IN DWORD nNumberOfBytesToWrite)
@@ -692,4 +705,20 @@ DECL_EXTERN_API(DWORD, FileWrite, CONST IN HANDLE hFile, IN LPCVOID lpBuffer, IN
 	}
 
 	return dwNumberOfBytesWritten;
+}
+
+DECL_EXTERN_API(BOOLEAN, FileFlush, IN HANDLE hFile)
+{
+	NTSTATUS Status;
+	IO_STATUS_BLOCK IoStatusBlock;
+
+	Status = HcFlushBuffersFile(hFile,
+		&IoStatusBlock);
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+	return TRUE;
 }

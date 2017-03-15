@@ -192,7 +192,7 @@ DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, IN LPVOID pAddress)
 	return FALSE;
 }
 
-DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PHC_MODULE_INFORMATIONW pmInfo)
+DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PModuleInformationW pmInfo)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;

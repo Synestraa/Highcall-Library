@@ -1,14 +1,11 @@
 #include <highcall.h>
 
-DECL_EXTERN_API(BOOLEAN, PEIsValid, CONST IN HMODULE lpModule)
+DECL_EXTERN_API(BOOLEAN, ImageIsValid, CONST IN HMODULE lpModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
-	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(lpModule);
-
-	return (pHeaderDOS != NULL && pHeaderNT != NULL);
+	return HcImageGetNtHeader(lpModule) != NULL;
 }
 
-DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, CONST IN HMODULE lpModule)
+DECL_EXTERN_API(PIMAGE_DOS_HEADER, ImageGetDosHeader, CONST IN HMODULE lpModule)
 {
 	PIMAGE_DOS_HEADER pHeaderDOS = (PIMAGE_DOS_HEADER)lpModule;
 	if (pHeaderDOS->e_magic != IMAGE_DOS_SIGNATURE)
@@ -19,9 +16,9 @@ DECL_EXTERN_API(PIMAGE_DOS_HEADER, PEGetDosHeader, CONST IN HMODULE lpModule)
 	return pHeaderDOS;
 }
 
-DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, CONST IN HMODULE lpModule)
+DECL_EXTERN_API(PIMAGE_NT_HEADERS, ImageGetNtHeader, CONST IN HMODULE lpModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader(lpModule);
+	PIMAGE_DOS_HEADER pHeaderDOS = HcImageGetDosHeader(lpModule);
 	if (!pHeaderDOS)
 	{
 		return NULL;
@@ -36,9 +33,9 @@ DECL_EXTERN_API(PIMAGE_NT_HEADERS, PEGetNtHeader, CONST IN HMODULE lpModule)
 	return pHeaderNT;
 }
 
-DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, CONST IN ULONG64 hModule)
+DECL_EXTERN_API(PIMAGE_NT_HEADERS64, ImageGetNtHeader64, CONST IN ULONG64 hModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader((HMODULE) hModule);
+	PIMAGE_DOS_HEADER pHeaderDOS = HcImageGetDosHeader((HMODULE) hModule);
 	if (!pHeaderDOS)
 	{
 		return NULL;
@@ -53,9 +50,9 @@ DECL_EXTERN_API(PIMAGE_NT_HEADERS64, PEGetNtHeader64, CONST IN ULONG64 hModule)
 	return pHeaderNT;
 }
 
-DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, CONST IN ULONG_PTR hModule)
+DECL_EXTERN_API(PIMAGE_NT_HEADERS32, ImageGetNtHeader32, CONST IN ULONG_PTR hModule)
 {
-	PIMAGE_DOS_HEADER pHeaderDOS = HcPEGetDosHeader((HMODULE)hModule);
+	PIMAGE_DOS_HEADER pHeaderDOS = HcImageGetDosHeader((HMODULE)hModule);
 	if (!pHeaderDOS)
 	{
 		return NULL;
@@ -70,9 +67,9 @@ DECL_EXTERN_API(PIMAGE_NT_HEADERS32, PEGetNtHeader32, CONST IN ULONG_PTR hModule
 	return pHeaderNT;
 }
 
-DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, CONST IN HMODULE hModule)
+DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, ImageGetExportDirectory, CONST IN HMODULE hModule)
 {
-	PIMAGE_NT_HEADERS pHeaderNT = HcPEGetNtHeader(hModule);
+	PIMAGE_NT_HEADERS pHeaderNT = HcImageGetNtHeader(hModule);
 	if (!pHeaderNT)
 	{
 		return NULL;
@@ -84,9 +81,9 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory, CONST IN HMODULE 
 	return lpExportDirectory;
 }
 
-DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, CONST IN ULONG_PTR hModule)
+DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, ImageGetExportDirectory32, CONST IN ULONG_PTR hModule)
 {
-	PIMAGE_NT_HEADERS32 pHeaderNT = HcPEGetNtHeader32(hModule);
+	PIMAGE_NT_HEADERS32 pHeaderNT = HcImageGetNtHeader32(hModule);
 	if (!pHeaderNT)
 	{
 		return NULL;
@@ -98,9 +95,9 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory32, CONST IN ULONG_
 	return lpExportDirectory;
 }
 
-DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, CONST IN ULONG64 hModule)
+DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, ImageGetExportDirectory64, CONST IN ULONG64 hModule)
 {
-	PIMAGE_NT_HEADERS64 pHeaderNT = HcPEGetNtHeader64(hModule);
+	PIMAGE_NT_HEADERS64 pHeaderNT = HcImageGetNtHeader64(hModule);
 	if (!pHeaderNT)
 	{
 		return NULL;
@@ -112,7 +109,7 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, PEGetExportDirectory64, CONST IN ULONG6
 	return lpExportDirectory;
 }
 
-DECL_EXTERN_API(ULONG, PEOffsetFromRVA, CONST IN PIMAGE_NT_HEADERS pImageHeader, IN DWORD RVA)
+DECL_EXTERN_API(ULONG, ImageOffsetFromRVA, IN PIMAGE_NT_HEADERS pImageHeader, IN DWORD RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
 
@@ -137,7 +134,7 @@ DECL_EXTERN_API(ULONG, PEOffsetFromRVA, CONST IN PIMAGE_NT_HEADERS pImageHeader,
 	return 0;
 }
 
-DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, CONST IN PIMAGE_NT_HEADERS32 pImageHeader, IN DWORD RVA)
+DECL_EXTERN_API(ULONG, ImageOffsetFromRVA32, IN PIMAGE_NT_HEADERS32 pImageHeader, IN DWORD RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
 
@@ -163,7 +160,7 @@ DECL_EXTERN_API(ULONG, PEOffsetFromRVA32, CONST IN PIMAGE_NT_HEADERS32 pImageHea
 }
 
 
-DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, CONST IN PIMAGE_NT_HEADERS64 pImageHeader, IN DWORD RVA)
+DECL_EXTERN_API(ULONG, ImageOffsetFromRVA64, IN PIMAGE_NT_HEADERS64 pImageHeader, IN DWORD RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
 
@@ -185,4 +182,71 @@ DECL_EXTERN_API(ULONG, PEOffsetFromRVA64, CONST IN PIMAGE_NT_HEADERS64 pImageHea
 		}
 	}
 	return 0;
+}
+
+DECL_EXTERN_API(PIMAGE_SECTION_HEADER, ImageRvaToSection, IN HMODULE hModule, IN ULONG Rva)
+{
+	PIMAGE_NT_HEADERS NtHeader;
+	PIMAGE_SECTION_HEADER Section;
+	ULONG Va;
+	ULONG Count;
+
+	NtHeader = HcImageGetNtHeader(hModule);
+	if (!NtHeader)
+	{
+		return NULL;
+	}
+
+	Count = SWAPW(NtHeader->FileHeader.NumberOfSections);
+	if (!Count)
+	{
+		return NULL;
+	}
+
+	Section = IMAGE_FIRST_SECTION(NtHeader);
+
+	while (Count--)
+	{
+		Va = SWAPD(Section->VirtualAddress);
+		if (Va <= Rva && (Rva < Va + SWAPD(Section->SizeOfRawData)))
+		{
+			return Section;
+		}
+
+		Section++;
+	}
+
+	return NULL;
+}
+
+DECL_EXTERN_API(LPVOID, ImageRvaToVa, IN HMODULE hModule, IN ULONG Rva)
+{
+	PIMAGE_NT_HEADERS NtHeader;
+	PIMAGE_SECTION_HEADER Section = NULL;
+
+	NtHeader = HcImageGetNtHeader(hModule);
+	if (NtHeader == NULL)
+	{
+		return NULL;
+	}
+
+	if ((Section == NULL) ||
+		(Rva < SWAPD(Section->VirtualAddress)) ||
+		(Rva >= SWAPD(Section->VirtualAddress) + SWAPD(Section->SizeOfRawData)))
+	{
+		Section = HcImageRvaToSection(hModule, Rva);
+		if (Section == NULL)
+		{
+			return NULL;
+		}
+	}
+
+	return (PVOID) ((ULONG_PTR) hModule + Rva +
+		(ULONG_PTR) SWAPD(Section->PointerToRawData) -
+		(ULONG_PTR) SWAPD(Section->VirtualAddress));
+}
+
+DECL_EXTERN_API(ULONG, ImageVaToRva, IN HMODULE hModule, IN LPCVOID lpAddress)
+{
+	return SUBTRACT_PTR_32(lpAddress, hModule);
 }

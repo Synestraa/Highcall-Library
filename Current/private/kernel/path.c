@@ -2,6 +2,32 @@
 
 #include "../../public/imports.h"
 
+DECL_EXTERN_API(BOOLEAN, PathGetFileA, IN LPCSTR lpPath, IN LPSTR lpBuffer)
+{
+	DWORD LastSlashOccurance;
+
+	LastSlashOccurance = HcStringLastIndexOfA(lpPath, "\\", FALSE);
+	if (LastSlashOccurance != -1)
+	{
+		return HcStringSubtractA(lpPath, lpBuffer, LastSlashOccurance, -1);
+	}
+
+	return FALSE;
+}
+
+DECL_EXTERN_API(BOOLEAN, PathGetFileW, IN LPCWSTR lpPath, IN LPWSTR lpBuffer)
+{
+	DWORD LastSlashOccurance;
+
+	LastSlashOccurance = HcStringLastIndexOfW(lpPath, L"\\", FALSE);
+	if (LastSlashOccurance != -1)
+	{
+		return HcStringSubtractW(lpPath, lpBuffer, LastSlashOccurance, -1);
+	}
+
+	return FALSE;
+}
+
 DECL_EXTERN_API(DWORD, PathGetFullPathNameA, IN LPCSTR lpFileName, OUT LPSTR lpBuffer)
 {
 	LPWSTR lpTemp = HcStringAllocW(MAX_PATH);

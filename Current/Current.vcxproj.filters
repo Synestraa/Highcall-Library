@@ -58,9 +58,6 @@
     <ClCompile Include="private\kernel\object.c">
       <Filter>private\kernel</Filter>
     </ClCompile>
-    <ClCompile Include="private\kernel\pexec.c">
-      <Filter>private\kernel</Filter>
-    </ClCompile>
     <ClCompile Include="private\kernel\process.c">
       <Filter>private\kernel</Filter>
     </ClCompile>
@@ -84,8 +81,10 @@
     </ClCompile>
     <ClCompile Include="private\kernel\thread.c" />
     <ClCompile Include="private\kernel\deviceio.c" />
-    <ClCompile Include="private\kernel\event.c" />
     <ClCompile Include="private\kernel\util.c" />
+    <ClCompile Include="private\kernel\image.c">
+      <Filter>private\kernel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -1495,6 +1494,7 @@
       <Filter>private\sys\asm</Filter>
     </MASM>
     <MASM Include="private\wow64\wow64stdcall.asm" />
+    <MASM Include="private\sys\asm\QueryMutant.asm" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">

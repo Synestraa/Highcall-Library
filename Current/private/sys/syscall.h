@@ -4,7 +4,7 @@
 #include "../../public/base.h"
 
 /* indicates that a function performs a system call */
-#define SYSCALLAPI 
+#define SYSCALLAPI __cdecl
 
 #define SYSI_INVALID   (0xffffffff)
 
@@ -23,25 +23,25 @@ HcIsWow64();
 #pragma region Native System Call Definitions
 
 HC_GLOBAL SYS_INDEX sciQueryInformationToken;
-SYSCALLAPI NTSTATUS HcQueryInformationToken(CONST IN HANDLE TokenHandle,
+NTSTATUS SYSCALLAPI HcQueryInformationToken(CONST IN HANDLE TokenHandle,
 	CONST IN TOKEN_INFORMATION_CLASS TokenInformationClass,
 	_Out_writes_bytes_(TokenInformationLength) LPVOID TokenInformation,
 	CONST IN ULONG TokenInformationLength,
 	OUT PULONG ReturnLength);
 
 HC_GLOBAL SYS_INDEX sciOpenProcessToken;
-SYSCALLAPI NTSTATUS HcOpenProcessToken(CONST IN HANDLE hProcess,
+NTSTATUS SYSCALLAPI HcOpenProcessToken(CONST IN HANDLE hProcess,
 	CONST IN ACCESS_MASK DesiredAccess,
 	OUT PHANDLE TokenHandle);
 
 HC_GLOBAL SYS_INDEX sciResumeProcess;
-SYSCALLAPI NTSTATUS HcResumeProcess(CONST IN HANDLE ProcessHandle);
+NTSTATUS SYSCALLAPI HcResumeProcess(CONST IN HANDLE ProcessHandle);
 
 HC_GLOBAL SYS_INDEX sciSuspendProcess;
-SYSCALLAPI NTSTATUS HcSuspendProcess(CONST IN HANDLE ProcessHandle);
+NTSTATUS SYSCALLAPI HcSuspendProcess(CONST IN HANDLE ProcessHandle);
 
 HC_GLOBAL SYS_INDEX sciAllocateVirtualMemory;
-SYSCALLAPI NTSTATUS HcAllocateVirtualMemory(CONST IN HANDLE hProcess,
+NTSTATUS SYSCALLAPI HcAllocateVirtualMemory(CONST IN HANDLE hProcess,
 	IN LPVOID* UBaseAddress,
 	IN ULONG_PTR ZeroBits,
 	IN OUT PSIZE_T URegionSize,
@@ -49,36 +49,36 @@ SYSCALLAPI NTSTATUS HcAllocateVirtualMemory(CONST IN HANDLE hProcess,
 	CONST IN ULONG Protect);
 
 HC_GLOBAL SYS_INDEX sciFreeVirtualMemory;
-SYSCALLAPI NTSTATUS HcFreeVirtualMemory(CONST IN HANDLE hProcess,
+NTSTATUS SYSCALLAPI HcFreeVirtualMemory(CONST IN HANDLE hProcess,
 	IN LPVOID* UBaseAddress,
 	IN PSIZE_T URegionSize,
 	CONST IN ULONG FreeType);
 
 HC_GLOBAL SYS_INDEX sciResumeThread;
-SYSCALLAPI NTSTATUS HcResumeThread(CONST IN HANDLE ThreadHandle,
+NTSTATUS SYSCALLAPI HcResumeThread(CONST IN HANDLE ThreadHandle,
 	OUT PULONG SuspendCount OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciOpenThread;
-SYSCALLAPI NTSTATUS HcOpenThread(
+NTSTATUS SYSCALLAPI HcOpenThread(
 	OUT PHANDLE ThreadHandle,
 	IN ACCESS_MASK DesiredAccess,
 	IN POBJECT_ATTRIBUTES ObjectAttributes,
 	IN PCLIENT_ID ClientId OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciSuspendThread;
-SYSCALLAPI NTSTATUS HcSuspendThread(
+NTSTATUS SYSCALLAPI HcSuspendThread(
 	IN HANDLE ThreadHandle,
 	OUT PULONG PreviousSuspendCount OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciQueryInformationThread;
-SYSCALLAPI NTSTATUS HcQueryInformationThread(CONST IN HANDLE ThreadHandle,
+NTSTATUS SYSCALLAPI HcQueryInformationThread(CONST IN HANDLE ThreadHandle,
 	CONST IN THREADINFOCLASS ThreadInformationClass,
 	OUT LPVOID ThreadInformation,
 	CONST IN ULONG ThreadInformationLength,
 	OUT PULONG ReturnLength OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciCreateThread;
-SYSCALLAPI NTSTATUS HcCreateThread(OUT PHANDLE ThreadHandle,
+NTSTATUS SYSCALLAPI HcCreateThread(OUT PHANDLE ThreadHandle,
 	CONST IN ACCESS_MASK			DesiredAccess,
 	IN POBJECT_ATTRIBUTES			ObjectAttributes OPTIONAL,
 	CONST IN HANDLE					ProcessHandle,
@@ -88,12 +88,12 @@ SYSCALLAPI NTSTATUS HcCreateThread(OUT PHANDLE ThreadHandle,
 	CONST IN BOOLEAN				CreateSuspended);
 
 HC_GLOBAL SYS_INDEX sciFlushInstructionCache;
-SYSCALLAPI NTSTATUS HcFlushInstructionCache(CONST IN HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcFlushInstructionCache(CONST IN HANDLE ProcessHandle,
 	CONST IN LPVOID BaseAddress,
 	CONST IN SIZE_T NumberOfBytesToFlush);
 
 HC_GLOBAL SYS_INDEX sciOpenProcess;
-SYSCALLAPI NTSTATUS HcOpenProcess(
+NTSTATUS SYSCALLAPI HcOpenProcess(
 	OUT			PHANDLE				ProcessHandle,
 	CONST IN    ACCESS_MASK			DesiredAccess,
 	CONST IN    POBJECT_ATTRIBUTES	ObjectAttributes,
@@ -101,45 +101,46 @@ SYSCALLAPI NTSTATUS HcOpenProcess(
 );
 
 HC_GLOBAL SYS_INDEX sciProtectVirtualMemory;
-SYSCALLAPI NTSTATUS HcProtectVirtualMemory(CONST IN HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcProtectVirtualMemory(CONST IN HANDLE ProcessHandle,
 	IN OUT PVOID *BaseAddress,
 	IN OUT PSIZE_T NumberOfBytesToProtect,
 	CONST IN ULONG NewAccessProtection,
 	OUT PULONG OldAccessProtection);
 
 HC_GLOBAL SYS_INDEX sciReadVirtualMemory;
-SYSCALLAPI NTSTATUS HcReadVirtualMemory(CONST HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcReadVirtualMemory(CONST HANDLE ProcessHandle,
 	CONST LPVOID BaseAddress,
 	LPVOID Buffer,
 	CONST SIZE_T BufferSize,
 	PSIZE_T NumberOfBytesRead);
 
 HC_GLOBAL SYS_INDEX sciWriteVirtualMemory;
-SYSCALLAPI NTSTATUS HcWriteVirtualMemory(CONST HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcWriteVirtualMemory(CONST HANDLE ProcessHandle,
 	CONST LPVOID BaseAddress,
 	CONST VOID *Buffer,
 	CONST SIZE_T BufferSize,
 	PSIZE_T NumberOfBytesWritten);
 
 HC_GLOBAL SYS_INDEX sciQueryInformationProcess;
-SYSCALLAPI NTSTATUS HcQueryInformationProcess(
-	__in HANDLE ProcessHandle, __in PROCESSINFOCLASS ProcessInformationClass,
+NTSTATUS SYSCALLAPI HcQueryInformationProcess(
+	__in HANDLE ProcessHandle, 
+	__in PROCESSINFOCLASS ProcessInformationClass,
 	__out_bcount(ProcessInformationLength) LPVOID ProcessInformation,
 	__in ULONG ProcessInformationLength,
 	__out_opt PULONG ReturnLength);
 
 HC_GLOBAL SYS_INDEX sciQuerySystemInformation;
-SYSCALLAPI NTSTATUS HcQuerySystemInformation(
+NTSTATUS SYSCALLAPI HcQuerySystemInformation(
 	__in SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	__out_bcount_opt(SystemInformationLength) LPVOID SystemInformation,
 	__in ULONG SystemInformationLength,
 	__out_opt PULONG ReturnLength);
 
 HC_GLOBAL SYS_INDEX sciClose;
-SYSCALLAPI NTSTATUS HcClose(HANDLE hObject);
+NTSTATUS SYSCALLAPI HcClose(HANDLE hObject);
 
 HC_GLOBAL SYS_INDEX sciQueryVirtualMemory;
-SYSCALLAPI NTSTATUS HcQueryVirtualMemory(IN HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcQueryVirtualMemory(IN HANDLE ProcessHandle,
 	IN LPVOID BaseAddress,
 	IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
 	OUT LPVOID MemoryInformation,
@@ -147,7 +148,7 @@ SYSCALLAPI NTSTATUS HcQueryVirtualMemory(IN HANDLE ProcessHandle,
 	OUT PSIZE_T ReturnLength);
 
 HC_GLOBAL SYS_INDEX sciAdjustPrivilegesToken;
-SYSCALLAPI NTSTATUS HcAdjustPrivilegesToken(HANDLE TokenHandle,
+NTSTATUS SYSCALLAPI HcAdjustPrivilegesToken(HANDLE TokenHandle,
 	BOOLEAN 	DisableAllPrivileges,
 	PTOKEN_PRIVILEGES 	NewState,
 	DWORD 	BufferLength,
@@ -155,18 +156,18 @@ SYSCALLAPI NTSTATUS HcAdjustPrivilegesToken(HANDLE TokenHandle,
 	PDWORD 	ReturnLength);
 
 HC_GLOBAL SYS_INDEX sciSetInformationThread;
-SYSCALLAPI NTSTATUS HcSetInformationThread(IN HANDLE ThreadHandle,
+NTSTATUS SYSCALLAPI HcSetInformationThread(IN HANDLE ThreadHandle,
 	IN THREADINFOCLASS ThreadInformationClass,
 	IN PVOID ThreadInformation,
 	IN ULONG ThreadInformationLength);
 
 HC_GLOBAL SYS_INDEX sciOpenDirectoryObject;
-SYSCALLAPI NTSTATUS HcOpenDirectoryObject(OUT PHANDLE DirectoryHandle,
+NTSTATUS SYSCALLAPI HcOpenDirectoryObject(OUT PHANDLE DirectoryHandle,
 	IN ACCESS_MASK DesiredAccess,
 	IN POBJECT_ATTRIBUTES ObjectAttributes);
 
 HC_GLOBAL SYS_INDEX sciCreateThreadEx;
-SYSCALLAPI NTSTATUS HcCreateThreadEx(OUT PHANDLE ThreadHandle,
+NTSTATUS SYSCALLAPI HcCreateThreadEx(OUT PHANDLE ThreadHandle,
 	IN ACCESS_MASK DesiredAccess,
 	_In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
 	IN HANDLE ProcessHandle,
@@ -179,32 +180,32 @@ SYSCALLAPI NTSTATUS HcCreateThreadEx(OUT PHANDLE ThreadHandle,
 	_In_opt_ PVOID AttributeList);
 
 HC_GLOBAL SYS_INDEX sciWaitForSingleObject;
-SYSCALLAPI NTSTATUS HcWaitForSingleObject(IN HANDLE hObject,
+NTSTATUS SYSCALLAPI HcWaitForSingleObject(IN HANDLE hObject,
 	IN BOOLEAN bAlertable,
 	IN PLARGE_INTEGER Timeout);
 
 HC_GLOBAL SYS_INDEX sciWaitForMultipleObjects;
-SYSCALLAPI NTSTATUS HcWaitForMultipleObjects(IN ULONG ObjectCount,
+NTSTATUS SYSCALLAPI HcWaitForMultipleObjects(IN ULONG ObjectCount,
 	IN PHANDLE HandleArray,
 	IN WAIT_TYPE WaitType,
 	IN BOOLEAN Alertable,
 	IN PLARGE_INTEGER TimeOut OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciUnlockVirtualMemory;
-SYSCALLAPI NTSTATUS HcUnlockVirtualMemory(IN HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcUnlockVirtualMemory(IN HANDLE ProcessHandle,
 	IN OUT PVOID * BaseAddress,
 	IN OUT PSIZE_T NumberOfBytesToUnlock,
 	IN ULONG MapType);
 
 
 HC_GLOBAL SYS_INDEX sciLockVirtualMemory;
-SYSCALLAPI NTSTATUS HcLockVirtualMemory(IN HANDLE ProcessHandle,
+NTSTATUS SYSCALLAPI HcLockVirtualMemory(IN HANDLE ProcessHandle,
 	IN OUT PVOID * BaseAddress,
 	IN OUT PSIZE_T NumberOfBytesToLock,
 	IN ULONG MapType);
 
 HC_GLOBAL SYS_INDEX sciCreateFile;
-SYSCALLAPI NTSTATUS HcCreateFile(
+NTSTATUS SYSCALLAPI HcCreateFile(
 	OUT    PHANDLE            FileHandle,
 	IN     ACCESS_MASK        DesiredAccess,
 	IN     POBJECT_ATTRIBUTES ObjectAttributes,
@@ -219,7 +220,7 @@ SYSCALLAPI NTSTATUS HcCreateFile(
 );
 
 HC_GLOBAL SYS_INDEX sciQueryInformationFile;
-SYSCALLAPI NTSTATUS HcQueryInformationFile(
+NTSTATUS SYSCALLAPI HcQueryInformationFile(
 	IN  HANDLE                 FileHandle,
 	OUT PIO_STATUS_BLOCK       IoStatusBlock,
 	OUT PVOID                  FileInformation,
@@ -228,7 +229,7 @@ SYSCALLAPI NTSTATUS HcQueryInformationFile(
 );
 
 HC_GLOBAL SYS_INDEX sciQueryVolumeInformationFile;
-SYSCALLAPI NTSTATUS HcQueryVolumeInformationFile(
+NTSTATUS SYSCALLAPI HcQueryVolumeInformationFile(
 	IN  HANDLE               FileHandle,
 	OUT PIO_STATUS_BLOCK     IoStatusBlock,
 	OUT PVOID                FsInformation,
@@ -237,7 +238,7 @@ SYSCALLAPI NTSTATUS HcQueryVolumeInformationFile(
 );
 
 HC_GLOBAL SYS_INDEX sciQueryObject;
-SYSCALLAPI NTSTATUS HcQueryObject(
+NTSTATUS SYSCALLAPI HcQueryObject(
 	IN  HANDLE                   Handle OPTIONAL,
 	IN  OBJECT_INFORMATION_CLASS ObjectInformationClass,
 	OUT PVOID                    ObjectInformation OPTIONAL,
@@ -246,7 +247,7 @@ SYSCALLAPI NTSTATUS HcQueryObject(
 );
 
 HC_GLOBAL SYS_INDEX sciDuplicateObject;
-SYSCALLAPI NTSTATUS HcDuplicateObject(
+NTSTATUS SYSCALLAPI HcDuplicateObject(
 	IN HANDLE      SourceProcessHandle,
 	IN HANDLE      SourceHandle,
 	IN HANDLE      TargetProcessHandle OPTIONAL,
@@ -257,11 +258,11 @@ SYSCALLAPI NTSTATUS HcDuplicateObject(
 );
 
 HC_GLOBAL SYS_INDEX sciDelayExecution;
-SYSCALLAPI NTSTATUS HcDelayExecution(IN BOOLEAN Alertable,
+NTSTATUS SYSCALLAPI HcDelayExecution(IN BOOLEAN Alertable,
 	IN PLARGE_INTEGER DelayInterval);
 
 HC_GLOBAL SYS_INDEX sciWriteFile;
-SYSCALLAPI NTSTATUS HcWriteFile(
+NTSTATUS SYSCALLAPI HcWriteFile(
 	IN  HANDLE           FileHandle,
 	IN	HANDLE           Event OPTIONAL,
 	IN	PIO_APC_ROUTINE  ApcRoutine OPTIONAL,
@@ -274,13 +275,13 @@ SYSCALLAPI NTSTATUS HcWriteFile(
 );
 
 HC_GLOBAL SYS_INDEX sciTerminateProcess;
-SYSCALLAPI NTSTATUS HcTerminateProcess(
+NTSTATUS SYSCALLAPI HcTerminateProcess(
 	IN HANDLE   ProcessHandle OPTIONAL,
-	IN SYSCALLAPI NTSTATUS ExitStatus
+	IN NTSTATUS ExitStatus
 );
 
 HC_GLOBAL SYS_INDEX sciDeviceIoControlFile;
-SYSCALLAPI NTSTATUS HcDeviceIoControlFile(
+NTSTATUS SYSCALLAPI HcDeviceIoControlFile(
 	IN HANDLE DeviceHandle,
 	IN HANDLE Event OPTIONAL,
 	IN PIO_APC_ROUTINE UserApcRoutine OPTIONAL,
@@ -293,7 +294,7 @@ SYSCALLAPI NTSTATUS HcDeviceIoControlFile(
 	IN ULONG OutputBufferLength OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciFsControlFile;
-SYSCALLAPI NTSTATUS HcFsControlFile(
+NTSTATUS SYSCALLAPI HcFsControlFile(
 	HANDLE FileHandle,
 	HANDLE Event,
 	PIO_APC_ROUTINE ApcRoutine,
@@ -306,22 +307,29 @@ SYSCALLAPI NTSTATUS HcFsControlFile(
 	ULONG OutputBufferLength);
 
 HC_GLOBAL SYS_INDEX sciCreateEvent;
-SYSCALLAPI NTSTATUS HcCreateEvent(
+NTSTATUS SYSCALLAPI HcCreateEvent(
 	OUT PHANDLE            EventHandle,
 	IN  ACCESS_MASK        DesiredAccess,
 	IN	POBJECT_ATTRIBUTES ObjectAttributes,
 	IN  EVENT_TYPE         EventType,
 	IN  BOOLEAN            InitialState);
 
+HC_GLOBAL SYS_INDEX sciCreateMutant;
+NTSTATUS SYSCALLAPI HcCreateMutant(
+	OUT PHANDLE            MutantHandle,
+	IN  ACCESS_MASK        DesiredAccess,
+	IN	POBJECT_ATTRIBUTES ObjectAttributes,
+	IN  BOOLEAN            InitialOwner);
+
 HC_GLOBAL SYS_INDEX sciOpenThreadToken;
-SYSCALLAPI NTSTATUS HcOpenThreadToken(
+NTSTATUS SYSCALLAPI HcOpenThreadToken(
 	IN HANDLE ThreadHandle,
 	IN ACCESS_MASK DesiredAccess,
 	IN BOOLEAN OpenAsSelf,
 	OUT PHANDLE TokenHandle);
 
 HC_GLOBAL SYS_INDEX sciSetInformationFile;
-SYSCALLAPI NTSTATUS HcSetInformationFile(
+NTSTATUS SYSCALLAPI HcSetInformationFile(
 	IN  HANDLE                 FileHandle,
 	OUT PIO_STATUS_BLOCK       IoStatusBlock,
 	IN  PVOID                  FileInformation,
@@ -329,7 +337,7 @@ SYSCALLAPI NTSTATUS HcSetInformationFile(
 	IN  FILE_INFORMATION_CLASS FileInformationClass); 
 
 HC_GLOBAL SYS_INDEX sciReadFile;
-SYSCALLAPI NTSTATUS HcReadFile(
+NTSTATUS SYSCALLAPI HcReadFile(
 	IN  HANDLE           FileHandle,
 	IN  HANDLE           Event OPTIONAL,
 	IN  PIO_APC_ROUTINE  ApcRoutine OPTIONAL,
@@ -341,7 +349,7 @@ SYSCALLAPI NTSTATUS HcReadFile(
 	IN  PULONG           Key OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciWow64QueryInformationProcess64;
-SYSCALLAPI NTSTATUS HcWow64QueryInformationProcess64(
+NTSTATUS SYSCALLAPI HcWow64QueryInformationProcess64(
 	IN HANDLE ProcessHandle,
 	IN PROCESSINFOCLASS ProcessInformationClass,
 	OUT PVOID ProcessInformation64,
@@ -349,7 +357,7 @@ SYSCALLAPI NTSTATUS HcWow64QueryInformationProcess64(
 	OUT PULONG ReturnLength OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciWow64ReadVirtualMemory64;
-SYSCALLAPI NTSTATUS HcWow64ReadVirtualMemory64(
+NTSTATUS SYSCALLAPI HcWow64ReadVirtualMemory64(
 	IN HANDLE ProcessHandle,
 	IN PVOID64 BaseAddress OPTIONAL,
 	IN PVOID Buffer,
@@ -357,12 +365,17 @@ SYSCALLAPI NTSTATUS HcWow64ReadVirtualMemory64(
 	OUT PULONGLONG NumberOfBytesRead OPTIONAL);
 
 HC_GLOBAL SYS_INDEX sciWow64WriteVirtualMemory64;
-SYSCALLAPI NTSTATUS HcWow64WriteVirtualMemory64(
+NTSTATUS SYSCALLAPI HcWow64WriteVirtualMemory64(
 	IN HANDLE ProcessHandle,
 	IN PVOID64 BaseAddress OPTIONAL,
 	IN PVOID Buffer,
 	IN ULONG64 BufferSize,
 	OUT PULONG64 NumberOfBytesWritten OPTIONAL);
+
+HC_GLOBAL SYS_INDEX sciFlushBuffersFile;
+NTSTATUS SYSCALLAPI HcFlushBuffersFile(
+	IN HANDLE hFile, 
+	OUT PIO_STATUS_BLOCK IoStatusBlock);
 
 #if defined (__cplusplus)
 }

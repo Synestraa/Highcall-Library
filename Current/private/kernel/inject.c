@@ -385,7 +385,18 @@ CONST BYTE payload32[] =
 
 #pragma region Internal Manual Map Code
 
-#pragma optimize("", on)  
+// turn off incremental linking -- should force this to *not* use a jump table
+#pragma comment(linker, "/incremental:no")
+
+// turn off optimizations
+//#pragma optimize( "", off )
+
+// turn off pesky runtime checks that add an extra call to _RTC_CheckEsp to the end of our function
+#pragma runtime_checks( "", off)
+
+// put both functions in the same section.  as long as there are only two, they should be in order
+#pragma code_seg( ".text$A" )
+
 __declspec(noinline)
 static
 SIZE_T HCAPI MmInternalResolve(PVOID lParam)
@@ -484,7 +495,15 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 
 	return TRUE;
 }
-#pragma optimize("", off)  
+
+static void __stdcall MmInternalResolve_End()
+{
+
+}
+
+#pragma code_seg()
+#pragma runtime_checks ("", restore)
+//#pragma optimize ("", restore)
 
 #pragma endregion
 
@@ -493,7 +512,7 @@ BOOLEAN
 HCAPI
 HcParameterVerifyInjectModuleManual(PVOID Buffer)
 {
-	PIMAGE_NT_HEADERS pHeaderNt = HcPEGetNtHeader(Buffer);
+	PIMAGE_NT_HEADERS pHeaderNt = HcImageGetNtHeader(Buffer);
 
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
@@ -611,15 +630,14 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 
 	HcObjectClose(&hFile);
 
-	/* Verify this is a PE DLL */
 	if (!HcParameterVerifyInjectModuleManual(FileBuffer))
 	{
 		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
 		goto done;
 	}
 
-	pHeaderDos = HcPEGetDosHeader(FileBuffer);
-	pHeaderNt = HcPEGetNtHeader(FileBuffer);
+	pHeaderDos = HcImageGetDosHeader(FileBuffer);
+	pHeaderNt = HcImageGetNtHeader(FileBuffer);
 
 	/* Allocate for the code/data of the dll */
 	ImageBuffer = HcVirtualAllocEx(hProcess,
@@ -679,7 +697,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 	}
 
 	hKernel32 = (ULONG_PTR) HcModuleHandleW(L"kernel32.dll");
-	hRemoteKernel32 = (ULONG_PTR) HcProcessGetModuleHandleByNameAdvW(hProcess, L"kernel32.dll", FALSE);
+	hRemoteKernel32 = (ULONG_PTR) HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", FALSE);
 	if (!hRemoteKernel32)
 	{
 		HcVirtualFreeEx(hProcess, ImageBuffer, 0, MEM_RELEASE);

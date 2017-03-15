@@ -59,6 +59,8 @@ sciWow64QueryInformationProcess64 = SYSI_INVALID,
 sciWow64ReadVirtualMemory64 = SYSI_INVALID,
 sciWow64WriteVirtualMemory64 = SYSI_INVALID,
 sciFsControlFile = SYSI_INVALID,
+sciCreateMutant = SYSI_INVALID,
+sciFlushBuffersFile = SYSI_INVALID,
 sciDuplicateObject = SYSI_INVALID;
 #pragma endregion
 
@@ -106,13 +108,13 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 	LPBYTE VirtualAddress = 0;
 	DWORD RelativeVirtualAddress = 0;
 
-	pHeaderNT = HcPEGetNtHeader((HMODULE)lpModule);
+	pHeaderNT = HcImageGetNtHeader((HMODULE)lpModule);
 	if (!pHeaderNT)
 	{
 		return FALSE;
 	}
 
-	pExports = HcPEGetExportDirectory(HcGlobal.HandleNtdll);
+	pExports = HcImageGetExportDirectory(HcGlobal.HandleNtdll);
 	if (!pExports)
 	{
 		return FALSE;
@@ -138,7 +140,7 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			/* Calculate the relative offset */
 			RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
 
-			dwFileOffset = HcPEOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
+			dwFileOffset = HcImageOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
 
 			PBYTE lpbFn = lpBuffer + dwFileOffset;
 			if (!IsSyscall(lpbFn))
@@ -195,6 +197,8 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			SYSINDEX_ASSERT(Wow64QueryInformationProcess64);
 			SYSINDEX_ASSERT(Wow64ReadVirtualMemory64);
 			SYSINDEX_ASSERT(Wow64WriteVirtualMemory64);
+			SYSINDEX_ASSERT(FlushBuffersFile);
+			SYSINDEX_ASSERT(CreateMutant);
 
 			/* Syscwall identification end */
 		}
@@ -233,7 +237,7 @@ HcSysInitializeNativeSystem()
 
 	lpModulePath = HcStringAllocW(MAX_PATH);
 
-	if (!HcModuleFileNameW(hModule, lpModulePath))
+	if (!HcModulePathW(hModule, lpModulePath))
 	{
 		HcFree(lpModulePath);
 		return FALSE;

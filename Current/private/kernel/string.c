@@ -498,8 +498,6 @@ DECL_EXTERN_API(BOOLEAN, StringContainsW, IN LPCWSTR lpString1, IN LPCWSTR lpStr
 	return HcStringWithinStringW(lpString1, lpString2, TRUE, CaseInsensitive) != NULL;
 }
 
-#define MB_LEN_MAX 4
-
 static
 size_t
 __mbstowcs(register wchar_t *pwcs, register CONST char *s, int n)
@@ -518,7 +516,22 @@ __mbstowcs(register wchar_t *pwcs, register CONST char *s, int n)
 
 DECL_EXTERN_API(BOOLEAN, StringCopyConvertAtoW, IN LPCSTR lpStringToConvert, OUT LPWSTR lpStringOut, CONST IN DWORD dwStringCount)
 {
-	size_t retn = __mbstowcs(lpStringOut, lpStringToConvert, dwStringCount);
+	SIZE_T tReturn;
+	DWORD dwLength;
+
+	dwLength = HcStringLenA(lpStringToConvert);
+	if (dwLength == 0 || dwStringCount > dwLength)
+	{
+		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+		return FALSE;
+	}
+
+	tReturn  = __mbstowcs(lpStringOut, lpStringToConvert, dwStringCount);
+	if (tReturn == 0)
+	{
+		return FALSE;
+	}
+
 	TERMINATE_W(lpStringOut, dwStringCount);
 	return TRUE;
 }
@@ -541,9 +554,24 @@ __wcstombs(register char *s, register CONST wchar_t *pwcs, int n)
 
 DECL_EXTERN_API(BOOLEAN, StringCopyConvertWtoA, IN LPCWSTR lpStringToConvert, OUT LPSTR lpStringOut, CONST IN DWORD dwStringCount)
 {
-	size_t retn = __wcstombs(lpStringOut, lpStringToConvert, dwStringCount);
+	SIZE_T tReturn;
+	DWORD dwLength;
+
+	dwLength = HcStringLenW(lpStringToConvert);
+	if (dwLength == 0 || dwStringCount > dwLength)
+	{
+		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+		return FALSE;
+	}
+
+	tReturn = __wcstombs(lpStringOut, lpStringToConvert, dwStringCount);
+	if (tReturn == 0)
+	{
+		return FALSE;
+	}
+
 	TERMINATE_A(lpStringOut, dwStringCount);
-	return retn > 0;
+	return TRUE;
 }
 
 DECL_EXTERN_API(LPWSTR, StringConvertAtoW, IN LPCSTR lpStringConvert)
@@ -598,38 +626,58 @@ DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert)
 
 DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
-	DWORD Length = dwLen;
-	if (!Length)
+	BOOLEAN bReturn = FALSE;
+	DWORD dwCopyLength = HcStringLenA(szcIn);
+	DWORD dwLength = dwLen;
+
+	if (dwCopyLength == 0)
 	{
-		Length = HcStringLenA(szOut);
-		if (!Length)
-		{
-			return FALSE;
-		}
+		return bReturn;
 	}
 
-	HcInternalCopy(szOut, (PVOID) szcIn, Length);
-	TERMINATE_A(szOut, Length);
+	if (dwCopyLength < dwLen)
+	{
+		dwLength = dwCopyLength;
 
-	return TRUE;
+		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+	}
+	else
+	{
+		bReturn = TRUE;
+	}
+
+	HcInternalCopy(szOut, (PVOID) szcIn, dwLength);
+	TERMINATE_A(szOut, dwLength);
+
+	return bReturn;
 }
 
 DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
-	DWORD Length = dwLen;
-	if (!Length)
+	BOOLEAN bReturn = FALSE;
+	DWORD dwCopyLength = HcStringLenW(szcIn);
+	DWORD dwLength = dwLen;
+
+	if (dwCopyLength == 0)
 	{
-		Length = HcStringLenW(szOut);
-		if (!Length)
-		{
-			return FALSE;
-		}
+		return bReturn;
 	}
 
-	HcInternalCopy(szOut, (PVOID) szcIn, Length * sizeof(WCHAR));
-	TERMINATE_W(szOut, Length);
+	if (dwCopyLength < dwLen)
+	{
+		dwLength = dwCopyLength;
 
-	return TRUE;
+		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+	}
+	else
+	{
+		bReturn = TRUE;
+	}
+
+	HcInternalCopy(szOut, (PVOID) szcIn, dwLength * sizeof(WCHAR));
+	TERMINATE_W(szOut, dwLength);
+
+	return bReturn;
 }
 
 DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrA, IN LPSTR lpString)
