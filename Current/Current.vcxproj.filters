@@ -85,6 +85,7 @@
     <ClCompile Include="private\kernel\image.c">
       <Filter>private\kernel</Filter>
     </ClCompile>
+    <ClCompile Include="private\sys\table.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -144,6 +145,9 @@
     <ClInclude Include="public\ntuser.h">
       <Filter>private\sys\asm</Filter>
     </ClInclude>
+    <ClInclude Include="private\sys\table.h" />
+    <ClInclude Include="private\sys\version_table_86_64.h" />
+    <ClInclude Include="private\sys\version_table_86.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="private\sys\asm\AdjustPrivilegesToken.asm">

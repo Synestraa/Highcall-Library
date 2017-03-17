@@ -321,6 +321,7 @@
     <ClCompile Include="private\kernel\volume.c" />
     <ClCompile Include="private\kernel\path.c" />
     <ClCompile Include="private\sys\syscall.c" />
+    <ClCompile Include="private\sys\table.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build\Include\highcall.h" />
@@ -336,6 +337,9 @@
     <ClInclude Include="private\distorm\src\wstring.h" />
     <ClInclude Include="private\distorm\src\x86defs.h" />
     <ClInclude Include="private\sys\syscall.h" />
+    <ClInclude Include="private\sys\table.h" />
+    <ClInclude Include="private\sys\version_table_86.h" />
+    <ClInclude Include="private\sys\version_table_86_64.h" />
     <ClInclude Include="public\base.h" />
     <ClInclude Include="public\imports.h" />
     <ClInclude Include="public\native.h" />

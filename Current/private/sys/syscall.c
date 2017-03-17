@@ -3,67 +3,6 @@
 #include "syscall.h"
 #include "../../public/imports.h"
 
-#define NT_SYMBOL "Nt"
-#define SYSINDEX_ASSERT(x) \
-{ \
-	if (HcStringCompareA(lpCurrentFunction, NT_SYMBOL #x)) \
-	{\
-		sci##x = dwIndex;\
-		continue;\
-	} \
-}
-
-#pragma region System Call Indicies
-SYS_INDEX 
-sciQueryInformationToken = SYSI_INVALID,
-sciOpenProcessToken = SYSI_INVALID,
-sciResumeProcess = SYSI_INVALID,
-sciSuspendProcess = SYSI_INVALID,
-sciAllocateVirtualMemory = SYSI_INVALID,
-sciFreeVirtualMemory = SYSI_INVALID,
-sciResumeThread = SYSI_INVALID,
-sciQueryInformationThread = SYSI_INVALID,
-sciCreateThread = SYSI_INVALID,
-sciFlushInstructionCache = SYSI_INVALID,
-sciOpenProcess = SYSI_INVALID,
-sciOpenThread = SYSI_INVALID,
-sciSuspendThread = SYSI_INVALID,
-sciProtectVirtualMemory = SYSI_INVALID,
-sciReadVirtualMemory = SYSI_INVALID,
-sciWriteVirtualMemory = SYSI_INVALID,
-sciQueryInformationProcess = SYSI_INVALID,
-sciQuerySystemInformation = SYSI_INVALID,
-sciClose = SYSI_INVALID,
-sciQueryVirtualMemory = SYSI_INVALID,
-sciAdjustPrivilegesToken = SYSI_INVALID,
-sciSetInformationThread = SYSI_INVALID,
-sciOpenDirectoryObject = SYSI_INVALID,
-sciCreateThreadEx = SYSI_INVALID,
-sciWaitForSingleObject = SYSI_INVALID,
-sciWaitForMultipleObjects = SYSI_INVALID,
-sciLockVirtualMemory = SYSI_INVALID,
-sciUnlockVirtualMemory = SYSI_INVALID,
-sciCreateFile = SYSI_INVALID,
-sciQueryInformationFile = SYSI_INVALID,
-sciQueryVolumeInformationFile = SYSI_INVALID,
-sciQueryObject = SYSI_INVALID,
-sciDelayExecution = SYSI_INVALID,
-sciWriteFile = SYSI_INVALID,
-sciTerminateProcess = SYSI_INVALID,
-sciDeviceIoControlFile,
-sciCreateEvent = SYSI_INVALID,
-sciSetInformationFile = SYSI_INVALID,
-sciOpenThreadToken = SYSI_INVALID,
-sciReadFile = SYSI_INVALID,
-sciWow64QueryInformationProcess64 = SYSI_INVALID,
-sciWow64ReadVirtualMemory64 = SYSI_INVALID,
-sciWow64WriteVirtualMemory64 = SYSI_INVALID,
-sciFsControlFile = SYSI_INVALID,
-sciCreateMutant = SYSI_INVALID,
-sciFlushBuffersFile = SYSI_INVALID,
-sciDuplicateObject = SYSI_INVALID;
-#pragma endregion
-
 static
 BOOLEAN
 HCAPI
@@ -91,6 +30,7 @@ ExtractSyscallIndex(LPBYTE lpByte)
 #endif
 }
 
+/* OUTDATED 
 //
 // The purpose of this function is to update system call indicies based on a buffer received from reading ntdll.dll.
 //
@@ -120,12 +60,10 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 		return FALSE;
 	}
 
-	/* Get the address containg null terminated export names, in ASCII */
 	pExportNames = (PDWORD)(pExports->AddressOfNames + lpModule);
 	pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + lpModule);
 	pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + lpModule);
 
-	/* List through functions */
 	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
 	{
 		lpCurrentFunction = (LPSTR)(pExportNames[i] + lpModule);
@@ -137,7 +75,6 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 		VirtualAddress = pExportFunctions[pExportOrdinals[i]] + lpModule;
 		if (VirtualAddress)
 		{
-			/* Calculate the relative offset */
 			RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
 
 			dwFileOffset = HcImageOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
@@ -150,7 +87,7 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 
 			DWORD dwIndex = ExtractSyscallIndex(lpbFn);
 
-			/* Syscall identification begin */
+			/* Syscall identification begin
 
 			SYSINDEX_ASSERT(QueryInformationToken);
 			SYSINDEX_ASSERT(OpenProcessToken);
@@ -200,19 +137,18 @@ static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
 			SYSINDEX_ASSERT(FlushBuffersFile);
 			SYSINDEX_ASSERT(CreateMutant);
 
-			/* Syscwall identification end */
 		}
 	}
 
 	return TRUE;
-}
+}*/
 
-/*
+/* OUTDATED
  * This function should not be exported.
  * It's use is defined on a per session basis.
  * Use of highcall syscalls unpermitted due to undefined indicies.
  * This function will define system call indicies.
- */
+
 BOOLEAN
 HCAPI
 HcSysInitializeNativeSystem()
@@ -243,7 +179,6 @@ HcSysInitializeNativeSystem()
 		return FALSE;
 	}
 
-	/* validate & translate the filename */
 	if (!RtlDosPathNameToNtPathName_U(lpModulePath,
 		&NtPathU,
 		NULL,
@@ -253,7 +188,6 @@ HcSysInitializeNativeSystem()
 		return FALSE;
 	}
 
-	/* build the object attributes */
 	InitializeObjectAttributes(&ObjectAttributes,
 		&NtPathU,
 		0,
@@ -262,7 +196,6 @@ HcSysInitializeNativeSystem()
 
 	ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
 
-	/* Open the file */
 	Status = NtCreateFile(&hFile,
 		GENERIC_READ | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
 		&ObjectAttributes,
@@ -275,7 +208,6 @@ HcSysInitializeNativeSystem()
 		EaBuffer,
 		EaLength);
 
-	/* Don't free with HcFree due to RtlDosPathNameToNtPathName_U allocation type. */
 	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
 
 	if (!NT_SUCCESS(Status))
@@ -284,7 +216,6 @@ HcSysInitializeNativeSystem()
 		return FALSE;
 	}
 
-	/* Zero it out for the next call. */
 	ZERO(&IoStatusBlock);
 
 	Status = NtQueryInformationFile(hFile,
@@ -304,10 +235,8 @@ HcSysInitializeNativeSystem()
 
 	HcFree(lpModulePath);
 
-	/* Zero it out again, for the next call. */
 	ZERO(&IoStatusBlock);
 
-	/* Snatch the data */
 	Status = NtReadFile(hFile,
 		NULL,
 		NULL,
@@ -318,7 +247,6 @@ HcSysInitializeNativeSystem()
 		NULL,
 		NULL);
 
-	/* Wait in case operation is pending */
 	if (Status == STATUS_PENDING)
 	{
 		if (HcObjectWait(hFile, INFINITE))
@@ -348,7 +276,7 @@ HcSysInitializeNativeSystem()
 
 	HcFree(lpBuffer);
 	return TRUE;
-}
+}*/
 
 /* The logic behind this function is checking whether the wow64 call gate is active or not. */
 BOOLEAN
