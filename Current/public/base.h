@@ -30,6 +30,14 @@ typedef long SYS_INDEX;
 #define INFINITE 0xFFFFFFFF  // Infinite timeout
 #endif
 
+#define SYSI_INVALID (SYS_INDEX) (0xffffffff)
+#define SYSI_INVALID1 (SYS_INDEX) (0xfffffffe)
+#define SYSI_INVALID2 (SYS_INDEX) (0xfffffffd)
+#define SYSI_INVALID3 (SYS_INDEX) (0xfffffffc)
+#define SYSI_INVALID4 (SYS_INDEX) (0xfffffffb)
+#define SYSI_INVALID5 (SYS_INDEX) (0xfffffffa)
+#define SYSI_INVALID6 (SYS_INDEX) (0xfffffff9)
+
 //
 // dll linkage
 //

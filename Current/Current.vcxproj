@@ -340,6 +340,7 @@
     <ClInclude Include="private\sys\table.h" />
     <ClInclude Include="private\sys\version_table_86.h" />
     <ClInclude Include="private\sys\version_table_86_64.h" />
+    <ClInclude Include="private\sys\version_table_wow64.h" />
     <ClInclude Include="public\base.h" />
     <ClInclude Include="public\imports.h" />
     <ClInclude Include="public\native.h" />
