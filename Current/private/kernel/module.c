@@ -478,7 +478,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleUnload, CONST IN HMODULE hModule)
 	return NT_SUCCESS(LdrUnloadDll(hModule));
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32)
 {
 	MEMORY_BASIC_INFORMATION basicInfo;
 	HMODULE hModule;
@@ -530,7 +530,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 
 			} while (basicInfo.AllocationBase == (PVOID) hModule);
 
-			if (((ULONG_PTR) hModule <= USER_MAX_ADDRESS_32 && Bit32 || !Bit32) && ((ULONG64) hModule >= USER_MAX_ADDRESS_32 && Bit64 || !Bit64))
+			if ((ULONG_PTR) hModule <= USER_MAX_ADDRESS_32 && Bit32 || !Bit32)
 			{
 				if (!lpModuleName)
 				{
@@ -573,20 +573,20 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 	return hReturn;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32)
 {
 	LPWSTR lpConverted;
 	HMODULE hReturn = NULL;
 
 	if (!lpModuleName)
 	{
-		return HcModuleHandleAdvancedExW(ProcessHandle, NULL, Bit32, Bit64);
+		return HcModuleHandleAdvancedExW(ProcessHandle, NULL, Bit32);
 	}
 
 	lpConverted = HcStringConvertAtoW(lpModuleName);
 	if (lpConverted)
 	{
-		hReturn = HcModuleHandleAdvancedExW(ProcessHandle, lpConverted, Bit32, Bit64);
+		hReturn = HcModuleHandleAdvancedExW(ProcessHandle, lpConverted, Bit32);
 
 		HcFree(lpConverted);
 	}
@@ -594,9 +594,9 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle,
 	return hReturn;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN bBit64)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32)
 {
-	return HcModuleHandleAdvancedExW(NtCurrentProcess(), lpModuleName, bBit32, bBit64);
+	return HcModuleHandleAdvancedExW(NtCurrentProcess(), lpModuleName, bBit32);
 }
 
 DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN bBit64)

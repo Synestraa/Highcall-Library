@@ -761,6 +761,8 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 	ULONG PathSize = 0;
 	LPBYTE InternalShellcodeCopy = NULL;
 	PUNICODE_STRING32 exPath;
+	WCHAR szFullPath[MAX_PATH];
+	HANDLE hDll;
 	LPVOID pfnLdrLoadDll;
 	HMODULE hNtdll;
 	HANDLE hThread = NULL;
@@ -781,6 +783,21 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 		0xC2, 0x04, 0x00            // ret 4
 	};
 
+	if (!HcPathGetFullPathNameW(szcPath, szFullPath))
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
+		goto done;
+	}
+
+	hDll = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
+	if (hDll == INVALID_HANDLE)
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER_1);
+		goto done;
+	}
+
+	HcObjectClose(&hDll);
+
 	hNtdll = HcModuleHandleAdvancedExW(hProcess, L"ntdll.dll", TRUE, FALSE);
 	if (!hNtdll)
 	{
@@ -793,7 +810,7 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 		goto done;
 	}
 
-	PathSize = HcStringSizeW(szcPath);
+	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)
 	{
 		goto done;
@@ -824,7 +841,7 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 		goto done;
 	}
 
-	if (!HcProcessWriteMemory(hProcess, exszPath, (LPVOID) szcPath, PathSize, NULL))
+	if (!HcProcessWriteMemory(hProcess, exszPath, (LPVOID) szFullPath, PathSize, NULL))
 	{
 		goto done;
 	}
@@ -883,6 +900,8 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 	UNICODE_STRING64 InternalPath;
 	ULONG PathSize = 0;
 	LPBYTE InternalShellcodeCopy = NULL;
+	WCHAR szFullPath[MAX_PATH];
+	HANDLE hDll;
 	DWORD64 pfnLdrLoadDll;
 	DWORD64 hNtdll;
 	HANDLE hThread = NULL;
@@ -907,6 +926,21 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		0xC3                                    // ret
 	};
 
+	if (!HcPathGetFullPathNameW(szcPath, szFullPath))
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
+		goto done;
+	}
+
+	hDll = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
+	if (hDll == INVALID_HANDLE)
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER_1);
+		goto done;
+	}
+
+	HcObjectClose(&hDll);
+
 	hNtdll = HcModuleRemoteHandle64W(hProcess, L"ntdll.dll");
 	if (!hNtdll)
 	{
@@ -919,7 +953,7 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		goto done;
 	}
 
-	PathSize = HcStringSizeW(szcPath);
+	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)
 	{
 		goto done;
@@ -950,7 +984,7 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		goto done;
 	}
 
-	if (!HcProcessWriteMemory64(hProcess, (PVOID64) exszPath, (LPVOID) szcPath, PathSize, NULL))
+	if (!HcProcessWriteMemory64(hProcess, (PVOID64) exszPath, (LPVOID) szFullPath, PathSize, NULL))
 	{
 		goto done;
 	}
