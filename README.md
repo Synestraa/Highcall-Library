@@ -4,12 +4,6 @@ Designed to avoid generic methods used in windows, avoiding common detection rou
 
 Supported systems are Windows 7, Windows 8, Windows 8.1, Windows 10.
 
-*New features: 
- * injecting from 32 bit to 64, 32 to 32, 64 to 32 and 64 to 64.
- * debugger detection
- * memory scanning detection (cheat engine, etc.)
- * many ports to be able to do 32 to 64 and 64 to 32 things.
-
 * External/Internal Process 
   * List, find and open processes.
   * Enumerate Ldr/No PE/No Ldr modules.
@@ -25,3 +19,8 @@ Supported systems are Windows 7, Windows 8, Windows 8.1, Windows 10.
   * Handy safe reading functions
   * String helpers (such as ignore case comparison, validation, tokenizing)
   * Error setting (compatible with WINAPI) includes notes
+* New features
+  * injecting from 32 bit to 64, 32 to 32, 64 to 32 and 64 to 64.
+  * debugger detection
+  * memory scanning detection (cheat engine, etc.)
+  * many ports to be able to do 32 to 64 and 64 to 32 things.
