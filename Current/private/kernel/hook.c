@@ -321,10 +321,10 @@ DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, C
 			continue;
 		}
 
-		InstructionMnemonic = InstructionEx.mnemonic.p;
-
 		/* Parse the instruction for detailed information */
 		distorm_format(&Info, &Instruction, &InstructionEx);
+
+		InstructionMnemonic = InstructionEx.mnemonic.p;
 
 		/* The address of this instruction */
 		InstructionAddress = Code + InstructionEx.offset;
@@ -415,21 +415,18 @@ DECL_EXTERN_API(PVOID, HookCreateCave64, IN LPVOID lpBaseAddress, CONST IN SIZE_
 
 	for (PBYTE Addr = (PBYTE)lpBaseAddress; Addr > (PBYTE)lpBaseAddress - 0xffffffff / 2; Addr = (PBYTE)mbi.BaseAddress - 1)
 	{
-		/* Check the block */
 		if (!HcVirtualQuery((LPCVOID)Addr, &mbi, sizeof(mbi)))
 		{
 			break;
 		}
 
-		/* Ask her out on a date. */
 		if (mbi.State != MEM_FREE)
 		{
-			/* She told us she has a boyfriend, tell her to fuck off. */
 			continue;
 		}
 
-		/* Try and allocate on this spot. */
-		lpAddress = HcVirtualAlloc(mbi.BaseAddress,
+		lpAddress = HcVirtualAlloc(
+			mbi.BaseAddress,
 			Size,
 			MEM_RESERVE | MEM_COMMIT,
 			PAGE_EXECUTE_READWRITE);
@@ -551,7 +548,7 @@ DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 #endif
 		if (instructionSize)
 		{
-			HcProcessWriteMemory(NtCurrentProcess,
+			HcProcessWriteMemory(NtCurrentProcess(),
 				Context->lpSource,
 				originalData,
 				instructionSize,
@@ -672,7 +669,7 @@ DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 	}
 
 	/* Update the instruction cache. */
-	HcFlushInstructionCache(NtCurrentProcess, Context->lpSource, Context->dwLength);
+	HcFlushInstructionCache(NtCurrentProcess(), Context->lpSource, Context->dwLength);
 
 	return HOOK_NO_ERR;
 }

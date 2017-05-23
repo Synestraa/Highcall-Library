@@ -4,19 +4,52 @@
 #include "../../public/base.h"
 #include "table.h"
 
-/* indicates that a function performs a system call */
-#define SYSCALLAPI __cdecl
+#define SYSCALLAPI __cdecl /* indicates that a function performs a system call within asn .asm file */
+
+#define e(x) __asm __emit (x) /* emit an assembly byte. */
+
+#define X64_Start_with_CS(_cs) \
+	{ \
+	e(0x6A) e(_cs)                  /*  push   _cs             */ \
+	e(0xE8) e(0) e(0) e(0) e(0)		/*  call   $+5             */ \
+	e(0x83) e(4) e(0x24) e(5)		/*  add    dword [esp], 5  */ \
+	e(0xCB)                         /*  retf                   */ \
+	}
+
+#define X64_End_with_CS(_cs) \
+	{ \
+	e(0xE8) e(0) e(0) e(0) e(0)                         /*  call   $+5                   */ \
+	e(0xC7) e(0x44) e(0x24) e(4) e(_cs) e(0) e(0) e(0)	/*  mov    dword [rsp + 4], _cs  */ \
+	e(0x83) e(4) e(0x24) e(0xD)                         /*  add    dword [rsp], 0xD      */ \
+	e(0xCB)                                             /*  retf                         */ \
+	}
+
+#define X64_Start() X64_Start_with_CS(0x33)
+#define X64_End() X64_End_with_CS(0x23)
+
+#define _RAX  0
+#define _RCX  1
+#define _RDX  2
+#define _RBX  3
+#define _RSP  4
+#define _RBP  5
+#define _RSI  6
+#define _RDI  7
+#define _R8   8
+#define _R9   9
+#define _R10 10
+#define _R11 11
+#define _R12 12
+#define _R13 13
+#define _R14 14
+#define _R15 15
+
+#define X64_Push(r) e(0x48 | ((r) >> 3)) e(0x50 | ((r) & 7))
+#define X64_Pop(r) e(0x48 | ((r) >> 3)) e(0x58 | ((r) & 7))
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-/* 
-* OUTDATED
-Initialization functions should be called once per session. 
-BOOLEAN
-HCAPI
-HcSysInitializeNativeSystem();*/
 
 BOOLEAN
 HcIsWow64();
@@ -139,12 +172,10 @@ NTSTATUS SYSCALLAPI HcSetInformationThread(IN HANDLE ThreadHandle,
 	IN PVOID ThreadInformation,
 	IN ULONG ThreadInformationLength);
 
-HC_GLOBAL SYS_INDEX sciOpenDirectoryObject;
 NTSTATUS SYSCALLAPI HcOpenDirectoryObject(OUT PHANDLE DirectoryHandle,
 	IN ACCESS_MASK DesiredAccess,
 	IN POBJECT_ATTRIBUTES ObjectAttributes);
 
-HC_GLOBAL SYS_INDEX sciCreateThreadEx;
 NTSTATUS SYSCALLAPI HcCreateThreadEx(OUT PHANDLE ThreadHandle,
 	IN ACCESS_MASK DesiredAccess,
 	_In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
@@ -328,9 +359,108 @@ NTSTATUS SYSCALLAPI HcWow64WriteVirtualMemory64(
 	IN ULONG64 BufferSize,
 	OUT PULONG64 NumberOfBytesWritten OPTIONAL);
 
+NTSTATUS SYSCALLAPI HcWow64AllocateVirtualMemory64(
+	IN  HANDLE   ProcessHandle,
+	IN  PULONG64 BaseAddress,
+	IN  ULONG64  ZeroBits,
+	IN  PULONG64 Size,
+	IN  ULONG    AllocationType,
+	IN  ULONG    Protection);
+
 NTSTATUS SYSCALLAPI HcFlushBuffersFile(
 	IN HANDLE hFile, 
 	OUT PIO_STATUS_BLOCK IoStatusBlock);
+
+NTSTATUS SYSCALLAPI HcLoadDriver(
+	IN PUNICODE_STRING DriverServiceName);
+
+NTSTATUS SYSCALLAPI HcUnloadDriver(
+	IN PUNICODE_STRING DriverServiceName);
+
+NTSTATUS SYSCALLAPI HcOpenKey(
+  OUT PHANDLE            KeyHandle,
+  IN  ACCESS_MASK        DesiredAccess,
+  IN  POBJECT_ATTRIBUTES ObjectAttributes);
+
+NTSTATUS SYSCALLAPI HcOpenKeyEx(
+  OUT PHANDLE            KeyHandle,
+  IN  ACCESS_MASK        DesiredAccess,
+  IN  POBJECT_ATTRIBUTES ObjectAttributes,
+  IN  ULONG              OpenOptions);
+
+NTSTATUS SYSCALLAPI HcQueryValueKey(
+  IN      HANDLE                      KeyHandle,
+  IN      PUNICODE_STRING             ValueName,
+  IN      KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass,
+  OUT PVOID                           KeyValueInformation OPTIONAL,
+  IN      ULONG                       Length,
+  OUT     PULONG                      ResultLength);
+
+NTSTATUS SYSCALLAPI HcSetValueKey(
+  IN     HANDLE          KeyHandle,
+  IN     PUNICODE_STRING ValueName,
+  IN 	 ULONG           TitleIndex OPTIONAL,
+  IN     ULONG           Type,
+  IN 	 PVOID           Data OPTIONAL,
+  IN     ULONG           DataSize);
+
+NTSTATUS SYSCALLAPI HcCreateKey(
+  OUT      PHANDLE            KeyHandle,
+  IN       ACCESS_MASK        DesiredAccess,
+  IN       POBJECT_ATTRIBUTES ObjectAttributes,
+  IN       ULONG              TitleIndex,
+  IN   	   PUNICODE_STRING    Class OPTIONAL,
+  IN       ULONG              CreateOptions,
+  OUT  	   PULONG             Disposition OPTIONAL);
+
+NTSTATUS 
+SYSCALLAPI 
+HcGetContextThread(
+	HANDLE ThreadHandle, 
+	PCONTEXT Context);
+
+NTSTATUS 
+SYSCALLAPI 
+HcSetContextThread(
+	HANDLE ThreadHandle, 
+	PCONTEXT Context);
+
+NTSTATUS 
+SYSCALLAPI 
+HcSetDebugFilterState(
+	ULONG ComponentId, 
+	ULONG Level, 
+	BOOLEAN State);
+
+NTSTATUS
+SYSCALLAPI
+HcCreateDebugObject(
+	OUT PHANDLE DebugObjectHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes,
+	IN ULONG Flags);
+
+NTSTATUS
+SYSCALLAPI
+HcClose64(IN PTR_64(HANDLE) hObj);
+
+NTSTATUS
+SYSCALLAPI 
+HcCreateThreadEx64(OUT PTR_64(PHANDLE) PtrThreadHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN PTR_64(POBJECT_ATTRIBUTES) PtrObjectAttributes OPTIONAL,
+	IN PTR_64(HANDLE) ProcessHandle,
+	IN PTR_64(PVOID) StartRoutine,
+	IN PTR_64(PVOID) Argument OPTIONAL,
+	IN ULONG CreateFlags,
+	IN PTR_64(ULONG_PTR) ZeroBits OPTIONAL,
+	IN PTR_64(SIZE_T) StackSize OPTIONAL,
+	IN PTR_64(SIZE_T) MaximumStackSize OPTIONAL,
+	IN PTR_64(PVOID) AttributeList OPTIONAL);
+
+DWORD64
+SYSCALLAPI
+HcWow64Syscall(int idx, int argC, ...);
 
 #if defined (__cplusplus)
 }

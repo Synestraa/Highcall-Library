@@ -48,15 +48,22 @@ NTSYSAPI VOID NTAPI RtlInitUnicodeString(
 	_Out_    PUNICODE_STRING DestinationString,
 	_In_opt_ PCWSTR          SourceString);
 
-NTSYSAPI
-NTSTATUS
-NTAPI LdrUnloadDll(IN HANDLE ModuleHandle);
+NTSYSAPI NTSTATUS NTAPI LdrUnloadDll(IN HANDLE ModuleHandle);
 
 NTSYSAPI NTSTATUS NTAPI LdrLoadDll(
 	IN PWCHAR		   PathToFile OPTIONAL,
 	IN ULONG           Flags OPTIONAL,
 	IN PUNICODE_STRING ModuleFileName,
 	OUT PHANDLE        ModuleHandle);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlUnicodeStringToInteger(
+	_In_ PUNICODE_STRING String,
+	_In_opt_ ULONG Base,
+	_Out_ PULONG Value
+);
 
 NTSYSAPI VOID NTAPI RtlAcquirePebLock(VOID);
 NTSYSAPI VOID NTAPI RtlReleasePebLock(VOID);

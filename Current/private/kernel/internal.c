@@ -192,23 +192,25 @@ DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, IN LPVOID pAddress)
 	return FALSE;
 }
 
-DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PModuleInformationW pmInfo)
+
+DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR Pattern, IN LPCSTR szcMask, CONST IN PModuleInformationW pmInfo)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;
 	SIZE_T MaskSize; 
 
+	/* cannot use HcStringLen on szcPattern as it is a byte array and can contain 0x00. */
 	MaskSize = HcStringLenA(szcMask);
-	if (!MaskSize || HcStringLenA(szcPattern) != MaskSize)
+	if (!MaskSize)
 	{
-		return 0;
+		return (LPBYTE) -1;
 	}
 
 	/* Loop through the entire module .text/code area. */
 	for (CurrentAddress = pmInfo->Base; CurrentAddress < (LPBYTE)pmInfo->Base + pmInfo->Size - MaskSize; CurrentAddress++)
 	{
 		/* Check for an initial match to start our larger pattern. */
-		if (*CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')
+		if (*CurrentAddress == (Pattern[0] & 0xff) || szcMask[0] == '?')
 		{
 			ProbeAddress = CurrentAddress;
 
@@ -216,13 +218,13 @@ DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szc
 			for (int i = 0; szcMask[i] != '\0'; i++, ProbeAddress++)
 			{
 				/* This is not our pattern. */
-				if ((szcPattern[i] & 0xff) != *ProbeAddress && szcMask[i] != '?')
+				if ((Pattern[i] & 0xff) != *ProbeAddress && szcMask[i] != '?')
 				{
 					break;
 				}
 
 				/* This is a match. */
-				if (((szcPattern[i] & 0xff) == *ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
+				if (((Pattern[i] & 0xff) == *ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
 				{
 					return CurrentAddress;
 				}

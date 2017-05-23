@@ -77,3 +77,41 @@ DECL_EXTERN_API(BOOLEAN, ThreadResume, IN HANDLE hThread)
 {
 	return NT_SUCCESS(HcResumeThread(hThread, NULL));
 }
+
+DECL_EXTERN_API(BOOLEAN, ThreadGetContext, HANDLE hThread, LPCONTEXT lpContext)
+{
+	NTSTATUS Status;
+	BOOLEAN Result;
+
+	Status = HcGetContextThread(hThread, lpContext);
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		Result = FALSE;
+	}
+	else
+	{
+		Result = TRUE;
+	}
+
+	return Result;
+}
+
+DECL_EXTERN_API(BOOLEAN, ThreadSetContext, HANDLE hThread, LPCONTEXT lpContext)
+{
+	NTSTATUS Status;
+	BOOLEAN Result;
+
+	Status = HcSetContextThread(hThread, lpContext);
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		Result = FALSE;
+	}
+	else
+	{
+		Result = TRUE;
+	}
+
+	return Result;
+}

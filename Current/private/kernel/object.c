@@ -349,7 +349,7 @@ DECL_EXTERN_API(HANDLE, ObjectCreateMutexA,
 	return hReturn;
 }
 
-static HC_EXTERN_API NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
+static NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
 {
 	// @defineme 0xffff USHRT_MAX
 
@@ -452,7 +452,7 @@ DECL_EXTERN_API(BOOLEAN, ObjectEnumHandles, HandleCallback callback, DWORD dwTyp
 
 		Status = HcDuplicateObject(hProcess,
 			(HANDLE) curHandle.HandleValue,
-			NtCurrentProcess,
+			NtCurrentProcess(),
 			&hDuplicate,
 			0,
 			FALSE,

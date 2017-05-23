@@ -2204,4 +2204,7 @@ typedef long NTSTATUS;
 
 #define STATUS_COULD_NOT_RESIZE_LOG      ((NTSTATUS)0x80190009L)
 
+/* highcall custom, for scan.c */
+#define STATUS_DEBUGGER_ATTACHED		((NTSTATUS)0xC03A001A)
+
 #endif 

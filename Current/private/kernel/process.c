@@ -54,7 +54,6 @@ DECL_EXTERN_API(BOOLEAN, ProcessIsWow64Ex, CONST IN HANDLE hProcess)
 		return FALSE;
 	}
 
-	/* Enforce this is a BOOLEAN, and return success */
 	return pbi != 0;
 }
 
@@ -73,7 +72,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessIsWow64, CONST IN DWORD dwProcessId)
 	return Result;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, IN LPDWORD lpExitCode)
+DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, OUT LPDWORD lpExitCode)
 {
 	HANDLE hProcess;
 	PROCESS_BASIC_INFORMATION ProcessBasic;
@@ -107,7 +106,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, IN LPDWOR
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, IN LPDWORD lpExitCode)
+DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, OUT LPDWORD lpExitCode)
 {
 	PROCESS_BASIC_INFORMATION ProcessBasic;
 	NTSTATUS Status;
@@ -132,7 +131,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, IN LPDWORD
 	return TRUE;
 }
 
-DECL_EXTERN_API(HANDLE, ProcessOpen, CONST SIZE_T dwProcessId, CONST ACCESS_MASK DesiredAccess)
+DECL_EXTERN_API(HANDLE, ProcessOpen, CONST IN SIZE_T dwProcessId, CONST IN ACCESS_MASK DesiredAccess)
 {
 	NTSTATUS Status;
 	OBJECT_ATTRIBUTES oa;
@@ -158,7 +157,7 @@ DECL_EXTERN_API(HANDLE, ProcessOpen, CONST SIZE_T dwProcessId, CONST ACCESS_MASK
 	return 0;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST IN HANDLE hProcess)
 {
 	NTSTATUS Status;
 	PPEB_LDR_DATA LoaderData;
@@ -200,7 +199,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST IN SIZE_T dwProcessId)
 {
 	BOOLEAN Success;
 	HANDLE hProcess;
@@ -218,7 +217,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId)
 	return Success;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST IN SIZE_T dwProcessId)
 {
 	NTSTATUS Status;
 	HANDLE hProcess;
@@ -235,13 +234,13 @@ DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessSuspendEx, CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessSuspendEx, CONST IN HANDLE hProcess)
 {
 	/* Suspend and return */
 	return NT_SUCCESS(HcSuspendProcess(hProcess));
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST SIZE_T dwProcessId)
+DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST IN SIZE_T dwProcessId)
 {
 	NTSTATUS Status;
 	HANDLE hProcess;
@@ -258,22 +257,22 @@ DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST SIZE_T dwProcessId)
 	return NT_SUCCESS(Status);
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessResumeEx, CONST HANDLE hProcess)
+DECL_EXTERN_API(BOOLEAN, ProcessResumeEx, CONST IN HANDLE hProcess)
 {
 	return NT_SUCCESS(HcResumeProcess(hProcess));
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST HANDLE hProcess,
-	CONST LPVOID lpBaseAddress,
-	CONST VOID* lpBuffer,
-	SIZE_T nSize,
-	PSIZE_T lpNumberOfBytesWritten)
+DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST IN HANDLE hProcess,
+	CONST IN LPVOID lpBaseAddress,
+	CONST IN LPVOID lpBuffer,
+	IN SIZE_T nSize,
+	OUT PSIZE_T lpNumberOfBytesWritten)
 {
-	NTSTATUS Status = STATUS_SUCCESS;
+	NTSTATUS Status;
 	ULONG OldValue = 0;
-	SIZE_T RegionSize = 0;
-	PVOID Base = NULL;
-	BOOLEAN UnProtect = FALSE;
+	SIZE_T RegionSize;
+	PVOID Base;
+	BOOLEAN UnProtect;
 
 	/* Set parameters for protect call */
 	RegionSize = nSize;
@@ -370,33 +369,110 @@ DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST HANDLE hProcess,
 	return FALSE;
 }
 
+DECL_EXTERN_API(BOOLEAN, ProcessWriteMemoryWow64, CONST IN HANDLE hProcess,
+	CONST IN PVOID64 lpBaseAddress,
+	CONST IN PVOID64 lpBuffer,
+	IN ULONG64 nSize,
+	OUT PULONG64 lpNumberOfBytesWritten)
+{
+	NTSTATUS Status;
+	ULONG OldValue = 0;
+
+	/* Write the memory */
+	Status = HcWow64WriteVirtualMemory64(hProcess,
+		lpBaseAddress,
+		(LPVOID) lpBuffer,
+		nSize,
+		&nSize);
+
+	/* In Win32, the parameter is optional, so handle this case */
+	if (lpNumberOfBytesWritten) *lpNumberOfBytesWritten = nSize;
+
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory64, CONST IN HANDLE hProcess,
+	CONST IN PVOID64 lpBaseAddress,
+	CONST IN PVOID64 lpBuffer,
+	IN ULONG64 nSize,
+	OUT PULONG64 lpNumberOfBytesWritten)
+{
+#ifndef _WIN64
+	return HcProcessWriteMemoryWow64(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten);
+#else
+	return HcProcessWriteMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten);
+#endif
+}
+
 DECL_EXTERN_API(BOOLEAN, ProcessReadMemory, CONST IN HANDLE hProcess,
-	IN LPCVOID lpBaseAddress,
+	IN LPVOID lpBaseAddress,
 	IN LPVOID lpBuffer,
 	IN SIZE_T nSize,
 	OUT PSIZE_T lpNumberOfBytesRead)
 {
 	NTSTATUS Status;
+	SIZE_T ReadBytes = 0;
 
 	/* Do the read */
 	Status = HcReadVirtualMemory(hProcess,
-		(PVOID)lpBaseAddress,
+		lpBaseAddress,
 		lpBuffer,
 		nSize,
-		&nSize);
+		&ReadBytes);
 
 	/* In user-mode, this parameter is optional */
 	if (lpNumberOfBytesRead)
 	{
-		*lpNumberOfBytesRead = nSize;
+		*lpNumberOfBytesRead = ReadBytes;
 	}
 
-	if (!NT_SUCCESS(Status))
+	HcErrorSetNtStatus(Status);
+	return NT_SUCCESS(Status);
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessReadMemoryWow64, CONST IN HANDLE hProcess,
+	IN PVOID64 lpBaseAddress,
+	IN PVOID64 lpBuffer,
+	IN ULONG64 nSize,
+	OUT PULONG64 lpNumberOfBytesRead)
+{
+	NTSTATUS Status;
+	ULONGLONG ReadBytes = 0;
+
+	/* Do the read */
+	Status = HcWow64ReadVirtualMemory64(hProcess,
+		lpBaseAddress,
+		lpBuffer,
+		nSize,
+		&ReadBytes);
+
+	/* In user-mode, this parameter is optional */
+	if (lpNumberOfBytesRead)
 	{
-		return FALSE;
+		*lpNumberOfBytesRead = ReadBytes;
 	}
 
-	return TRUE;
+	HcErrorSetNtStatus(Status);
+	return NT_SUCCESS(Status);
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessReadMemory64, CONST IN HANDLE hProcess,
+	IN PVOID64 lpBaseAddress,
+	IN PVOID64 lpBuffer,
+	IN ULONG64 nSize,
+	OUT PULONG64 lpNumberOfBytesRead)
+{
+#ifndef _WIN64
+	return HcProcessReadMemoryWow64(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead);
+#else
+	return HcProcessReadMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead);
+#endif
 }
 
 DECL_EXTERN_API(HANDLE, ProcessCreateThread, CONST IN HANDLE hProcess,
@@ -422,16 +498,43 @@ DECL_EXTERN_API(HANDLE, ProcessCreateThread, CONST IN HANDLE hProcess,
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
-		return 0;
+		return INVALID_HANDLE;
 	}
 
 	return hThread;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST HANDLE hProcess,
-	CONST PUNICODE_STRING usStringIn,
-	LPWSTR lpStringOut,
-	CONST SIZE_T lpSize)
+DECL_EXTERN_API(HANDLE, ProcessCreateThread64, CONST IN HANDLE hProcess,
+	CONST IN DWORD64 lpStartAddress,
+	CONST IN DWORD64 lpParameter,
+	CONST IN DWORD dwCreationFlags)
+{
+	NTSTATUS Status;
+	HANDLE hThread = 0;
+
+#ifndef _WIN64
+	DWORD64 hThread64 = 0;
+	Status = HcCreateThreadEx64((DWORD64) &hThread64, THREAD_ALL_ACCESS, 0, (DWORD64) hProcess, lpStartAddress, lpParameter, 0, 0, 0, 0, 0);
+#else
+	Status = HcCreateThreadEx(&hThread, THREAD_ALL_ACCESS, NULL, hProcess, lpStartAddress, lpParamater, dwCreationFlags, 0, 0, 0, NULL);
+#endif
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return INVALID_HANDLE;
+	}
+
+#ifndef _WIN64
+	hThread = (HANDLE) (ULONG_PTR) hThread64;
+#endif
+
+	return hThread;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST IN HANDLE hProcess,
+	CONST IN PUNICODE_STRING usStringIn,
+	OUT LPWSTR lpStringOut,
+	CONST IN SIZE_T lpSize)
 {
 	SIZE_T tStringSize;
 
@@ -477,10 +580,43 @@ DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST HANDLE hProcess,
 	return TRUE;
 }
 
-static
-NTSTATUS
-HCAPI
-GetProcessList(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation)
+static void internal_spi_to_highcall_struct(PSYSTEM_PROCESS_INFORMATION sysInfo, PPROCESS_INFORMATION_W pInformation)
+{
+	pInformation->Id = HandleToUlong(sysInfo->UniqueProcessId);
+	pInformation->ParentProcessId = HandleToUlong(sysInfo->InheritedFromUniqueProcessId);
+
+	/* Copy the name */
+	HcStringCopyW(pInformation->Name,
+		sysInfo->ImageName.Buffer,
+		sysInfo->ImageName.Length / sizeof(WCHAR));
+}
+
+static void internal_spi_to_highcall_struct_detailed(PSYSTEM_PROCESS_INFORMATION sysInfo, PPROCESS_INFORMATION_EX_W pInformation)
+{
+	pInformation->Id = HandleToUlong(sysInfo->UniqueProcessId);
+	pInformation->ParentProcessId = HandleToUlong(sysInfo->InheritedFromUniqueProcessId);
+
+	/* Copy the name */
+	HcStringCopyW(pInformation->Name,
+		sysInfo->ImageName.Buffer,
+		sysInfo->ImageName.Length / sizeof(WCHAR));
+
+	/* Try opening the process */
+	HANDLE hProcess = HcProcessOpen(pInformation->Id, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
+
+	if (hProcess != NULL)
+	{
+		pInformation->CanAccess = TRUE;
+
+		/* Query main module */
+		HcModuleQueryInformationExW(hProcess, NULL, &pInformation->MainModule);
+
+		/* Close this handle. */
+		HcClose(hProcess);
+	}
+}
+
+static NTSTATUS internal_process_list(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation)
 {
 	DWORD ReturnLength = 0;
 	LPVOID Buffer;
@@ -536,18 +672,17 @@ GetProcessList(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation
 	return Status;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName,
-	ProcessCallbackExW Callback,
-	LPARAM lParam)
+DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, IN LPCWSTR lpProcessName,
+	IN ProcessCallbackExW Callback,
+	IN LPARAM lParam)
 {
 	NTSTATUS Status;
-	HANDLE CurrentHandle;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
-	ProcessInformationExW hcpInformation;
+	PROCESS_INFORMATION_EX_W hcpInformation;
 	PVOID Buffer = NULL;
 
 	/* Query the process list. */
-	Status = GetProcessList(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -562,28 +697,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName,
 		/* Check for a match */
 		if (HcStringIsNullOrEmpty(lpProcessName) || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
 		{
-			hcpInformation.Id = HandleToUlong(processInfo->UniqueProcessId);
-			hcpInformation.ParentProcessId = HandleToUlong(processInfo->InheritedFromUniqueProcessId);
-
-			/* Copy the name */
-			HcStringCopyW(hcpInformation.Name,
-				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length / sizeof(WCHAR));
-
-			/* Try opening the process */
-			CurrentHandle = HcProcessOpen((SIZE_T)processInfo->UniqueProcessId,
-				PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
-
-			if (CurrentHandle != NULL)
-			{
-				hcpInformation.CanAccess = TRUE;
-
-				/* Query main module */
-				HcModuleQueryInformationExW(CurrentHandle, NULL, &hcpInformation.MainModule);
-
-				/* Close this handle. */
-				HcClose(CurrentHandle);
-			}
+			internal_spi_to_highcall_struct_detailed(processInfo, &hcpInformation);
 
 			/* Call the callback as long as the user doesn't return FALSE. */
 			if (Callback(hcpInformation, lParam))
@@ -606,7 +720,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName,
 	return FALSE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PProcessInformationW pProcessInfo)
+DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PPROCESS_INFORMATION_W pProcessInfo)
 {
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
@@ -614,7 +728,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PProces
 	BOOLEAN ReturnValue = FALSE;
 
 	/* Query the process list. */
-	Status = GetProcessList(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -631,13 +745,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PProces
 		/* Check for a match */
 		if (processId == dwProcessId)
 		{
-			pProcessInfo->Id = processId;
-			pProcessInfo->ParentProcessId = HandleToUlong(processInfo->InheritedFromUniqueProcessId);
-
-			/* Copy the name */
-			HcStringCopyW(pProcessInfo->Name,
-				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length / sizeof(WCHAR));
+			internal_spi_to_highcall_struct(processInfo, pProcessInfo);
 
 			ReturnValue = TRUE;
 			goto end;
@@ -657,7 +765,7 @@ end:
 	return ReturnValue;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PProcessInformationW pProcessInfo)
+DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, IN LPCWSTR lpName, OUT PPROCESS_INFORMATION_W pProcessInfo)
 {
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
@@ -665,7 +773,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PProces
 	BOOLEAN ReturnValue = FALSE;
 
 	/* Query the process list. */
-	Status = GetProcessList(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -677,19 +785,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PProces
 	/* Loop through the process list */
 	while (TRUE)
 	{
-		DWORD processId = HandleToUlong(processInfo->UniqueProcessId);
-
 		/* Check for a match */
-		if (!HcStringIsNullOrEmpty(processInfo->ImageName.Buffer) 
-			&& HcStringEqualW(processInfo->ImageName.Buffer, lpName, TRUE))
+		if (!HcStringIsNullOrEmpty(processInfo->ImageName.Buffer) && HcStringEqualW(processInfo->ImageName.Buffer, lpName, TRUE))
 		{
-			pProcessInfo->Id = processId;
-			pProcessInfo->ParentProcessId = HandleToUlong(processInfo->InheritedFromUniqueProcessId);
-
-			/* Copy the name */
-			HcStringCopyW(pProcessInfo->Name,
-				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length / sizeof(WCHAR));
+			internal_spi_to_highcall_struct(processInfo, pProcessInfo);
 
 			ReturnValue = TRUE;
 			goto end;
@@ -709,17 +808,73 @@ end:
 	return ReturnValue;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName,
-	ProcessCallbackW Callback,
-	LPARAM lParam)
+DECL_EXTERN_API(BOOLEAN, ProcessGetAllByNameW, IN LPCWSTR lpName, OUT PROCESS_INFORMATION_W** pProcessInfo, OUT PULONG Count)
 {
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
-	ProcessInformationW hcpInformation;
+	PVOID Buffer = NULL;
+	BOOLEAN ReturnValue = FALSE;
+
+	if (Count == NULL || pProcessInfo == NULL)
+	{
+		HcErrorSetDosError(ERROR_INVALID_PARAMETER);
+		return FALSE;
+	}
+
+	*Count = 0;
+
+	/* Query the process list. */
+	Status = internal_process_list(&Buffer, &processInfo);
+	if (!NT_SUCCESS(Status))
+	{
+		HcErrorSetNtStatus(Status);
+		return ReturnValue;
+	}
+
+	RtlInitUnicodeString(&processInfo->ImageName, L"IdleSystem");
+
+	/* Loop through the process list */
+	while (TRUE)
+	{
+		/* Check for a match */
+		if (!HcStringIsNullOrEmpty(processInfo->ImageName.Buffer) && HcStringEqualW(processInfo->ImageName.Buffer, lpName, TRUE))
+		{
+			/* Insert process into PROCESS_INFORMATION_W[n] structure. */
+
+			internal_spi_to_highcall_struct(processInfo, &(*pProcessInfo)[*Count]);
+
+			if (!ReturnValue)
+			{
+				ReturnValue = TRUE;
+			}
+
+			(*Count)++;
+		}
+
+		if (!processInfo->NextEntryOffset)
+		{
+			break;
+		}
+
+		/* Calculate the next entry address */
+		processInfo = (PSYSTEM_PROCESS_INFORMATION) ((SIZE_T) processInfo + processInfo->NextEntryOffset);
+	}
+
+	HcFree(Buffer);
+	return ReturnValue;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, IN LPCWSTR lpProcessName,
+	IN ProcessCallbackW Callback,
+	IN LPARAM lParam)
+{
+	NTSTATUS Status;
+	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
+	PROCESS_INFORMATION_W hcpInformation;
 	PVOID Buffer = NULL;
 
 	/* Query the process list. */
-	Status = GetProcessList(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -736,13 +891,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName,
 		/* Check for a match */
 		if (HcStringIsNullOrEmpty(lpProcessName) || HcStringEqualW(processInfo->ImageName.Buffer, lpProcessName, TRUE))
 		{
-			hcpInformation.Id = HandleToUlong(processInfo->UniqueProcessId);
-			hcpInformation.ParentProcessId = HandleToUlong(processInfo->InheritedFromUniqueProcessId);
-
-			/* Copy the name */
-			HcStringCopyW(hcpInformation.Name,
-				processInfo->ImageName.Buffer,
-				processInfo->ImageName.Length / sizeof(WCHAR));
+			internal_spi_to_highcall_struct(processInfo, &hcpInformation);
 
 			/* Call the callback as long as the user doesn't return FALSE. */
 			if (Callback(hcpInformation, lParam))
@@ -765,9 +914,9 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName,
 	return FALSE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST HANDLE hProcess,
-	CONST LPCSTR Privilege,
-	CONST BOOLEAN bEnablePrivilege)
+DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST IN HANDLE hProcess,
+	IN LPCSTR Privilege,
+	CONST IN BOOLEAN bEnablePrivilege)
 {
 	LPWSTR lpConvertedPrivilege = HcStringConvertAtoW(Privilege);
 	BOOLEAN bReturn;
@@ -781,9 +930,9 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST HANDLE hProcess,
 	return bReturn;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
-	CONST LPCWSTR Privilege,
-	CONST BOOLEAN bEnablePrivilege)
+DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST IN HANDLE hProcess,
+	IN LPCWSTR Privilege,
+	CONST IN BOOLEAN bEnablePrivilege)
 {
 	NTSTATUS Status;
 	HANDLE hToken = NULL;
@@ -847,8 +996,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	else
 	{
 		/* Disable this privilege */
-		tpPrevious.Privileges[0].Attributes ^= (SE_PRIVILEGE_ENABLED &
-			tpPrevious.Privileges[0].Attributes);
+		tpPrevious.Privileges[0].Attributes ^= (SE_PRIVILEGE_ENABLED & tpPrevious.Privileges[0].Attributes);
 	}
 
 	Status = HcAdjustPrivilegesToken(
@@ -870,7 +1018,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess,
 	return TRUE;
 };
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST IN HANDLE hProcess, OUT PPEB32 pPeb)
 {
 	NTSTATUS Status;
 	ULONG_PTR wow64 = 0;
@@ -908,7 +1056,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST IN HANDLE hProcess, OUT PPEB pPeb)
 {
 	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION ProcInfo;
@@ -947,7 +1095,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST IN HANDLE hProcess, OUT PPEB32 pPeb)
 {
 	NTSTATUS Status;
 	PROCESS_BASIC_INFORMATION32 ProcInfo;
@@ -986,7 +1134,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb)
 	return TRUE;
 }
 
-DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
+DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST IN HANDLE hProcess, OUT PPEB64 pPeb)
 {
 	NTSTATUS Status;
 #ifdef _WIN64
@@ -1025,30 +1173,379 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb)
 		return FALSE;
 	}
 
-#ifdef _WIN64
-	if (!HcProcessReadMemory(hProcess,
-		(PVOID)ProcInfo.PebBaseAddress,
+	if (!HcProcessReadMemory64(hProcess,
+		(PVOID64) ProcInfo.PebBaseAddress,
 		pPeb,
 		sizeof(*pPeb),
 		NULL))
 	{
 		return FALSE;
 	}
-#else
-	if (!HcWow64ReadVirtualMemory64(hProcess,
-		(PVOID64)ProcInfo.PebBaseAddress,
-		pPeb,
-		sizeof(*pPeb),
-		NULL))
-	{
-		return FALSE;
-	}
-#endif
 
 	return TRUE;
 }
 
-DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc)
+DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddressW, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCWSTR lpExportSymbolName)
+{
+	ULONG_PTR Return = 0;
+	LPSTR lpConverted;
+
+	lpConverted = HcStringConvertWtoA(lpExportSymbolName);
+	if (lpConverted)
+	{
+		Return = HcProcessGetExportAddress32A(hProcess, hModule, lpConverted);
+		HcFree(lpConverted);
+	}
+
+	return Return;
+}
+
+DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddressA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCSTR lpExportSymbolName)
+{
+	ULONG_PTR Return = 0;
+	PDWORD pExportNames = NULL;
+	PDWORD pExportFunctions = NULL;
+	PWORD pExportOrdinals = NULL;
+	LPSTR lpName;
+	IMAGE_EXPORT_DIRECTORY ExportDirectory;
+
+	if (!hModule)
+	{
+		return Return;
+	}
+
+	if (!HcImageRemoteExportDirectoryFromModule(hProcess, hModule, &ExportDirectory))
+	{
+		return Return;
+	}
+
+	ULONG NumberOfFunctions = ExportDirectory.NumberOfFunctions;
+	ULONG NumberOfNames = ExportDirectory.NumberOfNames;
+
+	pExportNames = (PDWORD) HcAllocPage(NumberOfNames * sizeof(*pExportNames));
+	if (!pExportNames)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfNames), pExportNames, NumberOfNames * sizeof(*pExportNames), NULL))
+	{
+		goto done;
+	}
+
+	pExportFunctions = (PDWORD) HcAllocPage(NumberOfFunctions * sizeof(*pExportFunctions));
+	if (!pExportFunctions)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfFunctions), pExportFunctions, NumberOfFunctions * sizeof(*pExportFunctions), NULL))
+	{
+		goto done;
+	}
+
+	pExportOrdinals = (PWORD) HcAllocPage(NumberOfFunctions * sizeof(NumberOfNames));
+	if (!pExportOrdinals)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfNameOrdinals), pExportOrdinals, NumberOfNames * sizeof(NumberOfNames), NULL))
+	{
+		goto done;
+	}
+
+	for (ULONG_PTR i = 0; i < ExportDirectory.NumberOfFunctions; i++)
+	{
+		lpName = (LPSTR) HcAlloc(1024); /* seems reasonable */
+		if (lpName)
+		{
+			if (HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR)hModule + pExportNames[i]), lpName, 1024, NULL))
+			{
+				if (HcStringEqualA(lpName, lpExportSymbolName, TRUE))
+				{
+					Return = (ULONG_PTR) hModule + pExportFunctions[pExportOrdinals[i]];
+				}
+			}
+
+			HcFree(lpName);
+
+			if (Return)
+			{
+				goto done;
+			}
+		}
+		else
+		{
+			goto done;
+		}
+	}
+
+done:
+	if (pExportNames)
+	{
+		HcFreePage(pExportNames);
+	}
+
+	if (pExportFunctions)
+	{
+		HcFreePage(pExportFunctions);
+	}
+
+	if (pExportOrdinals)
+	{
+		HcFreePage(pExportOrdinals);
+	}
+
+	return Return;
+}
+
+
+DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddress32W, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCWSTR lpExportSymbolName)
+{
+	ULONG_PTR Return = 0;
+	LPSTR lpConverted;
+
+	lpConverted = HcStringConvertWtoA(lpExportSymbolName);
+	if (lpConverted)
+	{
+		Return = HcProcessGetExportAddress32A(hProcess, hModule, lpConverted);
+		HcFree(lpConverted);
+	}
+
+	return Return;
+}
+
+/* This is rather problematic to port to a 32 -> 64 version due to the limitations of ReadVirtualMemory.
+*  In a scenario where one must use a 32bit environment to read a 64bit address using Wow64ReadVirtualMemory64 is the way to go.
+*/
+DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddress32A, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCSTR lpExportSymbolName)
+{
+	ULONG_PTR Return = 0;
+	PDWORD pExportNames = NULL;
+	PDWORD pExportFunctions = NULL;
+	PWORD pExportOrdinals = NULL;
+	LPSTR lpName;
+	IMAGE_EXPORT_DIRECTORY ExportDirectory;
+
+	if (!hModule)
+	{
+		return Return;
+	}
+
+	if (!HcImageRemoteExportDirectoryFromModule32(hProcess, hModule, &ExportDirectory))
+	{
+		return Return;
+	}
+
+	ULONG NumberOfFunctions = ExportDirectory.NumberOfFunctions;
+	ULONG NumberOfNames = ExportDirectory.NumberOfNames;
+
+	pExportNames = (PDWORD) HcAllocPage(NumberOfNames * sizeof(*pExportNames));
+	if (!pExportNames)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfNames), pExportNames, NumberOfNames * sizeof(*pExportNames), NULL))
+	{
+		goto done;
+	}
+
+	pExportFunctions = (PDWORD) HcAllocPage(NumberOfFunctions * sizeof(*pExportFunctions));
+	if (!pExportFunctions)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfFunctions), pExportFunctions, NumberOfFunctions * sizeof(*pExportFunctions), NULL))
+	{
+		goto done;
+	}
+
+	pExportOrdinals = (PWORD) HcAllocPage(NumberOfFunctions * sizeof(NumberOfNames));
+	if (!pExportOrdinals)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + ExportDirectory.AddressOfNameOrdinals), pExportOrdinals, NumberOfNames * sizeof(NumberOfNames), NULL))
+	{
+		goto done;
+	}
+
+	for (ULONG_PTR i = 0; i < ExportDirectory.NumberOfFunctions; i++)
+	{
+		lpName = (LPSTR) HcAlloc(1024); /* seems reasonable */
+		if (lpName)
+		{
+			if (HcProcessReadMemory(hProcess, (LPVOID) ((ULONG_PTR) hModule + pExportNames[i]), lpName, 1024, NULL))
+			{
+				if (HcStringEqualA(lpName, lpExportSymbolName, TRUE))
+				{
+					Return = (ULONG_PTR) hModule + pExportFunctions[pExportOrdinals[i]];
+				}
+			}
+
+			HcFree(lpName);
+
+			if (Return)
+			{
+				goto done;
+			}
+		}
+		else
+		{
+			goto done;
+		}
+	}
+
+done:
+	if (pExportNames)
+	{
+		HcFreePage(pExportNames);
+	}
+
+	if (pExportFunctions)
+	{
+		HcFreePage(pExportFunctions);
+	}
+
+	if (pExportOrdinals)
+	{
+		HcFreePage(pExportOrdinals);
+	}
+
+	return Return;
+}
+
+DECL_EXTERN_API(ULONG64, ProcessGetExportAddress64W, CONST IN HANDLE hProcess, CONST IN ULONG64 hModule, IN LPCWSTR lpExportSymbolName)
+{
+	ULONG64 Return = 0;
+	LPSTR lpConverted;
+
+	lpConverted = HcStringConvertWtoA(lpExportSymbolName);
+	if (lpConverted)
+	{
+		Return = HcProcessGetExportAddress64A(hProcess, hModule, lpConverted);
+		HcFree(lpConverted);
+	}
+
+	return Return;
+}
+
+DECL_EXTERN_API(ULONG64, ProcessGetExportAddress64A, CONST IN HANDLE hProcess, CONST IN ULONG64 hModule, IN LPCSTR lpExportSymbolName)
+{
+	ULONG64 Return = 0;
+	PDWORD pExportNames = NULL;
+	PDWORD pExportFunctions = NULL;
+	PWORD pExportOrdinals = NULL;
+	IMAGE_EXPORT_DIRECTORY ExportDirectory;
+	LPSTR lpName;
+
+	if (!hModule)
+	{
+		return Return;
+	}
+
+	if (!HcImageRemoteExportDirectoryFromModule64(hProcess, hModule, &ExportDirectory))
+	{
+		return Return;
+	}
+
+	ULONG NumberOfFunctions = ExportDirectory.NumberOfFunctions;
+	ULONG NumberOfNames = ExportDirectory.NumberOfNames;
+
+	pExportNames = (PDWORD) HcAllocPage(NumberOfNames * sizeof(*pExportNames));
+	if (!pExportNames)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory64(hProcess,
+		(PVOID64) ((ULONG64) hModule + ExportDirectory.AddressOfNames),
+		pExportNames, 
+		NumberOfNames * sizeof(*pExportNames),
+		NULL))
+	{
+		goto done;
+	}
+
+	pExportFunctions = (PDWORD) HcAllocPage(NumberOfFunctions * sizeof(*pExportFunctions));
+	if (!pExportFunctions)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory64(hProcess,
+		(PVOID64) ((ULONG64) hModule + ExportDirectory.AddressOfFunctions),
+		pExportFunctions, 
+		NumberOfFunctions * sizeof(*pExportFunctions),
+		NULL))
+	{
+		goto done;
+	}
+
+	pExportOrdinals = (PWORD) HcAllocPage(NumberOfFunctions * sizeof(NumberOfNames));
+	if (!pExportOrdinals)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory64(hProcess,
+		(PVOID64) ((ULONG64) hModule + ExportDirectory.AddressOfNameOrdinals),
+		pExportOrdinals, 
+		NumberOfNames * sizeof(NumberOfNames), 
+		NULL))
+	{
+		goto done;
+	}
+
+	for (ULONG_PTR i = 0; i < ExportDirectory.NumberOfFunctions; i++)
+	{
+		lpName = (LPSTR) HcAlloc(1024); /* Since we have no idea what the size of the function name is,
+										 * we dont know where to terminate. Meaning we don't know how to account for shorter/larger strings.
+										 * Meaning Allocating/Dellocating is the way to go as it nullifies the entire size. HcInternalSet is fine too. */
+
+		if (HcProcessReadMemory64(hProcess, (PVOID64) ((ULONG64) hModule + pExportNames[i]), lpName, 1024, NULL))
+		{
+			if (HcStringEqualA(lpName, lpExportSymbolName, TRUE))
+			{
+				Return = hModule + pExportFunctions[pExportOrdinals[i]];
+			}
+		}
+
+		if (Return)
+		{
+			goto done;
+		}
+
+		if (lpName)
+		{
+			HcFree(lpName);
+		}
+	}
+
+done:
+	if (pExportNames)
+	{
+		HcFreePage(pExportNames);
+	}
+
+	if (pExportFunctions)
+	{
+		HcFreePage(pExportFunctions);
+	}
+
+	if (pExportOrdinals)
+	{
+		HcFreePage(pExportOrdinals);
+	}
+
+	return Return;
+}
+
+DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST IN HANDLE hProcess, OUT LPSTR* lpszCommandline, CONST IN BOOLEAN bAlloc)
 {
 	LPWSTR lpCmd = NULL;
 	DWORD dwReturnLEngth;
@@ -1071,9 +1568,7 @@ DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lps
 	return dwReturnLEngth;
 }
 
-DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess,
-	LPWSTR* lpszCommandline,
-	CONST BOOLEAN bAlloc)
+DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST IN HANDLE hProcess, OUT LPWSTR* lpszCommandline, CONST IN BOOLEAN bAlloc)
 {
 	DWORD dwCmdLength;
 	PROCESS_BASIC_INFORMATION ProcInfo;
@@ -1125,7 +1620,7 @@ DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess,
 	return dwCmdLength;
 }
 
-DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWSTR* lpszDirectory)
+DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST IN HANDLE hProcess, OUT LPWSTR lpszDirectory)
 {
 	PROCESS_BASIC_INFORMATION pbi;
 	RTL_USER_PROCESS_PARAMETERS upp;
@@ -1152,6 +1647,7 @@ DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWST
 	}
 
 	dwReturnLength = upp.CurrentDirectory.DosPath.Length / sizeof(WCHAR);
+
 	if (lpszDirectory == NULL)
 	{
 		return dwReturnLength;
@@ -1159,7 +1655,7 @@ DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWST
 
 	if (!HcProcessReadNullifiedString(hProcess,
 		&upp.CurrentDirectory.DosPath,
-		*lpszDirectory, 
+		lpszDirectory, 
 		upp.CurrentDirectory.DosPath.Length))
 	{
 		return 0;
@@ -1168,7 +1664,7 @@ DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWST
 	return dwReturnLength;
 }
 
-DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST HANDLE hProcess, LPSTR* szDirectory)
+DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST IN HANDLE hProcess, OUT LPSTR szDirectory)
 {
 	LPWSTR lpCopy = HcStringAllocW(MAX_PATH);
 	DWORD dwCount;
@@ -1179,19 +1675,33 @@ DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST HANDLE hProcess, LPSTR
 		return HcProcessGetCurrentDirectoryW(hProcess, NULL);
 	}
 
-	dwCount = HcProcessGetCurrentDirectoryW(hProcess, &lpCopy);
-	if (!dwCount)
+	dwCount = HcProcessGetCurrentDirectoryW(hProcess, lpCopy);
+	if (dwCount)
 	{
-		HcFree(lpCopy);
-		return 0;
-	}
-
-	if (!HcStringCopyConvertWtoA(lpCopy, *szDirectory, dwCount))
-	{
-		HcFree(lpCopy);
-		return 0;
+		if (!HcStringCopyConvertWtoA(lpCopy, szDirectory, dwCount))
+		{
+			dwCount = 0;
+		}
 	}
 
 	HcFree(lpCopy);
 	return dwCount;
+}
+
+DECL_EXTERN_API(BOOLEAN, ProcessQueryWorkingSetEx, IN HANDLE hProcess, OUT PWORKING_SET_EX_DATA Data)
+{
+	NTSTATUS Status;
+	BOOLEAN Result;
+
+	Status = HcQueryVirtualMemory(hProcess, NULL, MemoryWorkingSetExInformation, Data, sizeof(*Data), NULL);
+	if (NT_SUCCESS(Status))
+	{
+		Result = TRUE;
+	}
+	else
+	{
+		Result = FALSE;
+		HcErrorSetNtStatus(Status);
+	}
+	return Result;
 }

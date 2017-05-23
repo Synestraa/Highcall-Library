@@ -34,9 +34,6 @@
     <ClCompile Include="private\sys\syscall.c">
       <Filter>private\sys</Filter>
     </ClCompile>
-    <ClCompile Include="private\kernel\construct.c">
-      <Filter>private\kernel</Filter>
-    </ClCompile>
     <ClCompile Include="private\kernel\error.c">
       <Filter>private\kernel</Filter>
     </ClCompile>
@@ -86,6 +83,7 @@
       <Filter>private\kernel</Filter>
     </ClCompile>
     <ClCompile Include="private\sys\table.c" />
+    <ClCompile Include="private\kernel\scan.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -1500,6 +1498,7 @@
     </MASM>
     <MASM Include="private\wow64\wow64stdcall.asm" />
     <MASM Include="private\sys\asm\QueryMutant.asm" />
+    <MASM Include="private\sys\asm\Wow64AllocateVirtualMemory64.asm" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">

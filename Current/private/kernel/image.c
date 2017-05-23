@@ -250,3 +250,171 @@ DECL_EXTERN_API(ULONG, ImageVaToRva, IN HMODULE hModule, IN LPCVOID lpAddress)
 {
 	return SUBTRACT_PTR_32(lpAddress, hModule);
 }
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteDosHeaderFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_DOS_HEADER pDosHeader)
+{
+	if (!HcProcessReadMemory64(hProcess, (PVOID64) hModule, pDosHeader, sizeof(*pDosHeader), NULL))
+	{
+		return FALSE;
+	}
+
+	if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_NT_HEADERS64 pNtHeaders)
+{
+	IMAGE_DOS_HEADER Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteDosHeaderFromModule64(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory64(hProcess, (PVOID64) (hModule + Header.e_lfanew), pNtHeaders, sizeof(*pNtHeaders), NULL))
+	{
+		return FALSE;
+	}
+
+	if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory)
+{
+	IMAGE_NT_HEADERS64 Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteNtHeadersFromModule64(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory64(
+		hProcess,
+		(PVOID64) (hModule + Header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress),
+		pExportDirectory,
+		sizeof(*pExportDirectory),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteDosHeaderFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_DOS_HEADER pDosHeader)
+{
+	if (!HcProcessReadMemory(hProcess, hModule, pDosHeader, sizeof(*pDosHeader), NULL))
+	{
+		return FALSE;
+	}
+
+	if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule32, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_NT_HEADERS32 pNtHeaders)
+{
+	IMAGE_DOS_HEADER Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteDosHeaderFromModule(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (PVOID) ((ULONG_PTR) hModule + Header.e_lfanew), pNtHeaders, sizeof(*pNtHeaders), NULL))
+	{
+		return FALSE;
+	}
+
+	if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule32, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory)
+{
+	IMAGE_NT_HEADERS32 Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteNtHeadersFromModule32(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(
+		hProcess,
+		(LPVOID) ((ULONG_PTR) hModule + Header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress),
+		pExportDirectory,
+		sizeof(*pExportDirectory),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_NT_HEADERS pNtHeaders)
+{
+	IMAGE_DOS_HEADER Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteDosHeaderFromModule(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(hProcess, (PVOID) ((ULONG_PTR) hModule + Header.e_lfanew), pNtHeaders, sizeof(*pNtHeaders), NULL))
+	{
+		return FALSE;
+	}
+
+	if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory)
+{
+	IMAGE_NT_HEADERS Header;
+	ZERO(&Header);
+
+	if (!HcImageRemoteNtHeadersFromModule(hProcess, hModule, &Header))
+	{
+		return FALSE;
+	}
+
+	if (!HcProcessReadMemory(
+		hProcess,
+		(LPVOID) ((ULONG_PTR) hModule + Header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress),
+		pExportDirectory,
+		sizeof(*pExportDirectory),
+		NULL))
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}

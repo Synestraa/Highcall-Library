@@ -22,6 +22,7 @@ DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CO
 		/* Important note is that this is strict to the entire name */
 		if (!lpModuleName || HcStringEqualW(lpModuleName, pLdrDataTableEntry->BaseModuleName.Buffer, CaseInSensitive))
 		{
+			LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 			return pLdrDataTableEntry;
 		}
 
@@ -30,6 +31,76 @@ DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CO
 
 	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 	return NULL;
+}
+DECL_EXTERN_API(BOOLEAN, ModuleRemoteEntry64W, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInsensitive, PLDR_DATA_TABLE_ENTRY64 pLdrEntry)
+{
+	PEB64 Peb;
+	LDR_DATA_TABLE_ENTRY64 LdrDataTableEntry;
+	LIST_ENTRY64 ListEntry;
+	ULONG64 pListHead, pListEntry;
+	BOOLEAN Result = FALSE;
+	LPWSTR lpBuffer = NULL;
+
+	ZERO(&Peb);
+
+	if (!HcProcessGetPeb64(hProcess, &Peb))
+	{
+		goto done;
+	}
+
+	ZERO(&LdrDataTableEntry);
+	ZERO(&ListEntry);
+
+	pListHead = (ULONG64) Peb.Ldr + FIELD_OFFSET(PEB_LDR_DATA64, InLoadOrderModuleList);
+
+	if (!HcProcessReadMemory64(hProcess, (PVOID64) (pListHead), &ListEntry, sizeof(ListEntry), NULL))
+	{
+		goto done;
+	}
+
+	pListEntry = ListEntry.Flink;
+
+	lpBuffer = HcStringAllocW(1024);
+	if (!lpBuffer)
+	{
+		goto done;
+	}
+
+	/* Loop through entry list till we find a match for the module's name */
+	for (; pListEntry != pListHead;)
+	{
+		if (!HcProcessReadMemory64(hProcess, (PVOID64) pListEntry, &LdrDataTableEntry, sizeof(LdrDataTableEntry), NULL))
+		{
+			break;
+		}
+
+		if (!HcProcessReadMemory64(hProcess,
+			(PVOID64) LdrDataTableEntry.BaseDllName.Buffer,
+			lpBuffer,
+			LdrDataTableEntry.BaseDllName.MaximumLength,
+			NULL))
+		{
+			break;
+		}
+
+		/* Important note is that this is strict to the entire name */
+		if (!lpModuleName || HcStringEqualW(lpModuleName, lpBuffer, CaseInsensitive))
+		{
+			HcInternalCopy(pLdrEntry, &LdrDataTableEntry, sizeof(LdrDataTableEntry));
+			Result = TRUE;
+			break;
+		}
+
+		pListEntry = LdrDataTableEntry.InLoadOrderLinks.Flink;
+	}
+
+done:
+	if (lpBuffer != NULL)
+	{
+		HcFree(lpBuffer);
+	}
+
+	return Result;
 }
 
 DECL_EXTERN_API(BOOLEAN, ModuleEntryExW, IN HANDLE hProcess, IN HMODULE hModule OPTIONAL, OUT PLDR_DATA_TABLE_ENTRY pEntry)
@@ -49,26 +120,10 @@ DECL_EXTERN_API(BOOLEAN, ModuleEntryExW, IN HANDLE hProcess, IN HMODULE hModule 
 	/* If no module was provided, get base as module */
 	if (hModule == NULL)
 	{
-		if (!HcProcessReadMemory(hProcess,
-			&(Peb.ImageBaseAddress),
-			&hModule,
-			sizeof(hModule),
-			NULL))
-		{
-			return FALSE;
-		}
+		hModule = (HMODULE) Peb.ImageBaseAddress;
 	}
 
-	/* Read loader data address from PEB */
-	if (!HcProcessReadMemory(hProcess,
-		&(Peb.LoaderData),
-		&LoaderData,
-		sizeof(LoaderData),
-		NULL))
-	{
-		return FALSE;
-	}
-
+	LoaderData = Peb.LoaderData;
 	if (LoaderData == NULL)
 	{
 		return FALSE;
@@ -267,6 +322,11 @@ DECL_EXTERN_API(HMODULE, ModuleHandleA, IN LPCSTR lpModuleName)
 	LPWSTR lpConvertedName;
 	HMODULE hReturn = NULL;
 
+	if (!lpModuleName)
+	{
+		return HcModuleHandleW(NULL);
+	}
+
 	lpConvertedName = HcStringConvertAtoW(lpModuleName);
 	if (lpConvertedName)
 	{
@@ -418,7 +478,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleUnload, CONST IN HMODULE hModule)
 	return NT_SUCCESS(LdrUnloadDll(hModule));
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64)
 {
 	MEMORY_BASIC_INFORMATION basicInfo;
 	HMODULE hModule;
@@ -439,13 +499,13 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 		sizeof(MEMORY_BASIC_INFORMATION),
 		NULL);
 
-	lpPath = HcStringAllocW(MAX_PATH);
-	lpModuleNameExtracted = HcStringAllocW(MAX_PATH);
-
 	while (NT_SUCCESS(Status))
 	{
 		if (basicInfo.Type == MEM_IMAGE)
 		{
+			lpPath = HcStringAllocW(MAX_PATH);
+			lpModuleNameExtracted = HcStringAllocW(MAX_PATH);
+
 			hModule = basicInfo.AllocationBase;
 
 			allocationSize = 0;
@@ -470,30 +530,32 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 
 			} while (basicInfo.AllocationBase == (PVOID) hModule);
 
-			if ((ULONG_PTR) hModule <= USER_MAX_ADDRESS && Bit32 || !Bit32)
+			if (((ULONG_PTR) hModule <= USER_MAX_ADDRESS_32 && Bit32 || !Bit32) && ((ULONG64) hModule >= USER_MAX_ADDRESS_32 && Bit64 || !Bit64))
 			{
 				if (!lpModuleName)
 				{
 					/* Give us this module. */
 					hReturn = hModule;
-					break;
 				}
-
-				if (HcModulePathAdvancedExW(ProcessHandle, (PVOID) hModule, lpPath))
+				else if (HcModulePathAdvancedExW(ProcessHandle, (PVOID) hModule, lpPath))
 				{
 					if (HcPathGetFileW(lpPath, lpModuleNameExtracted))
 					{
 						if (HcStringEqualW(lpModuleName, lpModuleNameExtracted, TRUE))
 						{
 							hReturn = hModule;
-							break;
 						}
 					}
 				}
 			}
 
-			ZERO(&lpPath);
-			ZERO(&lpModuleNameExtracted);
+			HcFree(lpPath);
+			HcFree(lpModuleNameExtracted);
+
+			if (hReturn)
+			{
+				break;
+			}
 		}
 		else
 		{
@@ -508,28 +570,23 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 		}
 	}
 
-	if (lpModuleNameExtracted)
-	{
-		HcFree(lpModuleNameExtracted);
-	}
-
-	if (lpPath)
-	{
-		HcFree(lpPath);
-	}
-
 	return hReturn;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64)
 {
 	LPWSTR lpConverted;
 	HMODULE hReturn = NULL;
 
+	if (!lpModuleName)
+	{
+		return HcModuleHandleAdvancedExW(ProcessHandle, NULL, Bit32, Bit64);
+	}
+
 	lpConverted = HcStringConvertAtoW(lpModuleName);
 	if (lpConverted)
 	{
-		hReturn = HcModuleHandleAdvancedExW(ProcessHandle, lpConverted, Bit32);
+		hReturn = HcModuleHandleAdvancedExW(ProcessHandle, lpConverted, Bit32, Bit64);
 
 		HcFree(lpConverted);
 	}
@@ -537,15 +594,20 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle,
 	return hReturn;
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN bBit64)
 {
-	return HcModuleHandleAdvancedExW(NtCurrentProcess, lpModuleName, bBit32);
+	return HcModuleHandleAdvancedExW(NtCurrentProcess(), lpModuleName, bBit32, bBit64);
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN bBit64)
 {
 	HMODULE hReturn = NULL;
 	LPWSTR lpConverted;
+
+	if (!lpModuleName)
+	{
+		return HcModuleHandleAdvancedW(NULL, bBit32, bBit64);
+	}
 
 	lpConverted = HcStringConvertAtoW(lpModuleName);
 	if (!lpConverted)
@@ -553,9 +615,36 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN
 		return hReturn;
 	}
 
-	hReturn = HcModuleHandleAdvancedW(lpConverted, bBit32);
+	hReturn = HcModuleHandleAdvancedW(lpConverted, bBit32, bBit64);
 	
 	HcFree(lpConverted);
+	return hReturn;
+}
+
+DECL_EXTERN_API(ULONG64, ModuleRemoteHandle64W, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName)
+{
+	ULONG64 hReturn = 0;
+	PEB64 Peb;
+	LDR_DATA_TABLE_ENTRY64 Entry;
+
+	ZERO(&Entry);
+	ZERO(&Peb);
+
+	if (!lpModuleName)
+	{
+		HcProcessGetPeb64(hProcess, &Peb);
+
+		hReturn = (ULONG64) Peb.ImageBaseAddress;
+		return hReturn;
+	}
+
+	if (!HcModuleRemoteEntry64W(hProcess, lpModuleName, TRUE, &Entry))
+	{
+		return hReturn;
+	}
+
+	hReturn = (ULONG64) Entry.DllBase;
+
 	return hReturn;
 }
 
@@ -593,7 +682,7 @@ DECL_EXTERN_API(DWORD, ModulePathAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 
 	if (!Module)
 	{
-		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE);
+		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE, FALSE);
 		if (!Module)
 		{
 			return 0;
@@ -650,7 +739,7 @@ DECL_EXTERN_API(DWORD, ModuleNameAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 
 	if (!Module)
 	{
-		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE);
+		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE, FALSE);
 		if (!Module)
 		{
 			return 0;
@@ -892,7 +981,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleEnumW, CONST IN ModuleCallbackW pCallback, IN LPA
 
 DECL_EXTERN_API(BOOLEAN, ModuleEnumAdvancedW, CONST IN ModuleCallbackW pCallback, IN LPARAM lParam)
 {
-	return HcModuleEnumAdvancedExW(NtCurrentProcess, pCallback, lParam);
+	return HcModuleEnumAdvancedExW(NtCurrentProcess(), pCallback, lParam);
 }
 
 DECL_EXTERN_API(DWORD, ModulePathA, CONST IN HANDLE hModule, OUT LPSTR lpModulePath)
@@ -978,22 +1067,22 @@ DECL_EXTERN_API(DWORD, ModuleNameW, CONST IN HMODULE hModule, OUT LPWSTR lpModul
 
 DECL_EXTERN_API(DWORD, ModulePathAdvancedA, CONST IN HMODULE hModule, OUT LPSTR lpPath)
 {
-	return HcModulePathAdvancedExA(NtCurrentProcess, hModule, lpPath);
+	return HcModulePathAdvancedExA(NtCurrentProcess(), hModule, lpPath);
 }
 
 DECL_EXTERN_API(DWORD, ModulePathAdvancedW, CONST IN HMODULE hModule, OUT LPWSTR lpPath)
 {
-	return HcModulePathAdvancedExW(NtCurrentProcess, hModule, lpPath);
+	return HcModulePathAdvancedExW(NtCurrentProcess(), hModule, lpPath);
 }
 
 DECL_EXTERN_API(DWORD, ModuleNameAdvancedA, CONST IN HMODULE hModule, OUT LPSTR lpName)
 {
-	return HcModuleNameAdvancedExA(NtCurrentProcess, hModule, lpName);
+	return HcModuleNameAdvancedExA(NtCurrentProcess(), hModule, lpName);
 }
 
 DECL_EXTERN_API(DWORD, ModuleNameAdvancedW, CONST IN HMODULE hModule, OUT LPWSTR lpName)
 {
-	return HcModuleNameAdvancedExW(NtCurrentProcess, hModule, lpName);
+	return HcModuleNameAdvancedExW(NtCurrentProcess(), hModule, lpName);
 }
 
 DECL_EXTERN_API(ULONG, ModuleChecksum, CONST IN HMODULE hModule)

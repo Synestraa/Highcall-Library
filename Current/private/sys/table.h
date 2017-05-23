@@ -446,6 +446,17 @@ HC_GLOBAL SYS_INDEX sciWaitForWorkViaWorkerFactory;
 HC_GLOBAL SYS_INDEX sciWaitHighEventPair;
 HC_GLOBAL SYS_INDEX sciWaitLowEventPair;
 HC_GLOBAL SYS_INDEX sciWorkerFactoryWorkerReady;
+HC_GLOBAL SYS_INDEX sciWriteFile;
+HC_GLOBAL SYS_INDEX sciWriteFileGather;
+HC_GLOBAL SYS_INDEX sciWriteRequestData;
+HC_GLOBAL SYS_INDEX sciWriteVirtualMemory;
+HC_GLOBAL SYS_INDEX sciYieldExecution;
+
+/* wow64_x64_custom */
+HC_GLOBAL SYS_INDEX sciClose64;
+HC_GLOBAL SYS_INDEX sciCreateThreadEx64;
+
+/* wow64_x64_regular */
 HC_GLOBAL SYS_INDEX sciWow64AllocateVirtualMemory64;
 HC_GLOBAL SYS_INDEX sciWow64CallFunction64;
 HC_GLOBAL SYS_INDEX sciWow64CsrAllocateCaptureBuffer;
@@ -465,8 +476,3 @@ HC_GLOBAL SYS_INDEX sciWow64IsProcessorFeaturePresent;
 HC_GLOBAL SYS_INDEX sciWow64QueryInformationProcess64;
 HC_GLOBAL SYS_INDEX sciWow64ReadVirtualMemory64;
 HC_GLOBAL SYS_INDEX sciWow64WriteVirtualMemory64;
-HC_GLOBAL SYS_INDEX sciWriteFile;
-HC_GLOBAL SYS_INDEX sciWriteFileGather;
-HC_GLOBAL SYS_INDEX sciWriteRequestData;
-HC_GLOBAL SYS_INDEX sciWriteVirtualMemory;
-HC_GLOBAL SYS_INDEX sciYieldExecution;

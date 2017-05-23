@@ -30,254 +30,6 @@ ExtractSyscallIndex(LPBYTE lpByte)
 #endif
 }
 
-/* OUTDATED 
-//
-// The purpose of this function is to update system call indicies based on a buffer received from reading ntdll.dll.
-//
-// lpModule is required to be the base of ntdll.dll!
-//
-static BOOLEAN update_syscall_list(PBYTE lpBuffer, PBYTE lpModule)
-{
-	PIMAGE_EXPORT_DIRECTORY pExports;
-	PDWORD pExportNames;
-	PDWORD pExportFunctions;
-	PWORD pExportOrdinals;
-	LPSTR lpCurrentFunction;
-	PIMAGE_NT_HEADERS pHeaderNT;
-	DWORD dwFileOffset = 0;
-	LPBYTE VirtualAddress = 0;
-	DWORD RelativeVirtualAddress = 0;
-
-	pHeaderNT = HcImageGetNtHeader((HMODULE)lpModule);
-	if (!pHeaderNT)
-	{
-		return FALSE;
-	}
-
-	pExports = HcImageGetExportDirectory(HcGlobal.HandleNtdll);
-	if (!pExports)
-	{
-		return FALSE;
-	}
-
-	pExportNames = (PDWORD)(pExports->AddressOfNames + lpModule);
-	pExportOrdinals = (PWORD)(pExports->AddressOfNameOrdinals + lpModule);
-	pExportFunctions = (PDWORD)(pExports->AddressOfFunctions + lpModule);
-
-	for (unsigned int i = 0; i < pExports->NumberOfFunctions; i++)
-	{
-		lpCurrentFunction = (LPSTR)(pExportNames[i] + lpModule);
-		if (!lpCurrentFunction)
-		{
-			continue;
-		}
-
-		VirtualAddress = pExportFunctions[pExportOrdinals[i]] + lpModule;
-		if (VirtualAddress)
-		{
-			RelativeVirtualAddress = (DWORD) (VirtualAddress - lpModule);
-
-			dwFileOffset = HcImageOffsetFromRVA(pHeaderNT, RelativeVirtualAddress);
-
-			PBYTE lpbFn = lpBuffer + dwFileOffset;
-			if (!IsSyscall(lpbFn))
-			{
-				continue;
-			}
-
-			DWORD dwIndex = ExtractSyscallIndex(lpbFn);
-
-			/* Syscall identification begin
-
-			SYSINDEX_ASSERT(QueryInformationToken);
-			SYSINDEX_ASSERT(OpenProcessToken);
-			SYSINDEX_ASSERT(ResumeProcess);
-			SYSINDEX_ASSERT(SuspendProcess);
-			SYSINDEX_ASSERT(AllocateVirtualMemory);
-			SYSINDEX_ASSERT(FreeVirtualMemory);
-			SYSINDEX_ASSERT(ResumeThread);
-			SYSINDEX_ASSERT(OpenThread);
-			SYSINDEX_ASSERT(SuspendThread);
-			SYSINDEX_ASSERT(QueryInformationThread);
-			SYSINDEX_ASSERT(CreateThread);
-			SYSINDEX_ASSERT(FlushInstructionCache);
-			SYSINDEX_ASSERT(OpenProcess);
-			SYSINDEX_ASSERT(ProtectVirtualMemory);
-			SYSINDEX_ASSERT(ReadVirtualMemory);
-			SYSINDEX_ASSERT(WriteVirtualMemory);
-			SYSINDEX_ASSERT(QueryInformationProcess);
-			SYSINDEX_ASSERT(QuerySystemInformation);
-			SYSINDEX_ASSERT(Close);
-			SYSINDEX_ASSERT(QueryVirtualMemory);
-			SYSINDEX_ASSERT(AdjustPrivilegesToken);
-			SYSINDEX_ASSERT(SetInformationThread);
-			SYSINDEX_ASSERT(OpenDirectoryObject);
-			SYSINDEX_ASSERT(CreateThreadEx);
-			SYSINDEX_ASSERT(WaitForSingleObject);
-			SYSINDEX_ASSERT(WaitForMultipleObjects);
-			SYSINDEX_ASSERT(LockVirtualMemory);
-			SYSINDEX_ASSERT(UnlockVirtualMemory);
-			SYSINDEX_ASSERT(CreateFile);
-			SYSINDEX_ASSERT(QueryInformationFile);
-			SYSINDEX_ASSERT(QueryVolumeInformationFile);
-			SYSINDEX_ASSERT(QueryObject);
-			SYSINDEX_ASSERT(DelayExecution);
-			SYSINDEX_ASSERT(WriteFile);
-			SYSINDEX_ASSERT(TerminateProcess);
-			SYSINDEX_ASSERT(DeviceIoControlFile);
-			SYSINDEX_ASSERT(FsControlFile);
-			SYSINDEX_ASSERT(CreateEvent);
-			SYSINDEX_ASSERT(OpenThreadToken);
-			SYSINDEX_ASSERT(DuplicateObject);
-			SYSINDEX_ASSERT(SetInformationFile);
-			SYSINDEX_ASSERT(ReadFile);
-			SYSINDEX_ASSERT(Wow64QueryInformationProcess64);
-			SYSINDEX_ASSERT(Wow64ReadVirtualMemory64);
-			SYSINDEX_ASSERT(Wow64WriteVirtualMemory64);
-			SYSINDEX_ASSERT(FlushBuffersFile);
-			SYSINDEX_ASSERT(CreateMutant);
-
-		}
-	}
-
-	return TRUE;
-}*/
-
-/* OUTDATED
- * This function should not be exported.
- * It's use is defined on a per session basis.
- * Use of highcall syscalls unpermitted due to undefined indicies.
- * This function will define system call indicies.
-
-BOOLEAN
-HCAPI
-HcSysInitializeNativeSystem()
-{
-	NTSTATUS Status;
-	PBYTE lpBuffer;
-	HANDLE hFile;
-	LPWSTR lpModulePath;
-	LPBYTE lpModule = (LPBYTE) HcGlobal.HandleNtdll;
-	HMODULE hModule = HcGlobal.HandleNtdll;
-	DWORD dwFileSize;
-	FILE_STANDARD_INFORMATION FileStandard;
-	IO_STATUS_BLOCK IoStatusBlock;
-	OBJECT_ATTRIBUTES ObjectAttributes;
-	UNICODE_STRING NtPathU;
-	PVOID EaBuffer = NULL;
-	DWORD EaLength = 0; 
-	DWORD dwNumberOfBytesRead = 0;
-
-	ZERO(&IoStatusBlock);
-	ZERO(&FileStandard);
-
-	lpModulePath = HcStringAllocW(MAX_PATH);
-
-	if (!HcModulePathW(hModule, lpModulePath))
-	{
-		HcFree(lpModulePath);
-		return FALSE;
-	}
-
-	if (!RtlDosPathNameToNtPathName_U(lpModulePath,
-		&NtPathU,
-		NULL,
-		NULL))
-	{
-		HcFree(lpModulePath);
-		return FALSE;
-	}
-
-	InitializeObjectAttributes(&ObjectAttributes,
-		&NtPathU,
-		0,
-		NULL,
-		NULL);
-
-	ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
-
-	Status = NtCreateFile(&hFile,
-		GENERIC_READ | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
-		&ObjectAttributes,
-		&IoStatusBlock,
-		NULL,
-		FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY),
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		FILE_OPEN,
-		FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE,
-		EaBuffer,
-		EaLength);
-
-	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcFree(lpModulePath);
-		return FALSE;
-	}
-
-	ZERO(&IoStatusBlock);
-
-	Status = NtQueryInformationFile(hFile,
-		&IoStatusBlock,
-		&FileStandard,
-		sizeof(FILE_STANDARD_INFORMATION),
-		FileStandardInformation);
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcFree(lpModulePath);
-		return FALSE;
-	}
-
-	dwFileSize = FileStandard.EndOfFile.u.LowPart;
-	lpBuffer = (PBYTE)HcAlloc(dwFileSize);
-
-	HcFree(lpModulePath);
-
-	ZERO(&IoStatusBlock);
-
-	Status = NtReadFile(hFile,
-		NULL,
-		NULL,
-		NULL,
-		&IoStatusBlock,
-		lpBuffer,
-		dwFileSize,
-		NULL,
-		NULL);
-
-	if (Status == STATUS_PENDING)
-	{
-		if (HcObjectWait(hFile, INFINITE))
-		{
-			Status = IoStatusBlock.Status;
-		}
-	}
-
-	if (!NT_SUCCESS(Status))
-	{
-		HcErrorSetNtStatus(Status);
-		HcFree(lpBuffer);
-		return FALSE;
-	}
-
-	dwNumberOfBytesRead = (DWORD)IoStatusBlock.Information;
-	if (dwNumberOfBytesRead != dwFileSize)
-	{
-		HcFree(lpBuffer);
-		return FALSE;
-	}
-
-
-	NtClose(hFile);
-
-	update_syscall_list(lpBuffer, lpModule);
-
-	HcFree(lpBuffer);
-	return TRUE;
-}*/
-
 /* The logic behind this function is checking whether the wow64 call gate is active or not. */
 BOOLEAN
 #ifndef _WIN64
@@ -302,3 +54,147 @@ HcIsWow64()
 	return FALSE;
 #endif
 }
+
+
+NTSTATUS
+SYSCALLAPI
+HcClose64(IN DWORD64 hObj)
+{
+	return (NTSTATUS) HcWow64Syscall(sciClose64, 1, (DWORD64) hObj);
+}
+
+
+NTSTATUS
+SYSCALLAPI
+HcCreateThreadEx64(OUT PTR_64(PHANDLE) PtrThreadHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN PTR_64(POBJECT_ATTRIBUTES) PtrObjectAttributes OPTIONAL,
+	IN PTR_64(HANDLE) ProcessHandle,
+	IN PTR_64(PVOID) StartRoutine,
+	IN PTR_64(PVOID) Argument OPTIONAL,
+	IN ULONG CreateFlags,
+	IN PTR_64(ULONG_PTR) ZeroBits OPTIONAL,
+	IN PTR_64(SIZE_T) StackSize OPTIONAL,
+	IN PTR_64(SIZE_T) MaximumStackSize OPTIONAL,
+	IN PTR_64(PVOID) AttributeList OPTIONAL)
+{
+	return (NTSTATUS) HcWow64Syscall(sciCreateThreadEx64, 11, (DWORD64) PtrThreadHandle,
+		(DWORD64) DesiredAccess,
+		(DWORD64) PtrObjectAttributes OPTIONAL,
+		(DWORD64) ProcessHandle,
+		(DWORD64) StartRoutine,
+		(DWORD64) Argument OPTIONAL,
+		(DWORD64) CreateFlags,
+		(DWORD64) ZeroBits OPTIONAL,
+		(DWORD64) StackSize OPTIONAL,
+		(DWORD64) MaximumStackSize OPTIONAL,
+		(DWORD64) AttributeList OPTIONAL);
+}
+
+#include <windows.h> /* this shouldn't include any libraries. */
+
+// to fool M$ inline asm compiler I'm using 2 DWORDs instead of DWORD64
+// use of DWORD64 will generate wrong 'pop word ptr[]' and it will break stack
+union reg64 {
+	unsigned long dw[2];
+	unsigned long long v;
+};
+
+// warning C4409: illegal instruction size
+#pragma warning(disable : 4409)
+DWORD64 X64SyscallV(int idx, int argC, va_list args)
+{
+	/* grab the first four arguments to accompany the x86_64 calling convention. */
+	DWORD64 _rcx = (argC > 0) ? argC--, va_arg(args, DWORD64) : 0;
+	DWORD64 _rdx = (argC > 0) ? argC--, va_arg(args, DWORD64) : 0;
+	DWORD64 _r8 = (argC > 0) ? argC--, va_arg(args, DWORD64) : 0;
+	DWORD64 _r9 = (argC > 0) ? argC--, va_arg(args, DWORD64) : 0;
+	union reg64 _rax;
+	DWORD32 _idx = idx;
+	_rax.v = 0;
+
+	DWORD64 restArgs = (DWORD64) &va_arg(args, DWORD64);
+
+	/* easier use in inline assembly. */
+	DWORD64 _argC = argC;
+	DWORD back_esp = 0;
+
+	__asm
+	{
+		/* save the esp. */
+		mov    back_esp, esp
+
+		/* align esp to prepare for the 64bit rsp conversion. */
+		and esp, 0xFFFFFFF8
+
+		X64_Start();
+
+		/* x86_64 calling convention. first 4 arguments go into rcx, rdx, r8, r9 */
+		push _rcx
+		X64_Pop(_RCX);
+		push _rdx
+		X64_Pop(_RDX);
+		push _r8
+		X64_Pop(_R8);
+		push _r9
+		X64_Pop(_R9);
+
+		push edi
+
+		push restArgs
+		X64_Pop(_RDI);
+
+		push _argC
+		X64_Pop(_RAX);
+
+		/* put rest of arguments on the stack */
+		test eax, eax
+		jz _ls_e
+		lea edi, dword ptr[edi + 8 * eax - 8]
+
+	_ls:
+		test eax, eax
+		jz _ls_e
+		push dword ptr[edi]
+		sub edi, 8
+		sub eax, 1
+		jmp _ls
+
+	_ls_e :
+		/* create stack space for spilling registers */
+		sub esp, 0x28
+
+		mov eax, _idx
+		push _rcx
+		X64_Pop(_R10);
+		e(0x0F) e(0x05); /* syscall */
+
+		/* cleanup stack */
+		push   _argC
+		X64_Pop(_RCX);
+		lea    esp, dword ptr[esp + 8 * ecx + 0x20]
+		pop    edi
+
+		/* set return value */
+		X64_Push(_RAX);
+		pop _rax.dw[0]
+		X64_End();
+
+		mov    esp, back_esp
+	}
+
+	return _rax.v;
+}
+
+
+DWORD64
+SYSCALLAPI
+HcWow64Syscall(int idx, int argC, ...)
+{
+	va_list args;
+	va_start(args, argC);
+
+	return X64SyscallV(idx, argC, args);
+}
+
+#pragma warning(default : 4409)

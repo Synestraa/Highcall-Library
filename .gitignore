@@ -153,6 +153,17 @@ publish/
 *.pubxml
 *.publishproj
 
+AntiCheat/
+AntiCheatLibrary/
+Driver/
+Tests/
+PolicyRemover/
+BlindProcess/
+Inject/
+World of Warcraft/
+BlackBoneDrv/
+AlefClient/
+
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
 # checkin your Azure Web App publish settings, but sensitive information contained
 # in these scripts will be unencrypted
@@ -309,11 +320,3 @@ __pycache__/
 *.exe
 *.out
 *.app
-
-AntiCheat/
-AntiCheatLibrary/
-Driver/
-Tests/
-PolicyRemover/
-BlindProcess/
-Inject/

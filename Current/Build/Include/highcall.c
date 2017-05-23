@@ -556,15 +556,12 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciAccessCheckByTypeResultListAndAuditAlarm = sciTable_wow64_NtAccessCheckByTypeResultListAndAuditAlarm[v];
 		sciAccessCheckByTypeResultListAndAuditAlarmByHandle = sciTable_wow64_NtAccessCheckByTypeResultListAndAuditAlarmByHandle[v];
 		sciAddAtom = sciTable_wow64_NtAddAtom[v];
-		sciAddAtomEx = sciTable_wow64_NtAddAtomEx[v];
 		sciAddBootEntry = sciTable_wow64_NtAddBootEntry[v];
 		sciAddDriverEntry = sciTable_wow64_NtAddDriverEntry[v];
 		sciAdjustGroupsToken = sciTable_wow64_NtAdjustGroupsToken[v];
 		sciAdjustPrivilegesToken = sciTable_wow64_NtAdjustPrivilegesToken[v];
-		sciAdjustTokenClaimsAndDeviceGroups = sciTable_wow64_NtAdjustTokenClaimsAndDeviceGroups[v];
 		sciAlertResumeThread = sciTable_wow64_NtAlertResumeThread[v];
 		sciAlertThread = sciTable_wow64_NtAlertThread[v];
-		sciAlertThreadByThreadId = sciTable_wow64_NtAlertThreadByThreadId[v];
 		sciAllocateLocallyUniqueId = sciTable_wow64_NtAllocateLocallyUniqueId[v];
 		sciAllocateReserveObject = sciTable_wow64_NtAllocateReserveObject[v];
 		sciAllocateUserPhysicalPages = sciTable_wow64_NtAllocateUserPhysicalPages[v];
@@ -573,7 +570,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciAlpcAcceptConnectPort = sciTable_wow64_NtAlpcAcceptConnectPort[v];
 		sciAlpcCancelMessage = sciTable_wow64_NtAlpcCancelMessage[v];
 		sciAlpcConnectPort = sciTable_wow64_NtAlpcConnectPort[v];
-		sciAlpcConnectPortEx = sciTable_wow64_NtAlpcConnectPortEx[v];
 		sciAlpcCreatePort = sciTable_wow64_NtAlpcCreatePort[v];
 		sciAlpcCreatePortSection = sciTable_wow64_NtAlpcCreatePortSection[v];
 		sciAlpcCreateResourceReserve = sciTable_wow64_NtAlpcCreateResourceReserve[v];
@@ -584,7 +580,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciAlpcDeleteSectionView = sciTable_wow64_NtAlpcDeleteSectionView[v];
 		sciAlpcDeleteSecurityContext = sciTable_wow64_NtAlpcDeleteSecurityContext[v];
 		sciAlpcDisconnectPort = sciTable_wow64_NtAlpcDisconnectPort[v];
-		sciAlpcImpersonateClientContainerOfPort = sciTable_wow64_NtAlpcImpersonateClientContainerOfPort[v];
 		sciAlpcImpersonateClientOfPort = sciTable_wow64_NtAlpcImpersonateClientOfPort[v];
 		sciAlpcOpenSenderProcess = sciTable_wow64_NtAlpcOpenSenderProcess[v];
 		sciAlpcOpenSenderThread = sciTable_wow64_NtAlpcOpenSenderThread[v];
@@ -596,23 +591,18 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciApphelpCacheControl = sciTable_wow64_NtApphelpCacheControl[v];
 		sciAreMappedFilesTheSame = sciTable_wow64_NtAreMappedFilesTheSame[v];
 		sciAssignProcessToJobObject = sciTable_wow64_NtAssignProcessToJobObject[v];
-		sciAssociateWaitCompletionPacket = sciTable_wow64_NtAssociateWaitCompletionPacket[v];
 		sciCallbackReturn = sciTable_wow64_NtCallbackReturn[v];
 		sciCancelIoFile = sciTable_wow64_NtCancelIoFile[v];
 		sciCancelIoFileEx = sciTable_wow64_NtCancelIoFileEx[v];
 		sciCancelSynchronousIoFile = sciTable_wow64_NtCancelSynchronousIoFile[v];
 		sciCancelTimer = sciTable_wow64_NtCancelTimer[v];
-		sciCancelTimer2 = sciTable_wow64_NtCancelTimer2[v];
-		sciCancelWaitCompletionPacket = sciTable_wow64_NtCancelWaitCompletionPacket[v];
 		sciClearEvent = sciTable_wow64_NtClearEvent[v];
 		sciClose = sciTable_wow64_NtClose[v];
 		sciCloseObjectAuditAlarm = sciTable_wow64_NtCloseObjectAuditAlarm[v];
 		sciCommitComplete = sciTable_wow64_NtCommitComplete[v];
 		sciCommitEnlistment = sciTable_wow64_NtCommitEnlistment[v];
-		sciCommitRegistryTransaction = sciTable_wow64_NtCommitRegistryTransaction[v];
 		sciCommitTransaction = sciTable_wow64_NtCommitTransaction[v];
 		sciCompactKeys = sciTable_wow64_NtCompactKeys[v];
-		sciCompareObjects = sciTable_wow64_NtCompareObjects[v];
 		sciCompareTokens = sciTable_wow64_NtCompareTokens[v];
 		sciCompleteConnectPort = sciTable_wow64_NtCompleteConnectPort[v];
 		sciCompressKey = sciTable_wow64_NtCompressKey[v];
@@ -620,32 +610,26 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciContinue = sciTable_wow64_NtContinue[v];
 		sciCreateDebugObject = sciTable_wow64_NtCreateDebugObject[v];
 		sciCreateDirectoryObject = sciTable_wow64_NtCreateDirectoryObject[v];
-		sciCreateDirectoryObjectEx = sciTable_wow64_NtCreateDirectoryObjectEx[v];
-		sciCreateEnclave = sciTable_wow64_NtCreateEnclave[v];
 		sciCreateEnlistment = sciTable_wow64_NtCreateEnlistment[v];
 		sciCreateEvent = sciTable_wow64_NtCreateEvent[v];
 		sciCreateEventPair = sciTable_wow64_NtCreateEventPair[v];
 		sciCreateFile = sciTable_wow64_NtCreateFile[v];
-		sciCreateIRTimer = sciTable_wow64_NtCreateIRTimer[v];
 		sciCreateIoCompletion = sciTable_wow64_NtCreateIoCompletion[v];
 		sciCreateJobObject = sciTable_wow64_NtCreateJobObject[v];
 		sciCreateJobSet = sciTable_wow64_NtCreateJobSet[v];
 		sciCreateKey = sciTable_wow64_NtCreateKey[v];
 		sciCreateKeyTransacted = sciTable_wow64_NtCreateKeyTransacted[v];
 		sciCreateKeyedEvent = sciTable_wow64_NtCreateKeyedEvent[v];
-		sciCreateLowBoxToken = sciTable_wow64_NtCreateLowBoxToken[v];
 		sciCreateMailslotFile = sciTable_wow64_NtCreateMailslotFile[v];
 		sciCreateMutant = sciTable_wow64_NtCreateMutant[v];
 		sciCreateNamedPipeFile = sciTable_wow64_NtCreateNamedPipeFile[v];
 		sciCreatePagingFile = sciTable_wow64_NtCreatePagingFile[v];
-		sciCreatePartition = sciTable_wow64_NtCreatePartition[v];
 		sciCreatePort = sciTable_wow64_NtCreatePort[v];
 		sciCreatePrivateNamespace = sciTable_wow64_NtCreatePrivateNamespace[v];
 		sciCreateProcess = sciTable_wow64_NtCreateProcess[v];
 		sciCreateProcessEx = sciTable_wow64_NtCreateProcessEx[v];
 		sciCreateProfile = sciTable_wow64_NtCreateProfile[v];
 		sciCreateProfileEx = sciTable_wow64_NtCreateProfileEx[v];
-		sciCreateRegistryTransaction = sciTable_wow64_NtCreateRegistryTransaction[v];
 		sciCreateResourceManager = sciTable_wow64_NtCreateResourceManager[v];
 		sciCreateSection = sciTable_wow64_NtCreateSection[v];
 		sciCreateSemaphore = sciTable_wow64_NtCreateSemaphore[v];
@@ -653,15 +637,11 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciCreateThread = sciTable_wow64_NtCreateThread[v];
 		sciCreateThreadEx = sciTable_wow64_NtCreateThreadEx[v];
 		sciCreateTimer = sciTable_wow64_NtCreateTimer[v];
-		sciCreateTimer2 = sciTable_wow64_NtCreateTimer2[v];
 		sciCreateToken = sciTable_wow64_NtCreateToken[v];
-		sciCreateTokenEx = sciTable_wow64_NtCreateTokenEx[v];
 		sciCreateTransaction = sciTable_wow64_NtCreateTransaction[v];
 		sciCreateTransactionManager = sciTable_wow64_NtCreateTransactionManager[v];
 		sciCreateUserProcess = sciTable_wow64_NtCreateUserProcess[v];
-		sciCreateWaitCompletionPacket = sciTable_wow64_NtCreateWaitCompletionPacket[v];
 		sciCreateWaitablePort = sciTable_wow64_NtCreateWaitablePort[v];
-		sciCreateWnfStateName = sciTable_wow64_NtCreateWnfStateName[v];
 		sciCreateWorkerFactory = sciTable_wow64_NtCreateWorkerFactory[v];
 		sciDebugActiveProcess = sciTable_wow64_NtDebugActiveProcess[v];
 		sciDebugContinue = sciTable_wow64_NtDebugContinue[v];
@@ -674,8 +654,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciDeleteObjectAuditAlarm = sciTable_wow64_NtDeleteObjectAuditAlarm[v];
 		sciDeletePrivateNamespace = sciTable_wow64_NtDeletePrivateNamespace[v];
 		sciDeleteValueKey = sciTable_wow64_NtDeleteValueKey[v];
-		sciDeleteWnfStateData = sciTable_wow64_NtDeleteWnfStateData[v];
-		sciDeleteWnfStateName = sciTable_wow64_NtDeleteWnfStateName[v];
 		sciDeviceIoControlFile = sciTable_wow64_NtDeviceIoControlFile[v];
 		sciDisableLastKnownGood = sciTable_wow64_NtDisableLastKnownGood[v];
 		sciDisplayString = sciTable_wow64_NtDisplayString[v];
@@ -690,12 +668,9 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciEnumerateTransactionObject = sciTable_wow64_NtEnumerateTransactionObject[v];
 		sciEnumerateValueKey = sciTable_wow64_NtEnumerateValueKey[v];
 		sciExtendSection = sciTable_wow64_NtExtendSection[v];
-		sciFilterBootOption = sciTable_wow64_NtFilterBootOption[v];
 		sciFilterToken = sciTable_wow64_NtFilterToken[v];
-		sciFilterTokenEx = sciTable_wow64_NtFilterTokenEx[v];
 		sciFindAtom = sciTable_wow64_NtFindAtom[v];
 		sciFlushBuffersFile = sciTable_wow64_NtFlushBuffersFile[v];
-		sciFlushBuffersFileEx = sciTable_wow64_NtFlushBuffersFileEx[v];
 		sciFlushInstallUILanguage = sciTable_wow64_NtFlushInstallUILanguage[v];
 		sciFlushInstructionCache = sciTable_wow64_NtFlushInstructionCache[v];
 		sciFlushKey = sciTable_wow64_NtFlushKey[v];
@@ -707,11 +682,8 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciFreezeRegistry = sciTable_wow64_NtFreezeRegistry[v];
 		sciFreezeTransactions = sciTable_wow64_NtFreezeTransactions[v];
 		sciFsControlFile = sciTable_wow64_NtFsControlFile[v];
-		sciGetCachedSigningLevel = sciTable_wow64_NtGetCachedSigningLevel[v];
-		sciGetCompleteWnfStateSubscription = sciTable_wow64_NtGetCompleteWnfStateSubscription[v];
 		sciGetContextThread = sciTable_wow64_NtGetContextThread[v];
 		sciGetCurrentProcessorNumber = sciTable_wow64_NtGetCurrentProcessorNumber[v];
-		sciGetCurrentProcessorNumberEx = sciTable_wow64_NtGetCurrentProcessorNumberEx[v];
 		sciGetDevicePowerState = sciTable_wow64_NtGetDevicePowerState[v];
 		sciGetMUIRegistryInfo = sciTable_wow64_NtGetMUIRegistryInfo[v];
 		sciGetNextProcess = sciTable_wow64_NtGetNextProcess[v];
@@ -722,7 +694,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciImpersonateAnonymousToken = sciTable_wow64_NtImpersonateAnonymousToken[v];
 		sciImpersonateClientOfPort = sciTable_wow64_NtImpersonateClientOfPort[v];
 		sciImpersonateThread = sciTable_wow64_NtImpersonateThread[v];
-		sciInitializeEnclave = sciTable_wow64_NtInitializeEnclave[v];
 		sciInitializeNlsFiles = sciTable_wow64_NtInitializeNlsFiles[v];
 		sciInitializeRegistry = sciTable_wow64_NtInitializeRegistry[v];
 		sciInitiatePowerAction = sciTable_wow64_NtInitiatePowerAction[v];
@@ -731,7 +702,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciIsUILanguageComitted = sciTable_wow64_NtIsUILanguageComitted[v];
 		sciListenPort = sciTable_wow64_NtListenPort[v];
 		sciLoadDriver = sciTable_wow64_NtLoadDriver[v];
-		sciLoadEnclaveData = sciTable_wow64_NtLoadEnclaveData[v];
 		sciLoadKey = sciTable_wow64_NtLoadKey[v];
 		sciLoadKey2 = sciTable_wow64_NtLoadKey2[v];
 		sciLoadKeyEx = sciTable_wow64_NtLoadKeyEx[v];
@@ -741,7 +711,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciLockVirtualMemory = sciTable_wow64_NtLockVirtualMemory[v];
 		sciMakePermanentObject = sciTable_wow64_NtMakePermanentObject[v];
 		sciMakeTemporaryObject = sciTable_wow64_NtMakeTemporaryObject[v];
-		sciManagePartition = sciTable_wow64_NtManagePartition[v];
 		sciMapCMFModule = sciTable_wow64_NtMapCMFModule[v];
 		sciMapUserPhysicalPages = sciTable_wow64_NtMapUserPhysicalPages[v];
 		sciMapUserPhysicalPagesScatter = sciTable_wow64_NtMapUserPhysicalPagesScatter[v];
@@ -766,12 +735,10 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciOpenKeyedEvent = sciTable_wow64_NtOpenKeyedEvent[v];
 		sciOpenMutant = sciTable_wow64_NtOpenMutant[v];
 		sciOpenObjectAuditAlarm = sciTable_wow64_NtOpenObjectAuditAlarm[v];
-		sciOpenPartition = sciTable_wow64_NtOpenPartition[v];
 		sciOpenPrivateNamespace = sciTable_wow64_NtOpenPrivateNamespace[v];
 		sciOpenProcess = sciTable_wow64_NtOpenProcess[v];
 		sciOpenProcessToken = sciTable_wow64_NtOpenProcessToken[v];
 		sciOpenProcessTokenEx = sciTable_wow64_NtOpenProcessTokenEx[v];
-		sciOpenRegistryTransaction = sciTable_wow64_NtOpenRegistryTransaction[v];
 		sciOpenResourceManager = sciTable_wow64_NtOpenResourceManager[v];
 		sciOpenSection = sciTable_wow64_NtOpenSection[v];
 		sciOpenSemaphore = sciTable_wow64_NtOpenSemaphore[v];
@@ -836,7 +803,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciQuerySection = sciTable_wow64_NtQuerySection[v];
 		sciQuerySecurityAttributesToken = sciTable_wow64_NtQuerySecurityAttributesToken[v];
 		sciQuerySecurityObject = sciTable_wow64_NtQuerySecurityObject[v];
-		sciQuerySecurityPolicy = sciTable_wow64_NtQuerySecurityPolicy[v];
 		sciQuerySemaphore = sciTable_wow64_NtQuerySemaphore[v];
 		sciQuerySymbolicLinkObject = sciTable_wow64_NtQuerySymbolicLinkObject[v];
 		sciQuerySystemEnvironmentValue = sciTable_wow64_NtQuerySystemEnvironmentValue[v];
@@ -849,8 +815,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciQueryValueKey = sciTable_wow64_NtQueryValueKey[v];
 		sciQueryVirtualMemory = sciTable_wow64_NtQueryVirtualMemory[v];
 		sciQueryVolumeInformationFile = sciTable_wow64_NtQueryVolumeInformationFile[v];
-		sciQueryWnfStateData = sciTable_wow64_NtQueryWnfStateData[v];
-		sciQueryWnfStateNameInformation = sciTable_wow64_NtQueryWnfStateNameInformation[v];
 		sciQueueApcThread = sciTable_wow64_NtQueueApcThread[v];
 		sciQueueApcThreadEx = sciTable_wow64_NtQueueApcThreadEx[v];
 		sciRaiseException = sciTable_wow64_NtRaiseException[v];
@@ -887,10 +851,8 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciRestoreKey = sciTable_wow64_NtRestoreKey[v];
 		sciResumeProcess = sciTable_wow64_NtResumeProcess[v];
 		sciResumeThread = sciTable_wow64_NtResumeThread[v];
-		sciRevertContainerImpersonation = sciTable_wow64_NtRevertContainerImpersonation[v];
 		sciRollbackComplete = sciTable_wow64_NtRollbackComplete[v];
 		sciRollbackEnlistment = sciTable_wow64_NtRollbackEnlistment[v];
-		sciRollbackRegistryTransaction = sciTable_wow64_NtRollbackRegistryTransaction[v];
 		sciRollbackTransaction = sciTable_wow64_NtRollbackTransaction[v];
 		sciRollforwardTransactionManager = sciTable_wow64_NtRollforwardTransactionManager[v];
 		sciSaveKey = sciTable_wow64_NtSaveKey[v];
@@ -900,8 +862,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciSerializeBoot = sciTable_wow64_NtSerializeBoot[v];
 		sciSetBootEntryOrder = sciTable_wow64_NtSetBootEntryOrder[v];
 		sciSetBootOptions = sciTable_wow64_NtSetBootOptions[v];
-		sciSetCachedSigningLevel = sciTable_wow64_NtSetCachedSigningLevel[v];
-		sciSetCachedSigningLevel2 = sciTable_wow64_NtSetCachedSigningLevel2[v];
 		sciSetContextThread = sciTable_wow64_NtSetContextThread[v];
 		sciSetDebugFilterState = sciTable_wow64_NtSetDebugFilterState[v];
 		sciSetDefaultHardErrorPort = sciTable_wow64_NtSetDefaultHardErrorPort[v];
@@ -913,7 +873,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciSetEventBoostPriority = sciTable_wow64_NtSetEventBoostPriority[v];
 		sciSetHighEventPair = sciTable_wow64_NtSetHighEventPair[v];
 		sciSetHighWaitLowEventPair = sciTable_wow64_NtSetHighWaitLowEventPair[v];
-		sciSetIRTimer = sciTable_wow64_NtSetIRTimer[v];
 		sciSetInformationDebugObject = sciTable_wow64_NtSetInformationDebugObject[v];
 		sciSetInformationEnlistment = sciTable_wow64_NtSetInformationEnlistment[v];
 		sciSetInformationFile = sciTable_wow64_NtSetInformationFile[v];
@@ -922,12 +881,10 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciSetInformationObject = sciTable_wow64_NtSetInformationObject[v];
 		sciSetInformationProcess = sciTable_wow64_NtSetInformationProcess[v];
 		sciSetInformationResourceManager = sciTable_wow64_NtSetInformationResourceManager[v];
-		sciSetInformationSymbolicLink = sciTable_wow64_NtSetInformationSymbolicLink[v];
 		sciSetInformationThread = sciTable_wow64_NtSetInformationThread[v];
 		sciSetInformationToken = sciTable_wow64_NtSetInformationToken[v];
 		sciSetInformationTransaction = sciTable_wow64_NtSetInformationTransaction[v];
 		sciSetInformationTransactionManager = sciTable_wow64_NtSetInformationTransactionManager[v];
-		sciSetInformationVirtualMemory = sciTable_wow64_NtSetInformationVirtualMemory[v];
 		sciSetInformationWorkerFactory = sciTable_wow64_NtSetInformationWorkerFactory[v];
 		sciSetIntervalProfile = sciTable_wow64_NtSetIntervalProfile[v];
 		sciSetIoCompletion = sciTable_wow64_NtSetIoCompletion[v];
@@ -944,20 +901,17 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciSetSystemTime = sciTable_wow64_NtSetSystemTime[v];
 		sciSetThreadExecutionState = sciTable_wow64_NtSetThreadExecutionState[v];
 		sciSetTimer = sciTable_wow64_NtSetTimer[v];
-		sciSetTimer2 = sciTable_wow64_NtSetTimer2[v];
 		sciSetTimerEx = sciTable_wow64_NtSetTimerEx[v];
 		sciSetTimerResolution = sciTable_wow64_NtSetTimerResolution[v];
 		sciSetUuidSeed = sciTable_wow64_NtSetUuidSeed[v];
 		sciSetValueKey = sciTable_wow64_NtSetValueKey[v];
 		sciSetVolumeInformationFile = sciTable_wow64_NtSetVolumeInformationFile[v];
-		sciSetWnfProcessNotificationEvent = sciTable_wow64_NtSetWnfProcessNotificationEvent[v];
 		sciShutdownSystem = sciTable_wow64_NtShutdownSystem[v];
 		sciShutdownWorkerFactory = sciTable_wow64_NtShutdownWorkerFactory[v];
 		sciSignalAndWaitForSingleObject = sciTable_wow64_NtSignalAndWaitForSingleObject[v];
 		sciSinglePhaseReject = sciTable_wow64_NtSinglePhaseReject[v];
 		sciStartProfile = sciTable_wow64_NtStartProfile[v];
 		sciStopProfile = sciTable_wow64_NtStopProfile[v];
-		sciSubscribeWnfStateChange = sciTable_wow64_NtSubscribeWnfStateChange[v];
 		sciSuspendProcess = sciTable_wow64_NtSuspendProcess[v];
 		sciSuspendThread = sciTable_wow64_NtSuspendThread[v];
 		sciSystemDebugControl = sciTable_wow64_NtSystemDebugControl[v];
@@ -978,11 +932,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUnlockFile = sciTable_wow64_NtUnlockFile[v];
 		sciUnlockVirtualMemory = sciTable_wow64_NtUnlockVirtualMemory[v];
 		sciUnmapViewOfSection = sciTable_wow64_NtUnmapViewOfSection[v];
-		sciUnmapViewOfSectionEx = sciTable_wow64_NtUnmapViewOfSectionEx[v];
-		sciUnsubscribeWnfStateChange = sciTable_wow64_NtUnsubscribeWnfStateChange[v];
-		sciUpdateWnfStateData = sciTable_wow64_NtUpdateWnfStateData[v];
 		sciVdmControl = sciTable_wow64_NtVdmControl[v];
-		sciWaitForAlertByThreadId = sciTable_wow64_NtWaitForAlertByThreadId[v];
 		sciWaitForDebugEvent = sciTable_wow64_NtWaitForDebugEvent[v];
 		sciWaitForKeyedEvent = sciTable_wow64_NtWaitForKeyedEvent[v];
 		sciWaitForMultipleObjects = sciTable_wow64_NtWaitForMultipleObjects[v];
@@ -992,7 +942,17 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciWaitHighEventPair = sciTable_wow64_NtWaitHighEventPair[v];
 		sciWaitLowEventPair = sciTable_wow64_NtWaitLowEventPair[v];
 		sciWorkerFactoryWorkerReady = sciTable_wow64_NtWorkerFactoryWorkerReady[v];
-		sciWow64AllocateVirtualMemory64 = sciTable_wow64_NtWow64AllocateVirtualMemory64[v];
+		sciWriteFile = sciTable_wow64_NtWriteFile[v];
+		sciWriteFileGather = sciTable_wow64_NtWriteFileGather[v];
+		sciWriteRequestData = sciTable_wow64_NtWriteRequestData[v];
+		sciWriteVirtualMemory = sciTable_wow64_NtWriteVirtualMemory[v];
+		sciYieldExecution = sciTable_wow64_NtYieldExecution[v];
+
+		/* wow64_x64_custom */
+		sciClose64 = sciTable_86_64_NtClose[v];
+		sciCreateThreadEx64 = sciTable_86_64_NtCreateThreadEx[v];
+
+		/* wow64_x64_regular */
 		sciWow64CallFunction64 = sciTable_wow64_NtWow64CallFunction64[v];
 		sciWow64CsrAllocateCaptureBuffer = sciTable_wow64_NtWow64CsrAllocateCaptureBuffer[v];
 		sciWow64CsrAllocateMessagePointer = sciTable_wow64_NtWow64CsrAllocateMessagePointer[v];
@@ -1007,15 +967,10 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciWow64DebuggerCall = sciTable_wow64_NtWow64DebuggerCall[v];
 		sciWow64GetCurrentProcessorNumberEx = sciTable_wow64_NtWow64GetCurrentProcessorNumberEx[v];
 		sciWow64GetNativeSystemInformation = sciTable_wow64_NtWow64GetNativeSystemInformation[v];
-		sciWow64IsProcessorFeaturePresent = sciTable_wow64_NtWow64IsProcessorFeaturePresent[v];
 		sciWow64QueryInformationProcess64 = sciTable_wow64_NtWow64QueryInformationProcess64[v];
 		sciWow64ReadVirtualMemory64 = sciTable_wow64_NtWow64ReadVirtualMemory64[v];
 		sciWow64WriteVirtualMemory64 = sciTable_wow64_NtWow64WriteVirtualMemory64[v];
-		sciWriteFile = sciTable_wow64_NtWriteFile[v];
-		sciWriteFileGather = sciTable_wow64_NtWriteFileGather[v];
-		sciWriteRequestData = sciTable_wow64_NtWriteRequestData[v];
-		sciWriteVirtualMemory = sciTable_wow64_NtWriteVirtualMemory[v];
-		sciYieldExecution = sciTable_wow64_NtYieldExecution[v];
+		sciWow64AllocateVirtualMemory64 = sciTable_wow64_NtWow64AllocateVirtualMemory64[v];
 	}
 	else
 	{
@@ -1432,7 +1387,7 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeSecurity(VOID)
 
 	HcGlobal.IsElevated = FALSE;
 
-	Status = HcOpenProcessToken(NtCurrentProcess,
+	Status = HcOpenProcessToken(NtCurrentProcess(),
 		TOKEN_QUERY,
 		&hToken);
 
@@ -1468,7 +1423,7 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
 	if (NtCurrentTeb()->IsImpersonating)
 	{
 		Status = HcOpenThreadToken(
-			NtCurrentThread,
+			NtCurrentThread(),
 			TOKEN_IMPERSONATE,
 			TRUE,
 			&Token);
@@ -1481,7 +1436,7 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
 		NewToken = NULL;
 
 		Status = HcSetInformationThread(
-			NtCurrentThread,
+			NtCurrentThread(),
 			ThreadImpersonationToken,
 			&NewToken,
 			sizeof(HANDLE));
@@ -1549,7 +1504,7 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
 
 	if (Token)
 	{
-		HcSetInformationThread(NtCurrentThread,
+		HcSetInformationThread(NtCurrentThread(),
 			ThreadImpersonationToken,
 			&Token,
 			sizeof(Token));
@@ -1593,16 +1548,13 @@ NTSTATUS INITIALIZATION_ROUTINE HcInitialize()
 	//Status = InitializeNamedObjectDirectory(); 
 
 	/* Set debug privilege, convenience. */
-	HcProcessSetPrivilegeW(NtCurrentProcess, SE_DEBUG_NAME, TRUE);
+	HcProcessSetPrivilegeW(NtCurrentProcess(), SE_DEBUG_NAME, TRUE);
 
 	HcErrorSetNtStatus(Status);
 	return STATUS_SUCCESS;
 }
 
 #ifdef _WINDLL
-
-#include <windows.h>
-#include <stdio.h>
 
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
@@ -1619,13 +1571,7 @@ BOOL WINAPI DllMain(
 			/* Check if we failed. */
 			if (!NT_SUCCESS(Status))
 			{
-				char errornote[1024];
-				HcErrorGetNoteA(errornote);
-				
-				char message[2048];
-				sprintf_s(message, sizeof(message), "Could not start Highcall, Status: %x, Note: %s\n", Status, errornote);
-				OutputDebugStringA(message);
-				return FALSE;
+				return Status;
 			}
 
 			return TRUE;

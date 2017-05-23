@@ -10,18 +10,16 @@ typedef VOID(NTAPI *pRtlInitUnicodeString) (PUNICODE_STRING, PCWSTR);
 typedef NTSTATUS(NTAPI *pLdrGetProcedureAddress) (HMODULE, PANSI_STRING, ULONG, LPVOID*);
 typedef VOID(NTAPI *pRtlInitAnsiString) (PANSI_STRING, LPCSTR);
 
-typedef struct _MANUAL_MAP
-{
-	LPVOID ImageBase;
-	PIMAGE_NT_HEADERS NtHeaders;
-	PIMAGE_BASE_RELOCATION BaseRelocation;
-	PIMAGE_IMPORT_DESCRIPTOR ImportDirectory;
-	pLoadLibraryA fnLoadLibraryA;
-	pGetProcAddress fnGetProcAddress;
+typedef struct {
+	ULONG ImageBase;
+	ULONG NtHeaders;
+	ULONG BaseRelocation;
+	ULONG ImportDirectory;
+	ULONG fnLoadLibraryA;
+	ULONG fnGetProcAddress;
 } MANUAL_MAP, *PMANUAL_MAP;
 
-typedef struct _Payload32Initializer
-{
+typedef struct {
 	LPVOID ImageBase;
 	PIMAGE_NT_HEADERS NtHeaders;
 	PIMAGE_BASE_RELOCATION BaseRelocation;
@@ -32,7 +30,7 @@ typedef struct _Payload32Initializer
 	pRtlInitAnsiString fnRtlInitAnsiString;
 	pGetProcAddress fnGetProcAddress;
 	pLoadLibraryA fnLoadLibraryA;
-} Payload32Initializer, *PPayload32Initializer;
+} MMAP_INITIALIZER32, *PMMAP_INITIALIZER32;
 
 CONST BYTE payload64[] =
 {
@@ -397,11 +395,32 @@ CONST BYTE payload32[] =
 // put both functions in the same section.  as long as there are only two, they should be in order
 #pragma code_seg( ".text$A" )
 
+static __inline size_t __mbstowcs(register wchar_t *pwcs, register const char *s, int n)
+{
+	register int i = n;
+
+	while (--i >= 0)
+	{
+		if (!(*pwcs++ = *s++))
+		{
+			return n - i - 1;
+		}
+	}
+	return n - i;
+}
+
+static __inline size_t __str_size(register const char *s)
+{
+	size_t ret = 0;
+	for (; *(s++); ret++);
+
+	return ret;
+}
+
 __declspec(noinline)
 static
-SIZE_T HCAPI MmInternalResolve(PVOID lParam)
+SIZE_T HCAPI MmInternalResolve(PMMAP_INITIALIZER32 Init)
 {
-	PMANUAL_MAP ManualInject = (PMANUAL_MAP)lParam;
 	HMODULE hModule;
 	ULONG_PTR Index, Function, Count, Delta;
 	PULONG_PTR FunctionPointer;
@@ -410,10 +429,20 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 	PIMAGE_IMPORT_DESCRIPTOR pIID;
 	PIMAGE_IMPORT_BY_NAME pIBN;
 	PIMAGE_THUNK_DATA FirstThunk, OrigFirstThunk;
+	PIMAGE_NT_HEADERS32 NtHeaders;
+	pRtlInitAnsiString fnRtlInitAnsiString;
+	pRtlInitUnicodeString fnRtlInitUnicodeString;
+	pLdrGetProcedureAddress fnLdrGetProcedureAddress;
+	pLdrLoadDll fnLdrLoadDll;
 	PDLL_MAIN EntryPoint;
 
-	pIBR = ManualInject->BaseRelocation;
-	Delta = (ULONG_PTR) ((LPBYTE)ManualInject->ImageBase - ManualInject->NtHeaders->OptionalHeader.ImageBase);
+	NtHeaders = (PIMAGE_NT_HEADERS32) Init->NtHeaders;
+	pIBR = Init->BaseRelocation;
+	Delta = (ULONG_PTR) ((LPBYTE) Init->ImageBase - NtHeaders->OptionalHeader.ImageBase);
+	fnLdrLoadDll = (pLdrLoadDll) Init->fnLdrLoadDll;
+	fnLdrGetProcedureAddress = (pLdrGetProcedureAddress) Init->fnLdrGetProcedureAddress;
+	fnRtlInitAnsiString = (pRtlInitAnsiString) Init->fnRtlInitAnsiString;
+	fnRtlInitUnicodeString = (pRtlInitUnicodeString) Init->fnRtlInitUnicodeString;
 
 	while (pIBR->VirtualAddress)
 	{
@@ -426,7 +455,7 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 			{
 				if (ImportList[Index])
 				{
-					FunctionPointer = (PULONG_PTR) ((LPBYTE)ManualInject->ImageBase + (pIBR->VirtualAddress + (ImportList[Index] & 0xFFFF)));
+					FunctionPointer = (PULONG_PTR) Init->ImageBase + pIBR->VirtualAddress + (ImportList[Index] & 0xFFFF);
 					*FunctionPointer += Delta;
 				}
 			}
@@ -435,28 +464,24 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 		pIBR = (PIMAGE_BASE_RELOCATION)((LPBYTE)pIBR + pIBR->SizeOfBlock);
 	}
 
-	pIID = ManualInject->ImportDirectory;
+	pIID = Init->ImportDirectory;
 
-	/* Manually load all the library imports */
 	while (pIID->Characteristics)
 	{
-		OrigFirstThunk = (PIMAGE_THUNK_DATA)((LPBYTE)ManualInject->ImageBase + pIID->OriginalFirstThunk);
-		FirstThunk = (PIMAGE_THUNK_DATA)((LPBYTE)ManualInject->ImageBase + pIID->FirstThunk);
+		OrigFirstThunk = (PIMAGE_THUNK_DATA)((LPBYTE)Init->ImageBase + pIID->OriginalFirstThunk);
+		FirstThunk = (PIMAGE_THUNK_DATA)((LPBYTE)Init->ImageBase + pIID->FirstThunk);
 
-
-		hModule = ManualInject->fnLoadLibraryA((LPCSTR)ManualInject->ImageBase + pIID->Name);
+		hModule = Init->fnLoadLibraryA((LPCSTR)Init->ImageBase + pIID->Name);
 		if (!hModule)
 		{
 			return FALSE;
 		}
 
-		/* Import each */
 		while (OrigFirstThunk->u1.AddressOfData)
 		{
 			if (OrigFirstThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
-				/* By ordinal */
-				Function = (SIZE_T)ManualInject->fnGetProcAddress(hModule, (LPCSTR)(OrigFirstThunk->u1.Ordinal & 0xFFFF));
+				Function = (SIZE_T)Init->fnGetProcAddress(hModule, (LPCSTR)(OrigFirstThunk->u1.Ordinal & 0xFFFF));
 
 				if (!Function)
 				{
@@ -468,9 +493,8 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 
 			else
 			{
-				/* By name */
-				pIBN = (PIMAGE_IMPORT_BY_NAME)((LPBYTE)ManualInject->ImageBase + OrigFirstThunk->u1.AddressOfData);
-				Function = (SIZE_T)ManualInject->fnGetProcAddress(hModule, (LPCSTR)pIBN->Name);
+				pIBN = (PIMAGE_IMPORT_BY_NAME)((LPBYTE)Init->ImageBase + OrigFirstThunk->u1.AddressOfData);
+				Function = (SIZE_T)Init->fnGetProcAddress(hModule, (LPCSTR)pIBN->Name);
 
 				if (!Function)
 				{
@@ -487,10 +511,10 @@ SIZE_T HCAPI MmInternalResolve(PVOID lParam)
 		pIID++;
 	}
 
-	if (ManualInject->NtHeaders->OptionalHeader.AddressOfEntryPoint)
+	if (NtHeaders->OptionalHeader.AddressOfEntryPoint)
 	{
-		EntryPoint = (PDLL_MAIN)((LPBYTE)ManualInject->ImageBase + ManualInject->NtHeaders->OptionalHeader.AddressOfEntryPoint);
-		return EntryPoint((HMODULE)ManualInject->ImageBase, DLL_PROCESS_ATTACH, NULL);
+		EntryPoint = (PDLL_MAIN)((LPBYTE)Init->ImageBase + NtHeaders->OptionalHeader.AddressOfEntryPoint);
+		return EntryPoint((HMODULE)Init->ImageBase, DLL_PROCESS_ATTACH, NULL);
 	}
 
 	return TRUE;
@@ -517,62 +541,11 @@ HcParameterVerifyInjectModuleManual(PVOID Buffer)
 	return pHeaderNt && (pHeaderNt->FileHeader.Characteristics & IMAGE_FILE_DLL);
 }
 
-static
-DECL_EXTERN_API(DWORD, AssertFunctionSize, LPVOID lpBaseAddress)
-{
-	DWORD Size = 0;
-	_CodeInfo Info;
-	_DInst* Instructions = NULL;
-	DWORD InstructionIndex = 0;
-	DWORD InstructionCount = 0;
-	PBYTE lpStream = (PBYTE)lpBaseAddress;
-
-	HcInternalSet(&Info, 0, sizeof(Info));
-
-	Info.code = (unsigned char*)lpBaseAddress;
-	Info.codeLen = 0x100 * 10;
-	Info.codeOffset = 0;
-	Info.features = DF_NONE;
-	Info.dt = DISASM_TYPE;
-
-	/* Assume that each instruction is 10 bytes at least */
-	Instructions = HcAlloc(sizeof(_DecodedInst) * 0x100);
-	if (!Instructions)
-	{
-		return 0;
-	}
-
-	/* Decode the instructions */
-	if (distorm_decompose(&Info, Instructions, 0x100, &InstructionCount) == DECRES_INPUTERR
-		|| InstructionCount == 0)
-	{
-		HcFree(Instructions);
-		return 0;
-	}
-
-	/* Loop through all the instructions. */
-	for (InstructionIndex = 0; InstructionIndex < InstructionCount; InstructionIndex++)
-	{
-		_DInst instr = Instructions[InstructionIndex];
-		if (*(lpStream + instr.addr) != 0xcc)
-		{
-			Size += instr.size;
-		}
-		else if (instr.size == 1)
-		{
-			break;
-		}
-	}
-
-	HcFree(Instructions);
-	return Size;
-}
-
 DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
 {
 	MANUAL_MAP ManualInject;
 	PIMAGE_DOS_HEADER pHeaderDos;
-	PIMAGE_NT_HEADERS pHeaderNt;
+	PIMAGE_NT_HEADERS32 pHeaderNt;
 	PIMAGE_SECTION_HEADER pHeaderSection;
 	HANDLE hThread = NULL, hFile;
 	PVOID ImageBuffer, LoaderBuffer = NULL, FileBuffer = NULL;
@@ -581,8 +554,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 	DWORD dwFileSize;
 	BOOLEAN bSuspended = FALSE;
 	BOOLEAN bReturnValue = FALSE;
-	ULONG_PTR hKernel32;
-	ULONG_PTR hRemoteKernel32;
+	HMODULE hRemoteKernel32;
 	ULONG_PTR dwRvaLoadLibraryA;
 	ULONG_PTR dwRvaGetProcAddress;
 
@@ -594,7 +566,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 		return FALSE;
 	}
 
-	if (hProcess != NtCurrentProcess)
+	if (hProcess != NtCurrentProcess())
 	{
 		if (HcProcessSuspendEx(hProcess))
 		{
@@ -637,7 +609,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 	}
 
 	pHeaderDos = HcImageGetDosHeader(FileBuffer);
-	pHeaderNt = HcImageGetNtHeader(FileBuffer);
+	pHeaderNt = HcImageGetNtHeader32((ULONG_PTR) FileBuffer);
 
 	/* Allocate for the code/data of the dll */
 	ImageBuffer = HcVirtualAllocEx(hProcess,
@@ -662,23 +634,14 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 		goto done;
 	}
 
-	pHeaderSection = (PIMAGE_SECTION_HEADER)(pHeaderNt + 1);
+	pHeaderSection = IMAGE_FIRST_SECTION(pHeaderNt);
 
 	/* Write sections of the dll to the process, not guaranteed to succeed, so no check. */
 	for (SectionIndex = 0; SectionIndex < pHeaderNt->FileHeader.NumberOfSections; SectionIndex++)
 	{
-		/* This writes to relative locations of our loaded executable.
-
-		ImageBuffer points to the base of the library.
-		.VirtualAddress points to the relative offset from the base of the library to the section.
-
-		FileBuffer points to the base of the file.
-		.PointerToRawData points to the relative offset from the file to the section.
-		*/
-
 		HcProcessWriteMemory(hProcess,
-			(PVOID)((LPBYTE)ImageBuffer + pHeaderSection[SectionIndex].VirtualAddress),
-			(PVOID)((LPBYTE)FileBuffer + pHeaderSection[SectionIndex].PointerToRawData),
+			(LPBYTE)ImageBuffer + pHeaderSection[SectionIndex].VirtualAddress,
+			(LPBYTE)FileBuffer + pHeaderSection[SectionIndex].PointerToRawData,
 			pHeaderSection[SectionIndex].SizeOfRawData,
 			&BytesWritten);
 	}
@@ -696,23 +659,23 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 		goto done;
 	}
 
-	hKernel32 = (ULONG_PTR) HcModuleHandleW(L"kernel32.dll");
-	hRemoteKernel32 = (ULONG_PTR) HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", FALSE);
+	hRemoteKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE, FALSE);
+
 	if (!hRemoteKernel32)
 	{
 		HcVirtualFreeEx(hProcess, ImageBuffer, 0, MEM_RELEASE);
 		goto done;
 	}
 
-	dwRvaLoadLibraryA = (ULONG_PTR) HcModuleProcedureW((HMODULE)hKernel32, L"LoadLibraryA") - hRemoteKernel32;
-	dwRvaGetProcAddress = (ULONG_PTR) HcModuleProcedureW((HMODULE)hKernel32, L"GetProcAddress") - hRemoteKernel32;
+	dwRvaLoadLibraryA = HcProcessGetExportAddress32A(hProcess, hRemoteKernel32, "LoadLibraryA") - (ULONG_PTR) hRemoteKernel32;
+	dwRvaGetProcAddress = HcProcessGetExportAddress32A(hProcess, hRemoteKernel32, "GetProcAddress") - (ULONG_PTR) hRemoteKernel32;
 
-	ManualInject.ImageBase = ImageBuffer;
-	ManualInject.NtHeaders = (PIMAGE_NT_HEADERS)((LPBYTE)ImageBuffer + pHeaderDos->e_lfanew);
-	ManualInject.BaseRelocation = (PIMAGE_BASE_RELOCATION)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-	ManualInject.ImportDirectory = (PIMAGE_IMPORT_DESCRIPTOR)((LPBYTE)ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-	ManualInject.fnLoadLibraryA = (pLoadLibraryA) ((ULONG_PTR) hRemoteKernel32 + dwRvaLoadLibraryA);
-	ManualInject.fnGetProcAddress = (pGetProcAddress) ((ULONG_PTR)hRemoteKernel32 + dwRvaGetProcAddress);
+	ManualInject.ImageBase =		POINTER_32BIT(ImageBuffer);
+	ManualInject.NtHeaders =		POINTER_32BIT((LPBYTE) ImageBuffer + pHeaderDos->e_lfanew);
+	ManualInject.BaseRelocation =	POINTER_32BIT((LPBYTE) ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+	ManualInject.ImportDirectory =	POINTER_32BIT((LPBYTE) ImageBuffer + pHeaderNt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+	ManualInject.fnLoadLibraryA =	POINTER_32BIT((LPBYTE) hRemoteKernel32 + dwRvaLoadLibraryA);
+	ManualInject.fnGetProcAddress = POINTER_32BIT((LPBYTE) hRemoteKernel32 + dwRvaGetProcAddress);
 
 	/* Set the manual map information */
 	if (!HcProcessWriteMemory(hProcess,
@@ -727,20 +690,19 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 
 	/* Set the code which will resolve imports, relocations  */
 	if (!HcProcessWriteMemory(hProcess,
-		(PVOID)((PMANUAL_MAP)LoaderBuffer + 1),
-		payload32,
+		(LPBYTE) LoaderBuffer + sizeof(MANUAL_MAP),
+		(LPVOID) payload32,
 		sizeof(payload32),
 		&BytesWritten))
 	{
 		HcVirtualFreeEx(hProcess, ImageBuffer, 0, MEM_RELEASE);
 
-		HcErrorSetNtStatus(STATUS_ACCESS_VIOLATION);
 		goto done;
 	}
 
-	/* Execute the code in a new thread */
+	/* Execute the code in a new thread  */
 	hThread = HcProcessCreateThread(hProcess,
-		(LPTHREAD_START_ROUTINE)((PMANUAL_MAP)LoaderBuffer + 1),
+		(LPTHREAD_START_ROUTINE) ((LPBYTE) LoaderBuffer + sizeof(MANUAL_MAP)),
 		LoaderBuffer,
 		0);
 
@@ -793,61 +755,325 @@ done:
 	return bReturnValue;
 }
 
+DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
+{
+	UNICODE_STRING32 InternalPath;
+	ULONG PathSize = 0;
+	LPBYTE InternalShellcodeCopy = NULL;
+	PUNICODE_STRING32 exPath;
+	LPVOID pfnLdrLoadDll;
+	HMODULE hNtdll;
+	HANDLE hThread = NULL;
+	ULONG ExitCode = 0;
+	ULONG hReturn = 0;
+	LPBYTE exShellcode;
+	HMODULE* exModule;
+	LPBYTE exPayload = NULL;
+	LPWSTR exszPath;
+
+	CONST UCHAR x86_shellcode_ldr[] =
+	{
+		0x68, 0, 0, 0, 0,           // push ModuleHandle            offset +1 
+		0x68, 0, 0, 0, 0,           // push ModuleFileName          offset +6
+		0x6A, 0,                    // push Flags  
+		0x6A, 0,                    // push PathToFile
+		0xE8, 0, 0, 0, 0,           // call LdrLoadDll              offset +15
+		0xC2, 0x04, 0x00            // ret 4
+	};
+
+	hNtdll = HcModuleHandleAdvancedExW(hProcess, L"ntdll.dll", TRUE, FALSE);
+	if (!hNtdll)
+	{
+		goto done;
+	}
+
+	pfnLdrLoadDll = (LPVOID) HcProcessGetExportAddress32W(hProcess, hNtdll, L"LdrLoadDll");
+	if (!pfnLdrLoadDll)
+	{
+		goto done;
+	}
+
+	PathSize = HcStringSizeW(szcPath);
+	if (!PathSize)
+	{
+		goto done;
+	}
+
+	exPayload = (LPBYTE) HcVirtualAllocEx(hProcess,
+		NULL, 
+		sizeof(x86_shellcode_ldr) + sizeof(*exPath) + PathSize + sizeof(ULONG), 
+		MEM_COMMIT | MEM_RESERVE, 
+		PAGE_EXECUTE_READWRITE);
+
+	if (!exPayload)
+	{
+		goto done;
+	}
+
+	exShellcode = exPayload;
+	exPath = (PUNICODE_STRING32) (exPayload + sizeof(x86_shellcode_ldr));
+	exszPath = (LPWSTR) ((LPBYTE) exPath) + sizeof(*exPath);
+	exModule = (HMODULE*) ((LPBYTE) exszPath) + PathSize;
+
+	InternalPath.Length = (USHORT) PathSize;
+	InternalPath.MaximumLength = (USHORT) PathSize + sizeof(UNICODE_NULL);
+	InternalPath.Buffer = (ULONG) (ULONG_PTR) exszPath;
+
+	if (!HcProcessWriteMemory(hProcess, exPath, &InternalPath, sizeof(InternalPath), NULL))
+	{
+		goto done;
+	}
+
+	if (!HcProcessWriteMemory(hProcess, exszPath, (LPVOID) szcPath, PathSize, NULL))
+	{
+		goto done;
+	}
+
+	InternalShellcodeCopy = (LPBYTE) HcAlloc(sizeof(x86_shellcode_ldr));
+	if (!InternalShellcodeCopy)
+	{
+		goto done;
+	}
+
+	HcInternalCopy(InternalShellcodeCopy, x86_shellcode_ldr, sizeof(x86_shellcode_ldr));
+
+	*(ULONG*) (InternalShellcodeCopy + 1) = (ULONG) (ULONG_PTR) exModule;
+	*(ULONG*) (InternalShellcodeCopy + 6) = (ULONG) (ULONG_PTR) exPath;
+	*(ULONG*) (InternalShellcodeCopy + 15) = (ULONG) ((ULONG_PTR) pfnLdrLoadDll - (ULONG_PTR) exShellcode - 19);
+
+	if (!HcProcessWriteMemory(hProcess, exShellcode, InternalShellcodeCopy, sizeof(x86_shellcode_ldr), NULL))
+	{
+		goto done;
+	}
+
+	hThread = HcProcessCreateThread(hProcess, (LPTHREAD_START_ROUTINE) exShellcode, NULL, 0);
+	if (!hThread)
+	{
+		goto done;
+	}
+
+	HcObjectWait(hThread, INFINITE);
+
+	if (!HcProcessReadMemory(hProcess, exModule, &hReturn, sizeof(ULONG), NULL))
+	{
+		HcErrorSetNtStatus(STATUS_FAIL_CHECK);
+	}
+
+done:
+	if (hThread != NULL)
+	{
+		HcObjectClose(&hThread);
+	}
+
+	if (exPayload != NULL)
+	{
+		HcVirtualFreeEx(hProcess, exPayload, 0, MEM_RELEASE);
+	}
+
+	if (InternalShellcodeCopy != NULL)
+	{
+		HcFree(InternalShellcodeCopy);
+	}
+
+	return hReturn;
+}
+
+DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
+{
+	UNICODE_STRING64 InternalPath;
+	ULONG PathSize = 0;
+	LPBYTE InternalShellcodeCopy = NULL;
+	DWORD64 pfnLdrLoadDll;
+	DWORD64 hNtdll;
+	HANDLE hThread = NULL;
+	ULONG ExitCode = 0;
+	ULONG64 hReturn = 0;
+	DWORD64 exPathUnicode;
+	DWORD64 exszPath;
+	DWORD64 exShellcode;
+	DWORD64 expModule;
+	DWORD64 exPayload = 0;
+
+	CONST UCHAR x86_64_shellcode_ldr[] =
+	{
+		0x48, 0x83, 0xEC, 0x28,                 // sub rsp, 0x28
+		0x48, 0x31, 0xC9,                       // xor rcx, rcx
+		0x48, 0x31, 0xD2,                       // xor rdx, rdx
+		0x49, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,     // mov r8, ModuleFileName   offset +12
+		0x49, 0xB9, 0, 0, 0, 0, 0, 0, 0, 0,     // mov r9, ModuleHandle     offset +22
+		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,     // mov rax, LdrLoadDll      offset +32
+		0xFF, 0xD0,                             // call rax
+		0x48, 0x83, 0xC4, 0x28,                 // add rsp, 0x28
+		0xC3                                    // ret
+	};
+
+	hNtdll = HcModuleRemoteHandle64W(hProcess, L"ntdll.dll");
+	if (!hNtdll)
+	{
+		goto done;
+	}
+
+	pfnLdrLoadDll = HcProcessGetExportAddress64W(hProcess, (ULONG64) hNtdll, L"LdrLoadDll");
+	if (!pfnLdrLoadDll)
+	{
+		goto done;
+	}
+
+	PathSize = HcStringSizeW(szcPath);
+	if (!PathSize)
+	{
+		goto done;
+	}
+
+	exPayload = HcVirtualAlloc64Ex(hProcess,
+		0, 
+		sizeof(x86_64_shellcode_ldr) + sizeof(UNICODE_STRING64) + PathSize + sizeof(ULONG64), 
+		MEM_COMMIT | MEM_RESERVE, 
+		PAGE_EXECUTE_READWRITE);
+
+	if (!exPayload)
+	{
+		goto done;
+	}
+
+	exShellcode = exPayload;
+	exPathUnicode = exShellcode + sizeof(x86_64_shellcode_ldr);
+	exszPath = exPathUnicode + sizeof(UNICODE_STRING64);
+	expModule = exszPath + PathSize;
+
+	InternalPath.Length = (USHORT) PathSize;
+	InternalPath.MaximumLength = (USHORT) PathSize + sizeof(UNICODE_NULL);
+	InternalPath.Buffer = exszPath;
+
+	if (!HcProcessWriteMemory64(hProcess, (PVOID64) exPathUnicode, &InternalPath, sizeof(InternalPath), NULL))
+	{
+		goto done;
+	}
+
+	if (!HcProcessWriteMemory64(hProcess, (PVOID64) exszPath, (LPVOID) szcPath, PathSize, NULL))
+	{
+		goto done;
+	}
+
+	InternalShellcodeCopy = (LPBYTE) HcAlloc(sizeof(x86_64_shellcode_ldr));
+	if (!InternalShellcodeCopy)
+	{
+		goto done;
+	}
+
+	HcInternalCopy(InternalShellcodeCopy, x86_64_shellcode_ldr, sizeof(x86_64_shellcode_ldr));
+
+	*(ULONG64*) (InternalShellcodeCopy + 12) = exPathUnicode;
+	*(ULONG64*) (InternalShellcodeCopy + 22) = expModule;
+	*(ULONG64*) (InternalShellcodeCopy + 32) = pfnLdrLoadDll;
+
+	if (!HcProcessWriteMemory64(hProcess, (PVOID64) exShellcode, InternalShellcodeCopy, sizeof(x86_64_shellcode_ldr), NULL))
+	{
+		goto done;
+	}
+
+	hThread = HcProcessCreateThread64(hProcess, exShellcode, 0, 0);
+	if (!hThread)
+	{
+		goto done;
+	}
+
+	HcObjectWait(hThread, INFINITE);
+
+	if (!HcProcessReadMemory64(hProcess, (PVOID64) expModule, &hReturn, sizeof(ULONG64), NULL))
+	{
+		HcErrorSetNtStatus(STATUS_FAIL_CHECK);
+	}
+
+done:
+	if (hThread != NULL)
+	{
+		HcObjectClose(&hThread);
+	}
+
+	if (exPayload != 0)
+	{
+		/* cannot free 64bit memory from 32bit */
+#ifdef _WIN64
+		HcVirtualFreeEx(hProcess, exPayload, 0, MEM_RELEASE);
+#endif
+	}
+
+	if (InternalShellcodeCopy != NULL)
+	{
+		HcFree(InternalShellcodeCopy);
+	}
+
+	return hReturn;
+}
+
 DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
 {
-	LPVOID PathToDll;
+#ifdef _WIN64
+	return HcInjectRemoteThread64W(hProcess, szcPath);
+#else
+	return HcInjectRemoteThread32W(hProcess, szcPath);
+#endif
+}
+
+DECL_EXTERN_API(BOOLEAN, InjectRemoteThread64W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
+{
+	ULONG64 PathToDll;
+	ULONG64 lpToLoadLibrary = 0;
+	ULONG64 hKernel32;
 	SIZE_T PathSize;
-	LPVOID lpToLoadLibrary;
-	LPWSTR szFullPath;
-	HANDLE hThread;
+	LPWSTR szFullPath = NULL;
+	HANDLE hThread = NULL;
 	DWORD ExitCode = 0;
 	HANDLE hFile;
+	BOOLEAN bReturnValue = FALSE;
+	BOOLEAN bSuspended = FALSE;
+
+	if (HcProcessSuspendEx(hProcess))
+	{
+		bSuspended = TRUE;
+	}
 
 	if (HcStringIsBad(szcPath))
 	{
 		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-		return FALSE;
+		goto done;
 	}
 
-	lpToLoadLibrary = (LPVOID)HcModuleProcedureA(HcModuleLoadW(L"kernel32.dll"), "LoadLibraryW");
+	hKernel32 = HcModuleRemoteHandle64W(hProcess, L"kernel32.dll");
+	if (!hKernel32)
+	{
+		goto done;
+	}
+
+	lpToLoadLibrary = HcProcessGetExportAddress64W(hProcess, hKernel32, L"LoadLibraryW");
 	if (!lpToLoadLibrary)
 	{
 		HcErrorSetNtStatus(STATUS_INVALID_ADDRESS);
-		return FALSE;
+		goto done;
 	}
 
-	//szFullPath = HcStringAllocW(MAX_PATH);
-	/*
+	szFullPath = HcStringAllocW(MAX_PATH);
 	if (!szFullPath)
 	{
-		//
-		// return NO_MEMORY;
-		//
 		HcErrorSetNtStatus(STATUS_NO_MEMORY);
-		return FALSE;
+		goto done;
 	}
-	*/
 
-	/*
-	// @defineme
-	if (!GetFullPathNameW(szcPath, MAX_PATH, szFullPath, NULL))
+	if (!HcPathGetFullPathNameW(szcPath, szFullPath))
 	{
 		//
 		// return INVALID_FILE;
 		//
-		HcFree(szFullPath);
-		return FALSE;
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
+		goto done;
 	}
-	*/
 
-	szFullPath = (LPWSTR) szcPath;
-
-	hFile = HcFileOpenW(szcPath, OPEN_EXISTING, GENERIC_READ);
+	hFile = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
 	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
-
-		return FALSE;
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER_1);
+		goto done;
 	}
 
 	HcObjectClose(&hFile);
@@ -855,22 +1081,145 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWS
 	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)
 	{
-		return FALSE;
+		goto done;
 	}
 
-	PathToDll = HcVirtualAllocEx(hProcess,
-		NULL,
+	PathToDll = HcVirtualAlloc64Ex(hProcess, 0,
 		PathSize + sizeof(WCHAR), 
 		MEM_COMMIT | MEM_RESERVE,
 		PAGE_READWRITE);
 
 	if (!PathToDll)
 	{
-		//
-		// SetLastError from the api should handle it.
-		//
+		goto done;
+	}
+
+	if (!HcProcessWriteMemory64(hProcess,
+		(PVOID64) PathToDll,
+		szFullPath,
+		PathSize + sizeof(WCHAR),
+		NULL))
+	{
+		goto done;
+	}
+
+	hThread = HcProcessCreateThread64(hProcess, (DWORD64) lpToLoadLibrary, (DWORD64) PathToDll, 0);
+	if (hThread == INVALID_HANDLE)
+	{
+		goto done;
+	}
+
+	/* Wait for the thread to finish */
+	HcObjectWait(hThread, INFINITE);
+	HcThreadExitCode(hThread, &ExitCode);
+
+	if (!ExitCode)
+	{
+		/* We've injected successfully, but DLL_MAIN failed. */
+		HcErrorSetNtStatus(STATUS_FAIL_CHECK);
+	}
+
+done:
+	if (hThread != NULL)
+	{
+		HcClose(hThread);
+	}
+
+	if (szFullPath != NULL)
+	{
 		HcFree(szFullPath);
-		return FALSE;
+	}
+
+	/* We can't free the allocated memory if we're in 32bit. */
+#ifdef _WIN64
+	if (lpToLoadLibrary != 0)
+	{
+		HcVirtualFreeEx(hProcess, (LPVOID) lpToLoadLibrary, 0, MEM_RELEASE);
+	}
+#endif
+	
+	if (bSuspended)
+	{
+		HcProcessResumeEx(hProcess);
+	}
+
+	return bReturnValue;
+}
+
+DECL_EXTERN_API(BOOLEAN, InjectRemoteThread32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath)
+{
+	LPBYTE PathToDll;
+	ULONG_PTR lpToLoadLibrary = 0;
+	HMODULE hKernel32;
+	SIZE_T PathSize;
+	LPWSTR szFullPath = NULL;
+	HANDLE hThread = NULL;
+	DWORD ExitCode = 0;
+	HANDLE hFile;
+	BOOLEAN bReturnValue = FALSE;
+	BOOLEAN bSuspended = FALSE;
+
+	if (HcProcessSuspendEx(hProcess))
+	{
+		bSuspended = TRUE;
+	}
+
+	if (HcStringIsBad(szcPath))
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
+		goto done;
+	}
+
+	hKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE, FALSE);
+	if (!hKernel32)
+	{
+		goto done;
+	}
+
+	lpToLoadLibrary = HcProcessGetExportAddress32W(hProcess, hKernel32, L"LoadLibraryW");
+	if (!lpToLoadLibrary)
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_ADDRESS);
+		goto done;
+	}
+
+	szFullPath = HcStringAllocW(MAX_PATH);
+	if (!szFullPath)
+	{
+		HcErrorSetNtStatus(STATUS_NO_MEMORY);
+		goto done;
+	}
+
+	if (!HcPathGetFullPathNameW(szcPath, szFullPath))
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER);
+		goto done;
+	}
+
+	hFile = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
+	if (hFile == INVALID_HANDLE)
+	{
+		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER_1);
+		goto done;
+	}
+
+	HcObjectClose(&hFile);
+
+	PathSize = HcStringSizeW(szFullPath);
+	if (!PathSize)
+	{
+		goto done;
+	}
+
+	PathToDll = HcVirtualAllocEx(hProcess,
+		0,
+		PathSize + sizeof(WCHAR),
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_READWRITE);
+
+	if (!PathToDll)
+	{
+		goto done;
 	}
 
 	if (!HcProcessWriteMemory(hProcess,
@@ -879,48 +1228,47 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWS
 		PathSize + sizeof(WCHAR),
 		NULL))
 	{
-		//
-		// SetLastError from the api should handle it.
-		//
-		HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
-		HcFree(szFullPath);
-		return FALSE;
+		goto done;
 	}
 
-	//
-	// Load the dll with a new thread in the process.
-	//
-	hThread = HcProcessCreateThread(hProcess, (LPTHREAD_START_ROUTINE)lpToLoadLibrary, (LPVOID)PathToDll, 0);
+	hThread = HcProcessCreateThread(hProcess, (LPTHREAD_START_ROUTINE) lpToLoadLibrary, (LPVOID) PathToDll, 0);
 	if (hThread == INVALID_HANDLE)
 	{
-		//
-		// Failed creating the thread
-		//
-		HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
-		return FALSE;
+		goto done;
 	}
-
 
 	/* Wait for the thread to finish */
 	HcObjectWait(hThread, INFINITE);
-
-	/* Did the thread exit? */
-	// @defineme GetExitCodeThread(hThread, &ExitCode);
+	HcThreadExitCode(hThread, &ExitCode);
 
 	if (!ExitCode)
 	{
-		/* We're out, something went wrong. */
-		//HcErrorSetDosError(ExitCode);
-
-		//HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
-
-		//HcClose(hThread);
-		//return FALSE;
+		/* We've injected successfully, but DLL_MAIN failed. */
+		HcErrorSetNtStatus(STATUS_FAIL_CHECK);
 	}
 
 	/* Done.*/
-	HcClose(hThread);
 
-	HcVirtualFreeEx(hProcess, lpToLoadLibrary, 0, MEM_RELEASE);
-	return TRUE;
+done:
+	if (hThread != NULL)
+	{
+		HcClose(hThread);
+	}
+
+	if (szFullPath != NULL)
+	{
+		HcFree(szFullPath);
+	}
+
+	if (lpToLoadLibrary != 0)
+	{
+		HcVirtualFreeEx(hProcess, (LPVOID) lpToLoadLibrary, 0, MEM_RELEASE);
+	}
+
+	if (bSuspended)
+	{
+		HcProcessResumeEx(hProcess);
+	}
+
+	return bReturnValue;
 }

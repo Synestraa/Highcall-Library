@@ -8,8 +8,6 @@
 #pragma comment(lib, "ntdll.lib")
 
 #pragma region FILE definitions
-/* file.c definitions */
-
 typedef struct _HC_FILE_INFORMATIONA
 {
 	DWORD Size;
@@ -343,7 +341,7 @@ typedef struct {
 	ModuleInformationA	MainModule;
 	BOOLEAN				CanAccess;
 	DWORD				ParentProcessId;
-} ProcessInformationExA, *PProcessInformationExA;
+} PROCESS_INFORMATION_EX_A, *PPROCESS_INFORMATION_EX_A;
 
 typedef struct
 {
@@ -352,36 +350,83 @@ typedef struct
 	ModuleInformationW	MainModule;
 	BOOLEAN				CanAccess;
 	DWORD				ParentProcessId;
-} ProcessInformationExW, *PProcessInformationExW;
+} PROCESS_INFORMATION_EX_W, *PPROCESS_INFORMATION_EX_W;
 
 typedef struct {
 	DWORD Id;
 	CHAR Name[MAX_PATH];
 	DWORD ParentProcessId;
-} ProcessInformationA, *PProcessInformationA;
+} PROCESS_INFORMATION_A, *PPROCESS_INFORMATION_A;
 
 typedef struct 
 {
 	DWORD Id;
 	WCHAR Name[MAX_PATH];
 	DWORD ParentProcessId;
-} ProcessInformationW, *PProcessInformationW;
+} PROCESS_INFORMATION_W, *PPROCESS_INFORMATION_W;
 
-typedef BOOLEAN(CALLBACK *ProcessCallbackExA)(CONST ProcessInformationExA, LPARAM);
-typedef BOOLEAN(CALLBACK *ProcessCallbackExW)(CONST ProcessInformationExW, LPARAM);
-typedef BOOLEAN(CALLBACK *ProcessCallbackA)(CONST ProcessInformationA Entry, LPARAM lParam);
-typedef BOOLEAN(CALLBACK *ProcessCallbackW)(CONST ProcessInformationW Entry, LPARAM lParam);
+typedef union {
+	ULONG_PTR Flags;
+	union {
+		struct {
+			ULONG_PTR Valid : 1;
+			ULONG_PTR ShareCount : 3;
+			ULONG_PTR Win32Protection : 11;
+			ULONG_PTR Shared : 1;
+			ULONG_PTR Node : 6;
+			ULONG_PTR Locked : 1;
+			ULONG_PTR LargePage : 1;
+			ULONG_PTR Reserved : 7;
+			ULONG_PTR Bad : 1;
+
+#if defined(_WIN64)
+			ULONG_PTR ReservedUlong : 32;
+#endif
+		};
+		struct {
+			ULONG_PTR Valid : 1;            // Valid = 0 in this format.
+			ULONG_PTR Reserved0 : 14;
+			ULONG_PTR Shared : 1;
+			ULONG_PTR Reserved1 : 15;
+			ULONG_PTR Bad : 1;
+
+#if defined(_WIN64)
+			ULONG_PTR ReservedUlong : 32;
+#endif
+		} Invalid;
+	};
+} WORKING_SET_EX_DATA_BLOCK, *PWORKING_SET_EX_DATA_BLOCK;
+
+typedef struct {
+	PVOID VirtualAddress;
+	WORKING_SET_EX_DATA_BLOCK VirtualAttributes;
+} WORKING_SET_EX_DATA, *PWORKING_SET_EX_DATA;
+
+typedef BOOLEAN(CALLBACK *ProcessCallbackExA)(CONST PROCESS_INFORMATION_EX_A, LPARAM);
+typedef BOOLEAN(CALLBACK *ProcessCallbackExW)(CONST PROCESS_INFORMATION_EX_W, LPARAM);
+typedef BOOLEAN(CALLBACK *ProcessCallbackA)(CONST PROCESS_INFORMATION_A Entry, LPARAM lParam);
+typedef BOOLEAN(CALLBACK *ProcessCallbackW)(CONST PROCESS_INFORMATION_W Entry, LPARAM lParam);
 #pragma endregion
 
 #pragma region INTERNAL definitons
-#define USER_MAX_ADDRESS 0x7FFFFFFF
+#define USER_MAX_ADDRESS_64 0x7fffffffffffffff
+#define USER_MAX_ADDRESS_32 0x7FFFFFFF
+
+#ifdef _WIN64
+#define USER_MAX_ADDRESS USER_MAX_ADDRESS_64
+#else
+#define USER_MAX_ADDRESS USER_MAX_ADDRESS_32
+#endif
+
 #define USER_MIN_ADDRESS 0x00000000
 
 #define POINTER32_HARDCODED(Type) (Type) (ULONG_PTR)
 #define POINTER64_HARDCODED(Type) (Type) (ULONG64)
 
+#define POINTER_32BIT(x) (ULONG) ((ULONG_PTR) (x))
+
 /* still needs to be allocated.. -_- */
-#define HcInternalMainModule(pmi) (HcProcessQueryInformationModule(NtCurrentProcess, NULL, pmi)) 
+#define HcInternalMainModule(pmi) (HcProcessQueryInformationModule(NtCurrentProcess(), NULL, pmi)) 
 
 #define HcInternalReadInt32(lpcAddress) ((INT)(HcInternalValidate(lpcAddress) ? (*(DWORD*)(lpcAddress)) : 0))
 #define HcInternalReadInt64(lpcAddress) ((INT64)(HcInternalValidate(lpcAddress) ? (*(DWORD64*)lpcAddress) : 0))
@@ -1048,42 +1093,46 @@ typedef struct {
 
 #pragma endregion
 
+#pragma region SCAN definitions
+#define NT_GLOBAL_FLAG_DEBUGGED (0x70)
+
+typedef VOID(CALLBACK* ScanPageMineTrigger)(LPVOID Page, NTSTATUS Status);
+
+typedef struct {
+	ULONG				MineAmount;
+	LPVOID*				Pages;
+	ULONG				Flags;
+} SCAN_PAGE_MINES, *PSCAN_PAGE_MINES;
+
+#pragma endregion
+
 #pragma region Globals
 
-typedef enum
-{
+typedef enum {
 	undefined = 0,
 	x86 = 1,
 	x86_x64 = 2
 } Architecture_Type;
 
-typedef struct _HcGlobalEnv
-{
+typedef struct {
 	/* Is the process running with administrative privileges? */
 	BOOLEAN IsElevated;
-
+	/* highcall defined version. */
 	ULONG WindowsVersion;
 	Architecture_Type ProcessorArchitecture;
-
 	/* Is the program running in Wow64? */
 	BOOLEAN IsWow64;
-
 	/* The base of kernel32.dll */
 	HMODULE HandleKernel32;
-
 	/* The base of ntdll.dll */
 	HMODULE HandleNtdll;
-
 	/* The base of user32.dll */
 	HMODULE HandleUser32;
-
 	/* our HMODULE */
 	HMODULE HandleCurrent;
-
 	/* CSRSS */
 	PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 	HANDLE BaseNamedObjectDirectory;
-
 } HcGlobalEnv, *PHcGlobalEnv;
 
 HC_GLOBAL HcGlobalEnv HcGlobal;
@@ -1159,40 +1208,56 @@ extern "C" {
 
 	/* defined in inject.c */
 	DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
-	DECL_EXTERN_API(BOOLEAN, InjectRemoteThreadW, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(ULONG64 , InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(BOOLEAN, InjectRemoteThread64W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
+	DECL_EXTERN_API(BOOLEAN, InjectRemoteThread32W, CONST IN HANDLE hProcess, IN LPCWSTR szcPath);
 
 	/* defined in process.c */
 	DECL_EXTERN_API(DWORD, ProcessGetCurrentId, VOID);
 	DECL_EXTERN_API(DWORD, ProcessGetId, IN HANDLE Process);
 	DECL_EXTERN_API(BOOLEAN, ProcessIsWow64Ex, CONST IN HANDLE hProcess);
 	DECL_EXTERN_API(BOOLEAN, ProcessIsWow64, CONST IN DWORD dwProcessId);
-	DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, IN LPDWORD lpExitCode);
-	DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, IN LPDWORD lpExitCode);
-	DECL_EXTERN_API(HANDLE, ProcessOpen, CONST SIZE_T dwProcessId, CONST ACCESS_MASK DesiredAccess);
-	DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST HANDLE hProcess, CONST LPVOID lpBaseAddress, CONST VOID* lpBuffer, SIZE_T nSize, PSIZE_T lpNumberOfBytesWritten);
-	DECL_EXTERN_API(BOOLEAN, ProcessReadMemory, CONST IN HANDLE hProcess, IN LPCVOID lpBaseAddress, IN LPVOID lpBuffer, IN SIZE_T nSize, OUT PSIZE_T lpNumberOfBytesRead);
+	DECL_EXTERN_API(BOOLEAN, ProcessExitCode, CONST IN SIZE_T dwProcessId, OUT LPDWORD lpExitCode);
+	DECL_EXTERN_API(BOOLEAN, ProcessExitCodeEx, CONST IN HANDLE hProcess, OUT LPDWORD lpExitCode);
+	DECL_EXTERN_API(HANDLE, ProcessOpen, CONST IN SIZE_T dwProcessId, CONST IN ACCESS_MASK DesiredAccess);
+	DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory, CONST IN HANDLE hProcess, CONST IN LPVOID lpBaseAddress, CONST IN LPVOID lpBuffer, IN SIZE_T nSize, OUT PSIZE_T lpNumberOfBytesWritten);
+	DECL_EXTERN_API(BOOLEAN, ProcessWriteMemory64, CONST IN HANDLE hProcess, CONST IN PVOID64 lpBaseAddress, CONST IN PVOID64 lpBuffer, IN ULONG64 nSize, OUT PULONG64 lpNumberOfBytesWritten);
+	DECL_EXTERN_API(BOOLEAN, ProcessWriteMemoryWow64, CONST IN HANDLE hProcess, CONST IN PVOID64 lpBaseAddress, CONST IN PVOID64 lpBuffer, IN ULONG64 nSize, OUT PULONG64 lpNumberOfBytesWritten);
+	DECL_EXTERN_API(BOOLEAN, ProcessReadMemory, CONST IN HANDLE hProcess, IN LPVOID lpBaseAddress, IN LPVOID lpBuffer, IN SIZE_T nSize, OUT PSIZE_T lpNumberOfBytesRead);
+	DECL_EXTERN_API(BOOLEAN, ProcessReadMemoryWow64, CONST IN HANDLE hProcess, IN PVOID64 lpBaseAddress, IN PVOID64 lpBuffer, IN ULONG64 nSize, OUT PULONG64 lpNumberOfBytesRead);
+	DECL_EXTERN_API(BOOLEAN, ProcessReadMemory64, CONST IN HANDLE hProcess, IN PVOID64 lpBaseAddress, IN PVOID64 lpBuffer, IN ULONG64 nSize, OUT PULONG64 lpNumberOfBytesRead);
 	DECL_EXTERN_API(HANDLE, ProcessCreateThread, CONST IN HANDLE hProcess, CONST IN LPTHREAD_START_ROUTINE lpStartAddress, CONST IN LPVOID lpParamater, CONST IN DWORD dwCreationFlags);
-	DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST HANDLE hProcess, CONST PUNICODE_STRING usStringIn, LPWSTR lpStringOut, CONST SIZE_T lpSize);
-	DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST SIZE_T dwProcessId);
-	DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST HANDLE hProcess);
-	DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST SIZE_T dwProcessId);
-	DECL_EXTERN_API(BOOLEAN, ProcessSuspendEx, CONST HANDLE hProcess);
-	DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST SIZE_T dwProcessId);
-	DECL_EXTERN_API(BOOLEAN, ProcessResumeEx, CONST HANDLE hProcess);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PProcessInformationW pProcessInfo);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, CONST IN LPCWSTR lpName, OUT PProcessInformationW pProcessInfo);
-	DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, CONST LPCWSTR lpProcessName, ProcessCallbackW pCallback, LPARAM lParam);
-	DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, CONST LPCWSTR lpProcessName, ProcessCallbackExW pCallback, LPARAM lParam);
-	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST HANDLE hProcess, CONST LPCSTR Privilege, CONST BOOLEAN bEnablePrivilege);
-	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST HANDLE hProcess, CONST LPCWSTR Privilege, CONST BOOLEAN bEnablePrivilege);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST HANDLE hProcess, PPEB32 pPeb);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST HANDLE hProcess, PPEB64 pPeb);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST HANDLE hProcess, PPEB32 pPeb);
-	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST HANDLE hProcess, PPEB pPeb);
-	DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST HANDLE hProcess, LPSTR* lpszCommandline, CONST BOOLEAN bAlloc);
-	DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST HANDLE hProcess, LPWSTR* lpszCommandline, CONST BOOLEAN bAlloc);
-	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST HANDLE hProcess, LPWSTR* szDirectory);
-	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST HANDLE hProcess, LPSTR* szDirectory);
+	DECL_EXTERN_API(HANDLE, ProcessCreateThread64, CONST IN HANDLE hProcess, CONST IN DWORD64 lpStartAddress, CONST IN DWORD64 lpParameter, CONST IN DWORD dwCreationFlags);
+	DECL_EXTERN_API(BOOLEAN, ProcessReadNullifiedString, CONST IN HANDLE hProcess, CONST IN PUNICODE_STRING usStringIn, OUT LPWSTR lpStringOut, CONST IN SIZE_T lpSize);
+	DECL_EXTERN_API(BOOLEAN, ProcessReady, CONST IN SIZE_T dwProcessId);
+	DECL_EXTERN_API(BOOLEAN, ProcessReadyEx, CONST IN HANDLE hProcess);
+	DECL_EXTERN_API(BOOLEAN, ProcessSuspend, CONST IN SIZE_T dwProcessId);
+	DECL_EXTERN_API(BOOLEAN, ProcessSuspendEx, CONST IN HANDLE hProcess);
+	DECL_EXTERN_API(BOOLEAN, ProcessResume, CONST IN SIZE_T dwProcessId);
+	DECL_EXTERN_API(BOOLEAN, ProcessResumeEx, CONST IN HANDLE hProcess);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PPROCESS_INFORMATION_W pProcessInfo);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, IN LPCWSTR lpName, OUT PPROCESS_INFORMATION_W pProcessInfo);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetAllByNameW, IN LPCWSTR lpName, OUT PROCESS_INFORMATION_W** pProcessInfo, OUT PULONG Count);
+	DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, IN LPCWSTR lpProcessName, IN ProcessCallbackW pCallback, IN LPARAM lParam);
+	DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, IN LPCWSTR lpProcessName, IN ProcessCallbackExW pCallback, IN LPARAM lParam);
+	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeA, CONST IN HANDLE hProcess, IN LPCSTR Privilege, CONST IN BOOLEAN bEnablePrivilege);
+	DECL_EXTERN_API(BOOLEAN, ProcessSetPrivilegeW, CONST IN HANDLE hProcess, IN LPCWSTR Privilege, CONST IN BOOLEAN bEnablePrivilege);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPebWow64, CONST IN HANDLE hProcess, OUT PPEB32 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST IN HANDLE hProcess, OUT PPEB64 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb32, CONST IN HANDLE hProcess, OUT PPEB32 pPeb);
+	DECL_EXTERN_API(BOOLEAN, ProcessGetPeb, CONST IN HANDLE hProcess, OUT PPEB pPeb);
+	DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddressW, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCWSTR lpExportSymbolName);
+	DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddressA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCSTR lpExportSymbolName);
+	DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddress32W, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCWSTR lpExportSymbolName);
+	DECL_EXTERN_API(ULONG_PTR, ProcessGetExportAddress32A, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, IN LPCSTR lpExportSymbolName);
+	DECL_EXTERN_API(ULONG64, ProcessGetExportAddress64W, CONST IN HANDLE hProcess, CONST IN ULONG64 hModule, IN LPCWSTR lpExportSymbolName);
+	DECL_EXTERN_API(ULONG64, ProcessGetExportAddress64A, CONST IN HANDLE hProcess, CONST IN ULONG64 hModule, IN LPCSTR lpExportSymbolName);
+	DECL_EXTERN_API(DWORD, ProcessGetCommandLineA, CONST IN HANDLE hProcess, OUT LPSTR* lpszCommandline, CONST IN BOOLEAN bAlloc);
+	DECL_EXTERN_API(DWORD, ProcessGetCommandLineW, CONST IN HANDLE hProcess, OUT LPWSTR* lpszCommandline, CONST IN BOOLEAN bAlloc);
+	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryW, CONST IN HANDLE hProcess, OUT LPWSTR szDirectory);
+	DECL_EXTERN_API(DWORD, ProcessGetCurrentDirectoryA, CONST IN HANDLE hProcess, OUT LPSTR szDirectory);
+	DECL_EXTERN_API(BOOLEAN, ProcessQueryWorkingSetEx, IN HANDLE hProcess, OUT PWORKING_SET_EX_DATA Data);
 
 	/* defined in internal.c */
 	DECL_EXTERN_API(BOOLEAN, InternalCompare, IN PBYTE pbFirst, IN PBYTE pbSecond, IN SIZE_T tLength);
@@ -1205,8 +1270,8 @@ extern "C" {
 	DECL_EXTERN_API(INT64, InternalReadIntEx64, IN LPCVOID lpcAddress, CONST IN PSIZE_T ptOffsets, CONST IN SIZE_T tCount);
 	DECL_EXTERN_API(BOOLEAN, InternalMemoryWrite, IN LPVOID lpAddress, IN SIZE_T tLength, CONST IN PBYTE pbNew);
 	DECL_EXTERN_API(BOOLEAN, InternalMemoryNopInstruction, IN LPVOID pAddress);
-	DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR szcPattern, IN LPCSTR szcMask, CONST IN PModuleInformationW pmInfo);
-	DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LPCSTR szcMask, IN LPBYTE lpBuffer, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR Pattern, IN LPCSTR szcMask, CONST IN PModuleInformationW pModule);
+	DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR Pattern, IN LPCSTR szcMask, IN LPBYTE lpBuffer, CONST IN SIZE_T Size);
 
 	/* defined in module.c */
 	DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInSensitive);
@@ -1224,10 +1289,12 @@ extern "C" {
 	DECL_EXTERN_API(HMODULE, ModuleLoadA, IN LPCSTR lpPath);
 	DECL_EXTERN_API(HMODULE, ModuleLoadW, IN LPCWSTR lpPath);
 	DECL_EXTERN_API(BOOLEAN, ModuleUnload, CONST IN HMODULE hModule);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32);
-	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32);
+	DECL_EXTERN_API(ULONG64, ModuleRemoteHandle64W, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName);
+	DECL_EXTERN_API(BOOLEAN, ModuleRemoteEntry64W, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInsensitive, PLDR_DATA_TABLE_ENTRY64 pLdrEntry);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle, IN LPCWSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExA, CONST IN HANDLE ProcessHandle, IN LPCSTR lpModuleName, IN BOOLEAN Bit32, IN BOOLEAN Bit64);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN Bit64);
+	DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN Bit64);
 	DECL_EXTERN_API(DWORD, ModulePathAdvancedExA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, OUT LPSTR lpPath);
 	DECL_EXTERN_API(DWORD, ModulePathAdvancedExW, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, OUT LPWSTR lpPath);
 	DECL_EXTERN_API(DWORD, ModuleNameAdvancedExA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, OUT LPSTR lpName);
@@ -1280,6 +1347,14 @@ extern "C" {
 	DECL_EXTERN_API(PIMAGE_SECTION_HEADER, ImageRvaToSection, IN HMODULE hModule, IN ULONG Rva);
 	DECL_EXTERN_API(LPVOID, ImageRvaToVa, IN HMODULE hModule, IN ULONG Rva);
 	DECL_EXTERN_API(ULONG, ImageVaToRva, IN HMODULE hModule, IN LPCVOID lpAddress);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteDosHeaderFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_DOS_HEADER pDosHeader);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteDosHeaderFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_DOS_HEADER pDosHeader);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_NT_HEADERS64 pNtHeaders);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule64, IN HANDLE hProcess, IN ULONG64 hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule32, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_NT_HEADERS32 pNtHeaders);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule32, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteNtHeadersFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_NT_HEADERS pNtHeaders);
+	DECL_EXTERN_API(BOOLEAN, ImageRemoteExportDirectoryFromModule, IN HANDLE hProcess, IN HMODULE hModule, IN PIMAGE_EXPORT_DIRECTORY pExportDirectory);
 
 	/* 
 	** defined in string.c 
@@ -1340,6 +1415,8 @@ extern "C" {
 
 	/* defined in virtual.c */
 	DECL_EXTERN_API(LPVOID, VirtualAllocEx, CONST IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
+	DECL_EXTERN_API(ULONG64, VirtualAllocWow64Ex, CONST IN HANDLE hProcess, IN ULONG64 Address, IN ULONG64 Size, CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
+	DECL_EXTERN_API(ULONG64, VirtualAlloc64Ex, CONST IN HANDLE hProcess, IN ULONG64 Address, IN ULONG64 Size ,CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
 	DECL_EXTERN_API(LPVOID, VirtualAlloc, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD flAllocationType, CONST IN DWORD flProtect);
 	DECL_EXTERN_API(BOOL, VirtualFreeEx, CONST IN HANDLE hProcess, IN LPVOID lpAddress, IN SIZE_T dwSize, CONST IN DWORD dwFreeType);
 	DECL_EXTERN_API(BOOL, VirtualFree, IN LPVOID lpAddress, CONST IN SIZE_T dwSize, CONST IN DWORD dwFreeType);
@@ -1352,6 +1429,9 @@ extern "C" {
 	DECL_EXTERN_API(LPVOID, Alloc32, CONST IN SIZE_T Size);
 	DECL_EXTERN_API(PVOID, Alloc, CONST IN SIZE_T Size);
 	DECL_EXTERN_API(VOID, Free, CONST IN LPVOID lpAddress);
+	DECL_EXTERN_API(PVOID, AllocPage, CONST IN SIZE_T Size);
+	DECL_EXTERN_API(VOID, FreePage, CONST IN LPVOID lpAddress);
+	DECL_EXTERN_API(ULONG64, Alloc64, CONST IN ULONG64 Size); /* can't be freed from a 32bit process. */
 
 	/* defined in volume.c */
 	DECL_EXTERN_API(BOOLEAN, VolumeGetInformationA, 
@@ -1388,6 +1468,8 @@ extern "C" {
 	DECL_EXTERN_API(DWORD, ThreadCurrentId);
 	DECL_EXTERN_API(DWORD, ThreadSuspend, IN HANDLE hThread);
 	DECL_EXTERN_API(BOOLEAN, ThreadResume, IN HANDLE hThread);
+	DECL_EXTERN_API(BOOLEAN, ThreadGetContext, HANDLE hThread, LPCONTEXT lpContext);
+	DECL_EXTERN_API(BOOLEAN, ThreadSetContext, HANDLE hThread, LPCONTEXT lpContext);
 
 	/* defined in deviceio.c */
 	DECL_EXTERN_API(BOOLEAN, DeviceIoControl,
@@ -1402,6 +1484,24 @@ extern "C" {
 
 	/* defined in util.c */
 	DECL_EXTERN_API(POBJECT_ATTRIBUTES, UtilFormatObjectAttributes, OUT POBJECT_ATTRIBUTES ObjectAttributes, IN PSECURITY_ATTRIBUTES SecurityAttributes OPTIONAL, IN PUNICODE_STRING ObjectName);
+
+	/* defined in scan.c */
+	DECL_EXTERN_API(NTSTATUS, ScanPageMinesCreate, PSCAN_PAGE_MINES ScanInformation);
+	DECL_EXTERN_API(NTSTATUS, ScanPageMinesCheck, PSCAN_PAGE_MINES ScanInformation);
+	DECL_EXTERN_API(ULONG, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggermines);
+	DECL_EXTERN_API(NTSTATUS, ScanHideCurrentThread);
+	DECL_EXTERN_API(NTSTATUS, ScanApplyDebuggerMines);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckProcessDebuggerFlags);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckPebFlags);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerPort);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckKernelFlag);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckKernelDebugger);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckThreadHook);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckHeaderFlags);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckDebugHandle);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckHardwareBreakpoints);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckInvalidDebugObject);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckVEH);
 
 #if defined (__cplusplus)
 }

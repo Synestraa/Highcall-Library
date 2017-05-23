@@ -249,8 +249,8 @@ DECL_EXTERN_API(BOOLEAN, StringEqualA, IN LPCSTR lpString1, IN LPCSTR lpString2,
 	DWORD dwLen1, dwLen2;
 	BOOLEAN bString1, bString2;
 
-	bString1 = HcStringIsNullOrEmpty(lpString1);
-	bString2 = HcStringIsNullOrEmpty(lpString2);
+	bString1 = !lpString1;
+	bString2 = !lpString2;
 
 	if (bString1 && bString2)
 	{
@@ -307,8 +307,8 @@ DECL_EXTERN_API(BOOLEAN, StringEqualW, IN LPCWSTR lpString1, IN LPCWSTR lpString
 	DWORD Length1, Length2;
 	BOOLEAN bString1, bString2;
 
-	bString1 = HcStringIsNullOrEmpty(lpString1);
-	bString2 = HcStringIsNullOrEmpty(lpString2);
+	bString1 = !lpString1;
+	bString2 = !lpString2;
 
 	if (bString1 && bString2)
 	{
