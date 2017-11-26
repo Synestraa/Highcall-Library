@@ -108,6 +108,30 @@ DECL_EXTERN_API(PLUID, LookupPrivilegeValueA, LPCSTR Name)
 	return NULL;
 }
 
+DECL_EXTERN_API(NTSTATUS, OpenProcessTokenEx, CONST IN HANDLE hProcess,
+	CONST IN ACCESS_MASK DesiredAccess,
+	OUT PHANDLE TokenHandle)
+{
+	if (HcGlobal.IsWow64)
+	{
+		NTSTATUS Status;
+		PTR_64(HANDLE) TokenHandle64 = 0;
+	
+		Status = HcOpenProcessTokenWow64((ULONG64) hProcess, DesiredAccess, (ULONG64) &TokenHandle64);
+		if (NT_SUCCESS(Status))
+		{
+			if (TokenHandle)
+			{
+				*TokenHandle = (HANDLE) TokenHandle64;
+			}
+		}
+
+		return Status;
+	}
+
+	return HcOpenProcessToken(hProcess, DesiredAccess, TokenHandle);
+}
+
 DECL_EXTERN_API(NTSTATUS, TokenIsElevated, HANDLE TokenHandle, PBOOLEAN Elevated) 
 {
 	NTSTATUS Status;

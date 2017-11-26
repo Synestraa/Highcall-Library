@@ -596,7 +596,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 
 	if (HcFileRead(hFile, FileBuffer, dwFileSize) != dwFileSize)
 	{
-		HcClose(hFile);
+		HcObjectClose(&hFile);
 		goto done;
 	}
 
@@ -659,7 +659,7 @@ DECL_EXTERN_API(BOOLEAN, InjectManualMap32W, CONST IN HANDLE hProcess, IN LPCWST
 		goto done;
 	}
 
-	hRemoteKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE, FALSE);
+	hRemoteKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE);
 
 	if (!hRemoteKernel32)
 	{
@@ -789,16 +789,7 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 		goto done;
 	}
 
-	hDll = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
-	if (hDll == INVALID_HANDLE)
-	{
-		HcErrorSetNtStatus(STATUS_INVALID_PARAMETER_1);
-		goto done;
-	}
-
-	HcObjectClose(&hDll);
-
-	hNtdll = HcModuleHandleAdvancedExW(hProcess, L"ntdll.dll", TRUE, FALSE);
+	hNtdll = HcModuleHandleAdvancedExW(hProcess, L"ntdll.dll", TRUE);
 	if (!hNtdll)
 	{
 		goto done;
@@ -869,6 +860,7 @@ DECL_EXTERN_API(ULONG, InjectRemoteThreadLdr32W, CONST IN HANDLE hProcess, IN LP
 		goto done;
 	}
 
+	HcThreadResume(hThread);
 	HcObjectWait(hThread, INFINITE);
 
 	if (!HcProcessReadMemory(hProcess, exModule, &hReturn, sizeof(ULONG), NULL))
@@ -932,6 +924,8 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		goto done;
 	}
 
+	/* we do not want to check if we can access it since we might be injecting a dll in system32 and we might be 32bit */
+	/*
 	hDll = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
 	if (hDll == INVALID_HANDLE)
 	{
@@ -940,6 +934,7 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 	}
 
 	HcObjectClose(&hDll);
+	*/
 
 	hNtdll = HcModuleRemoteHandle64W(hProcess, L"ntdll.dll");
 	if (!hNtdll)
@@ -959,8 +954,7 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		goto done;
 	}
 
-	exPayload = HcVirtualAlloc64Ex(hProcess,
-		0, 
+	exPayload = HcVirtualAlloc64Ex(hProcess, 0, 
 		sizeof(x86_64_shellcode_ldr) + sizeof(UNICODE_STRING64) + PathSize + sizeof(ULONG64), 
 		MEM_COMMIT | MEM_RESERVE, 
 		PAGE_EXECUTE_READWRITE);
@@ -1012,6 +1006,7 @@ DECL_EXTERN_API(ULONG64, InjectRemoteThreadLdr64W, CONST IN HANDLE hProcess, IN 
 		goto done;
 	}
 
+	HcThreadResume(hThread);
 	HcObjectWait(hThread, INFINITE);
 
 	if (!HcProcessReadMemory64(hProcess, (PVOID64) expModule, &hReturn, sizeof(ULONG64), NULL))
@@ -1029,7 +1024,7 @@ done:
 	{
 		/* cannot free 64bit memory from 32bit */
 #ifdef _WIN64
-		HcVirtualFreeEx(hProcess, exPayload, 0, MEM_RELEASE);
+		HcVirtualFreeEx(hProcess, (LPVOID) exPayload, 0, MEM_RELEASE);
 #endif
 	}
 
@@ -1103,6 +1098,8 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThread64W, CONST IN HANDLE hProcess, IN LPC
 		goto done;
 	}
 
+	/* we do not want to check if we can access it since we might be injecting a dll in system32 and we might be 32bit */
+	/*
 	hFile = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
 	{
@@ -1111,6 +1108,7 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThread64W, CONST IN HANDLE hProcess, IN LPC
 	}
 
 	HcObjectClose(&hFile);
+	*/
 
 	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)
@@ -1204,7 +1202,7 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThread32W, CONST IN HANDLE hProcess, IN LPC
 		goto done;
 	}
 
-	hKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE, FALSE);
+	hKernel32 = HcModuleHandleAdvancedExW(hProcess, L"kernel32.dll", TRUE);
 	if (!hKernel32)
 	{
 		goto done;
@@ -1230,6 +1228,8 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThread32W, CONST IN HANDLE hProcess, IN LPC
 		goto done;
 	}
 
+	/* we do not want to check if we can access it since we might be injecting a dll in system32 and we might be 32bit */
+	/*
 	hFile = HcFileOpenW(szFullPath, OPEN_EXISTING, GENERIC_READ);
 	if (hFile == INVALID_HANDLE)
 	{
@@ -1238,6 +1238,7 @@ DECL_EXTERN_API(BOOLEAN, InjectRemoteThread32W, CONST IN HANDLE hProcess, IN LPC
 	}
 
 	HcObjectClose(&hFile);
+	*/
 
 	PathSize = HcStringSizeW(szFullPath);
 	if (!PathSize)

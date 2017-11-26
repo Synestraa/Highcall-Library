@@ -278,6 +278,7 @@ DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, C
 	BYTE InstructionDispIndex;
 	BYTE InstructionOffsetIndex;
 	LPSTR InstructionMnemonic;
+	DWORD Protection = PAGE_EXECUTE;
 
 	ZERO(&Info);
 	ZERO(&Instruction);
@@ -305,6 +306,12 @@ DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, C
 	/* Decode the instructions */
 	if (distorm_decompose(&Info, Instructions, Size, &InstructionCount) == DECRES_INPUTERR
 		|| Size == 0 || InstructionCount == 0)
+	{
+		HcFree(Instructions);
+		return HOOK_FAILED_API;
+	}
+
+	if (!HcVirtualProtect((LPVOID) Code, Size, PAGE_EXECUTE_READWRITE, &Protection))
 	{
 		HcFree(Instructions);
 		return HOOK_FAILED_API;
@@ -396,7 +403,9 @@ DECL_EXTERN_API(HStatus, HookRelocateCode, CONST IN PBYTE Code, IN DWORD Size, C
 		}
 	}
 
+	HcVirtualProtect((LPVOID) Code, Size, Protection, &Protection);
 	HcFree(Instructions);
+	
 	return HOOK_NO_ERR;
 }
 
@@ -497,10 +506,10 @@ DECL_EXTERN_API(PVOID, HookRecreateCode, CONST IN PBYTE lpBaseAddress, CONST IN 
 	}
 
 	/* Copy original block of function to our new function */
-	HcInternalCopy(Recreated, Original, SizeOfFunction);
+	HcInternalCopy(Recreated, Original, dwRequiredSize);
 
 	/* Relocate the block we found. */
-	if (HcHookRelocateCode(Recreated, SizeOfFunction, lpBaseAddress) != HOOK_NO_ERR)
+	if (HcHookRelocateCode(Recreated, dwRequiredSize, lpBaseAddress) != HOOK_NO_ERR)
 	{
 		HcFree(Original);
 		return FALSE;
@@ -541,11 +550,17 @@ DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 	if (Context->Flags & Reconstruct)
 	{
 		PBYTE originalData = (PBYTE)HcHookRecreateCode(Context->lpSource, 16);
+
 #ifndef _WIN64
 		DWORD instructionSize = HcHookAssertLength(originalData, 5);
 #else
 		DWORD instructionSize = HcHookAssertLength(originalData, 16);
 #endif
+		if (!instructionSize)
+		{
+			return HOOK_INVALID_SOURCE;
+		}
+
 		if (instructionSize)
 		{
 			HcProcessWriteMemory(NtCurrentProcess(),
@@ -669,7 +684,7 @@ DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 	}
 
 	/* Update the instruction cache. */
-	HcFlushInstructionCache(NtCurrentProcess(), Context->lpSource, Context->dwLength);
+	HcProcessFlushInstructionCache(NtCurrentProcess(), Context->lpSource, Context->dwLength);
 
 	return HOOK_NO_ERR;
 }

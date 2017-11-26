@@ -12,24 +12,53 @@ DECL_EXTERN_API(LPVOID, VirtualAllocEx,
 {
 	NTSTATUS Status;
 
-	/* Allocate the memory */
-	Status = HcAllocateVirtualMemory(hProcess,
-		&lpAddress,
-		0,
-		&dwSize,
-		flAllocationType,
-		flProtect);
-
-	/* Check for status */
-	if (!NT_SUCCESS(Status))
+	if (HcGlobal.IsWow64)
 	{
-		/* We failed */
-		HcErrorSetNtStatus(Status);
-		return NULL;
-	}
+		PTR_64(LPVOID) lpAddress64 = WOW64_CONVERT(LPVOID) lpAddress;
+		PTR_64(SIZE_T) dwSize64 = WOW64_CONVERT(SIZE_T) dwSize;
 
-	/* Return the allocated address */
-	return lpAddress;
+		/* Allocate the memory */
+		Status = HcAllocateVirtualMemoryWow64((ULONG64) hProcess,
+			(ULONG64) &lpAddress64,
+			0,
+			(ULONG64) &dwSize64,
+			flAllocationType,
+			flProtect);
+
+		HcErrorSetNtStatus(Status);
+
+		/* Check for status */
+		if (!NT_SUCCESS(Status))
+		{
+			/* We failed */
+			return NULL;
+		}
+
+		/* Return the allocated address */
+		return POINTER32_HARDCODED(LPVOID) lpAddress64;
+	}
+	else
+	{
+		/* Allocate the memory */
+		Status = HcAllocateVirtualMemory(hProcess,
+			&lpAddress,
+			0,
+			&dwSize,
+			flAllocationType,
+			flProtect);
+
+		HcErrorSetNtStatus(Status);
+
+		/* Check for status */
+		if (!NT_SUCCESS(Status))
+		{
+			/* We failed */
+			return NULL;
+		}
+
+		/* Return the allocated address */
+		return lpAddress;
+	}
 }
 
 DECL_EXTERN_API(ULONG64, VirtualAllocWow64Ex, 
@@ -88,11 +117,25 @@ DECL_EXTERN_API(BOOL, VirtualFreeEx,
 	/* Validate size and flags */
 	if (!dwSize || !(dwFreeType & MEM_RELEASE))
 	{
-		/* Free the memory */
-		Status = HcFreeVirtualMemory(hProcess,
-			&lpAddress,
-			&dwSize,
-			dwFreeType);
+		if (HcGlobal.IsWow64)
+		{
+			PTR_64(LPVOID) lpAddress64 = WOW64_CONVERT(LPVOID) lpAddress;
+			PTR_64(SIZE_T) dwSize64 = WOW64_CONVERT(SIZE_T) dwSize;
+
+			/* Free the memory */
+			Status = HcFreeVirtualMemoryWow64((ULONG64) hProcess,
+				(ULONG64) &lpAddress64,
+				(ULONG64) &dwSize64,
+				dwFreeType);
+		}
+		else
+		{
+			/* Free the memory */
+			Status = HcFreeVirtualMemory(hProcess,
+				&lpAddress,
+				&dwSize,
+				dwFreeType);
+		}
 
 		if (!NT_SUCCESS(Status))
 		{
@@ -146,17 +189,37 @@ DECL_EXTERN_API(BOOL, VirtualProtectEx,
 {
 	NTSTATUS Status;
 
-	/* Make the call. */
-	Status = HcProtectVirtualMemory(hProcess,
-		&lpAddress,
-		&dwSize,
-		flNewProtect,
-		(PULONG)lpflOldProtect);
+	if (HcGlobal.IsWow64)
+	{
+		PTR_64(LPVOID) lpAddress64 = WOW64_CONVERT(LPVOID) lpAddress;
+		PTR_64(SIZE_T) dwSize64 = WOW64_CONVERT(SIZE_T) dwSize;
+		PTR_64(PDWORD) lpflOldProtect64 = WOW64_CONVERT(PDWORD) lpflOldProtect;
 
+		Status = HcProtectVirtualMemoryWow64((ULONG64) hProcess,
+			(ULONG64)&lpAddress64,
+			(ULONG64)&dwSize64,
+			flNewProtect,
+			(ULONG64)lpflOldProtect64);
+
+		if (NT_SUCCESS(Status))
+		{
+			*lpflOldProtect = *(DWORD*) lpflOldProtect64;
+		}
+	}
+	else
+	{ 
+		/* Make the call. */
+		Status = HcProtectVirtualMemory(hProcess,
+			&lpAddress,
+			&dwSize,
+			flNewProtect,
+			(PULONG)lpflOldProtect);
+	}
+
+	HcErrorSetNtStatus(Status);
 	if (!NT_SUCCESS(Status))
 	{
 		/* We failed */
-		HcErrorSetNtStatus(Status);
 		return FALSE;
 	}
 
@@ -199,6 +262,86 @@ DECL_EXTERN_API(SIZE_T, VirtualQuery,
 		dwLength);
 }
 
+DECL_EXTERN_API(NTSTATUS, QueryVirtualMemoryEx, IN HANDLE ProcessHandle,
+	IN LPVOID BaseAddress,
+	IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
+	OUT LPVOID MemoryInformation,
+	IN SIZE_T MemoryInformationLength,
+	OUT PSIZE_T ReturnLength)
+{
+	if (HcGlobal.IsWow64)
+	{
+		PTR_64(SIZE_T) ReturnLength64 = 0;
+		PTR_64(LPVOID) MemoryInformation64 = 0;
+
+		if (MemoryInformationClass == MemoryBasicInformation)
+		{
+			MemoryInformationLength = sizeof(MEMORY_BASIC_INFORMATION64);
+		}
+		else if (MemoryInformationClass == MemoryMappedFilenameInformation)
+		{
+			MemoryInformationLength = sizeof(MEMORY_SECTION_NAME_WOW64);
+		}
+
+		MemoryInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(MemoryInformationLength);
+
+		NTSTATUS Status = HcQueryVirtualMemoryWow64((ULONG64) ProcessHandle, 
+			(ULONG64) BaseAddress,
+			MemoryInformationClass, 
+			MemoryInformation64,
+			(ULONG64) MemoryInformationLength,
+			(ULONG64) &ReturnLength64);
+
+		if (NT_SUCCESS(Status))
+		{
+			if (ReturnLength)
+			{
+				*ReturnLength = (SIZE_T) ReturnLength64;
+			}
+
+			if (MemoryInformationClass == MemoryBasicInformation)
+			{
+				PMEMORY_BASIC_INFORMATION64 info = (PMEMORY_BASIC_INFORMATION64) MemoryInformation64;
+				PMEMORY_BASIC_INFORMATION original = (PMEMORY_BASIC_INFORMATION) MemoryInformation;
+
+				original->AllocationBase = (LPVOID) info->AllocationBase;
+				original->AllocationProtect = info->AllocationProtect;
+				original->BaseAddress = (LPVOID) info->BaseAddress;
+				original->Protect = info->Protect;
+				original->RegionSize = (SIZE_T) info->RegionSize;
+				original->State = info->State;
+				original->Type = info->Type;
+			}
+			else if (MemoryInformationClass == MemoryMappedFilenameInformation)
+			{
+				PMEMORY_SECTION_NAME_WOW64 Section64 = (PMEMORY_SECTION_NAME_WOW64) MemoryInformation64;
+				PMEMORY_SECTION_NAME SectionOriginal = (PMEMORY_SECTION_NAME) MemoryInformation;
+
+				SectionOriginal->SectionFileName.Buffer = (LPWSTR) (ULONG_PTR) Section64->SectionFileName.Buffer;
+				SectionOriginal->SectionFileName.Length = Section64->SectionFileName.Length;
+				SectionOriginal->SectionFileName.MaximumLength = Section64->SectionFileName.MaximumLength;
+
+				HcInternalCopy(SectionOriginal->NameBuffer, Section64->NameBuffer, sizeof(SectionOriginal->NameBuffer));
+			}
+			else
+			{
+				HcInternalCopy(MemoryInformation, (LPVOID) (ULONG_PTR) MemoryInformation64, MemoryInformationLength);
+			}
+		}
+
+		HcFree((LPVOID) MemoryInformation64);
+		
+		return Status;
+	}
+
+	return HcQueryVirtualMemory(ProcessHandle, 
+		BaseAddress, 
+		MemoryInformationClass, 
+		MemoryInformation, 
+		MemoryInformationLength, 
+		ReturnLength);
+}
+
 DECL_EXTERN_API(SIZE_T, VirtualQueryEx, 
 	CONST IN HANDLE hProcess,
 	IN LPCVOID lpAddress,
@@ -209,8 +352,8 @@ DECL_EXTERN_API(SIZE_T, VirtualQueryEx,
 	SIZE_T ResultLength = 0;
 
 	/* Make the call. */
-	Status = HcQueryVirtualMemory(hProcess,
-		(LPVOID)lpAddress,
+	Status = HcQueryVirtualMemoryEx(hProcess,
+		(LPVOID) lpAddress,
 		MemoryBasicInformation,
 		lpBuffer,
 		dwLength,

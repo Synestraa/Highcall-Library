@@ -1,5 +1,19 @@
 #include <highcall.h>
 
+/* 
+Obtain name of executable from path
+
+LPWSTR OccuranceOfName = HcStringWithinStringW(KritikaMainModule.Path, KritikaMainModule.Name, FALSE, TRUE);
+LPWSTR EndOfString = KritikaMainModule.Path + HcStringLenW(KritikaMainModule.Path);
+ULONG64 Delta = (ULONG64) EndOfString - (ULONG64) OccuranceOfName;
+LPWSTR Directory = HcStringAllocW(MAX_PATH);
+
+HcInternalCopy(Directory, KritikaMainModule.Path, Delta);
+
+HcFree(Directory);
+
+*/
+
 DECL_EXTERN_API(LPSTR, StringAllocA, CONST IN DWORD tSize)
 {
 	return (LPSTR) HcAlloc(tSize * sizeof(CHAR) + sizeof(ANSI_NULL));
@@ -626,58 +640,80 @@ DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert)
 
 DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
-	BOOLEAN bReturn = FALSE;
-	DWORD dwCopyLength = HcStringLenA(szcIn);
+	DWORD dwActualLength = HcStringLenA(szcIn);
 	DWORD dwLength = dwLen;
 
-	if (dwCopyLength == 0)
+	if (dwActualLength == 0)
 	{
-		return bReturn;
+		return FALSE;
 	}
 
-	if (dwCopyLength < dwLen)
+	if (dwLength == -1)
 	{
-		dwLength = dwCopyLength;
-
-		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
-	}
-	else
-	{
-		bReturn = TRUE;
+		dwLength = dwActualLength;
 	}
 
 	HcInternalCopy(szOut, (PVOID) szcIn, dwLength);
 	TERMINATE_A(szOut, dwLength);
 
-	return bReturn;
+	return TRUE;
 }
 
 DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
-	BOOLEAN bReturn = FALSE;
-	DWORD dwCopyLength = HcStringLenW(szcIn);
+	DWORD dwActualLength = HcStringLenW(szcIn);
 	DWORD dwLength = dwLen;
 
-	if (dwCopyLength == 0)
+	if (dwActualLength == 0)
 	{
-		return bReturn;
+		return FALSE;
 	}
 
-	if (dwCopyLength < dwLen)
+	if (dwLength == -1)
 	{
-		dwLength = dwCopyLength;
-
-		HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
-	}
-	else
-	{
-		bReturn = TRUE;
+		dwLength = dwActualLength;
 	}
 
 	HcInternalCopy(szOut, (PVOID) szcIn, dwLength * sizeof(WCHAR));
 	TERMINATE_W(szOut, dwLength);
 
-	return bReturn;
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, StringAppendA, IN LPSTR* szStream, IN LPCSTR szText, CONST IN DWORD dwLength OPTIONAL)
+{
+	DWORD dwActualLength = dwLength;
+	if (dwActualLength == -1)
+	{
+		dwActualLength = HcStringLenA(szText);
+		if (dwActualLength == 0)
+		{
+			return FALSE;
+		}
+	}
+
+
+	HcStringCopyA(*szStream, szText, dwActualLength);
+	*szStream += dwActualLength;
+	return TRUE;
+}
+
+DECL_EXTERN_API(BOOLEAN, StringAppendW, IN LPWSTR* szStream, IN LPCWSTR szText, CONST IN DWORD dwLength OPTIONAL)
+{
+	DWORD dwActualLength = dwLength;
+	if (dwActualLength == -1)
+	{
+		dwActualLength = HcStringLenW(szText);
+		if (dwActualLength == 0)
+		{
+			return FALSE;
+		}
+	}
+
+
+	HcStringCopyW(*szStream, szText, dwActualLength);
+	*szStream += dwActualLength;
+	return TRUE;
 }
 
 DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrA, IN LPSTR lpString)

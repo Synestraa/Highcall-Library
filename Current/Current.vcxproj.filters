@@ -1496,7 +1496,6 @@
     <MASM Include="private\sys\asm\Wow64WriteVirtualMemory64.asm">
       <Filter>private\sys\asm</Filter>
     </MASM>
-    <MASM Include="private\wow64\wow64stdcall.asm" />
     <MASM Include="private\sys\asm\QueryMutant.asm" />
     <MASM Include="private\sys\asm\Wow64AllocateVirtualMemory64.asm" />
   </ItemGroup>

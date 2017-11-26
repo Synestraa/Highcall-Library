@@ -3,6 +3,261 @@
 #include "../sys/syscall.h"
 #include "../../public/imports.h"
 
+
+DECL_EXTERN_API(DWORD, QueryDosDeviceW, LPCWSTR lpDeviceName, LPWSTR lpTargetPath, DWORD ucchMax)
+{
+	POBJECT_DIRECTORY_INFORMATION DirInfo;
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	UNICODE_STRING UnicodeString;
+	HANDLE DirectoryHandle;
+	HANDLE DeviceHandle;
+	ULONG ReturnLength;
+	ULONG NameLength;
+	ULONG Length;
+	ULONG Context;
+	BOOLEAN RestartScan;
+	NTSTATUS Status;
+	UCHAR Buffer[512];
+	PWSTR Ptr;
+
+	/* Open the '\??' directory */
+	RtlInitUnicodeString(&UnicodeString, L"\\??");
+	InitializeObjectAttributes(&ObjectAttributes,
+		&UnicodeString,
+		OBJ_CASE_INSENSITIVE,
+		NULL,
+		NULL);
+
+	Status = HcOpenDirectoryObjectEx(&DirectoryHandle,
+		DIRECTORY_QUERY,
+		&ObjectAttributes);
+
+	HcErrorSetNtStatus(Status);
+	if (!NT_SUCCESS(Status))
+	{
+		return 0;
+	}
+
+	Length = 0;
+
+	if (lpDeviceName != NULL)
+	{
+		/* Open the lpDeviceName link object */
+		RtlInitUnicodeString(&UnicodeString, (PWSTR) lpDeviceName);
+		InitializeObjectAttributes(&ObjectAttributes,
+			&UnicodeString,
+			OBJ_CASE_INSENSITIVE,
+			DirectoryHandle,
+			NULL);
+
+		Status = HcOpenSymbolicLinkObjectEx(&DeviceHandle,
+			SYMBOLIC_LINK_QUERY,
+			&ObjectAttributes);
+
+		HcErrorSetNtStatus(Status);
+		if (!NT_SUCCESS(Status))
+		{
+			HcObjectClose(&DirectoryHandle);
+			return 0;
+		}
+
+		/* Query link target */
+		UnicodeString.Length = 0;
+		UnicodeString.MaximumLength = (USHORT) ucchMax * sizeof(WCHAR);
+		UnicodeString.Buffer = lpTargetPath;
+
+		ReturnLength = 0;
+		Status = HcQuerySymbolicLinkObjectEx(DeviceHandle,
+			&UnicodeString,
+			&ReturnLength);
+
+		HcErrorSetNtStatus(Status);
+		HcObjectClose(&DeviceHandle);
+		HcObjectClose(&DirectoryHandle);
+
+		if (!NT_SUCCESS(Status))
+		{
+			return 0;
+		}
+
+		Length = UnicodeString.Length / sizeof(WCHAR);
+		if (Length < ucchMax)
+		{
+			/* Append null-character */
+			lpTargetPath[Length] = UNICODE_NULL;
+			Length++;
+		}
+		else
+		{
+			HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+			return 0;
+		}
+	}
+	else
+	{
+		RestartScan = TRUE;
+		Context = 0;
+		Ptr = lpTargetPath;
+		DirInfo = (POBJECT_DIRECTORY_INFORMATION) Buffer;
+
+		while (TRUE)
+		{
+			Status = HcQueryDirectoryObjectEx(DirectoryHandle,
+				Buffer,
+				sizeof(Buffer),
+				TRUE,
+				RestartScan,
+				&Context,
+				&ReturnLength);
+
+			if (!NT_SUCCESS(Status))
+			{
+				if (Status == STATUS_NO_MORE_ENTRIES)
+				{
+					/* Terminate the buffer */
+					*Ptr = UNICODE_NULL;
+					Length++;
+
+					Status = STATUS_SUCCESS;
+				}
+				else
+				{
+					Length = 0;
+				}
+
+				HcErrorSetNtStatus(Status);
+				break;
+			}
+
+			if (HcStringEqualW(DirInfo->TypeName.Buffer, L"SymbolicLink", FALSE))
+			{
+				NameLength = DirInfo->Name.Length / sizeof(WCHAR);
+				if (Length + NameLength + 1 >= ucchMax)
+				{
+					Length = 0;
+					HcErrorSetNtStatus(STATUS_BUFFER_TOO_SMALL);
+					break;
+				}
+
+				HcStringCopyW(Ptr, DirInfo->Name.Buffer, -1);
+				Ptr += NameLength;
+				Length += NameLength;
+				*Ptr = UNICODE_NULL;
+				Ptr++;
+				Length++;
+			}
+
+			RestartScan = FALSE;
+		}
+
+		HcObjectClose(&DirectoryHandle);
+	}
+
+	return Length;
+}
+
+DECL_EXTERN_API(NTSTATUS, QueryDirectoryObjectEx, IN HANDLE DirectoryHandle,
+	OUT PVOID Buffer,
+	IN ULONG BufferLength,
+	IN BOOLEAN ReturnSingleEntry,
+	IN BOOLEAN RestartScan,
+	IN OUT PULONG Context,
+	OUT PULONG ReturnLength OPTIONAL)
+{
+	if (HcGlobal.IsWow64)
+	{
+		OBJECT_DIRECTORY_INFORMATION_WOW64 DirInfo;
+		ZERO(&DirInfo);
+
+		ConvertObjectDirectoryInformationWow64(&DirInfo, (POBJECT_DIRECTORY_INFORMATION) Buffer);
+		NTSTATUS Status = HcQueryDirectoryObjectWow64((ULONG64) DirectoryHandle,
+			(ULONG64) &DirInfo, 
+			BufferLength, 
+			ReturnSingleEntry, 
+			RestartScan, 
+			(ULONG64) Context, 
+			(ULONG64) ReturnLength);
+
+		if (NT_SUCCESS(Status))
+		{
+			ConvertObjectDirectoryInformationFromWow64(&DirInfo, (POBJECT_DIRECTORY_INFORMATION) Buffer);
+		}
+
+		return Status;
+	}
+
+	return HcQueryDirectoryObject(DirectoryHandle, Buffer, BufferLength, ReturnSingleEntry, RestartScan, Context, ReturnLength);
+}
+
+DECL_EXTERN_API(NTSTATUS, OpenSymbolicLinkObjectEx, OUT PHANDLE LinkHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes)
+{
+	if (HcGlobal.IsWow64)
+	{
+		PTR_64(HANDLE) LinkHandle64 = 0;
+
+		OBJECT_ATTRIBUTES_WOW64 ObjectAttributes64;
+		ZERO(&ObjectAttributes64);
+		ConvertObjectAttributesWow64(&ObjectAttributes64, ObjectAttributes);
+
+		NTSTATUS Status = HcOpenSymbolicLinkObjectWow64((ULONG64) &LinkHandle64, DesiredAccess, (ULONG64) &ObjectAttributes64);
+		if (NT_SUCCESS(Status))
+		{
+			*LinkHandle = POINTER32_HARDCODED(HANDLE) LinkHandle64;
+		}
+
+		return Status;
+	}
+
+	return HcOpenSymbolicLinkObject(LinkHandle, DesiredAccess, ObjectAttributes);
+}
+
+DECL_EXTERN_API(NTSTATUS, QuerySymbolicLinkObjectEx, IN HANDLE LinkHandle,
+	OUT PUNICODE_STRING LinkTarget,
+	OUT PULONG ResultLength OPTIONAL)
+{
+	if (HcGlobal.IsWow64)
+	{
+		UNICODE_STRING64 LinkTarget64;
+		ConvertStringWow64(&LinkTarget64, LinkTarget);
+
+		NTSTATUS Status = HcQuerySymbolicLinkObjectWow64((ULONG64) LinkHandle, (ULONG64) &LinkTarget64, (ULONG64) ResultLength);
+		if (NT_SUCCESS(Status))
+		{
+			ConvertUnicodeStringFromWow64(&LinkTarget64, LinkTarget);
+		}
+
+		return Status;
+	}
+
+	return HcQuerySymbolicLinkObject(LinkHandle, LinkTarget, ResultLength);
+}
+
+DECL_EXTERN_API(NTSTATUS, OpenDirectoryObjectEx, OUT PHANDLE DirectoryHandle, IN ACCESS_MASK AccessMask, IN POBJECT_ATTRIBUTES ObjectAttributes)
+{
+	if (HcGlobal.IsWow64)
+	{
+		PTR_64(HANDLE) DirectoryHandle64 = 0;
+		
+		OBJECT_ATTRIBUTES_WOW64 ObjectAttributes64;
+		ZERO(&ObjectAttributes64);
+
+		ConvertObjectAttributesWow64(&ObjectAttributes64, ObjectAttributes);
+
+		NTSTATUS Status = HcOpenDirectoryObjectWow64((ULONG64) &DirectoryHandle64, AccessMask, (ULONG64) &ObjectAttributes64);
+		if (NT_SUCCESS(Status))
+		{
+			*DirectoryHandle = POINTER32_HARDCODED(HANDLE) DirectoryHandle64;
+		}
+
+		HcErrorSetNtStatus(Status);
+		return Status;
+	}
+
+	return HcOpenDirectoryObject(DirectoryHandle, AccessMask, ObjectAttributes);
+}
+
 DECL_EXTERN_API(DWORD, FileRead, CONST IN HANDLE hFile, IN OUT LPVOID lpBuffer, CONST IN DWORD nNumberOfBytesToRead)
 {
 	NTSTATUS Status;
@@ -11,15 +266,38 @@ DECL_EXTERN_API(DWORD, FileRead, CONST IN HANDLE hFile, IN OUT LPVOID lpBuffer, 
 
 	ZERO(&Iosb);
 
-	Status = HcReadFile(hFile,
-		NULL,
-		NULL,
-		NULL,
-		&Iosb,
-		lpBuffer,
-		nNumberOfBytesToRead,
-		NULL,
-		NULL);
+	if (HcGlobal.IsWow64)
+	{
+		IO_STATUS_BLOCK_WOW64 Iosb64;
+		ZERO(&Iosb64);
+
+		Status = HcReadFileWow64((ULONG64) hFile, 
+			0,
+			0,
+			0, 
+			(ULONG64) &Iosb64,
+			(ULONG64) lpBuffer, 
+			nNumberOfBytesToRead,
+			0, 
+			0);
+
+		Iosb.Information = (DWORD) Iosb64.Information;
+		Iosb.Status = Iosb64.Status;
+	}
+	else
+	{
+		Status = HcReadFile(hFile,
+			NULL,
+			NULL,
+			NULL,
+			&Iosb,
+			lpBuffer,
+			nNumberOfBytesToRead,
+			NULL,
+			NULL);
+	}
+
+	HcErrorSetNtStatus(Status);
 
 	/* Wait in case operation is pending */
 	if (Status == STATUS_PENDING)
@@ -149,12 +427,16 @@ DECL_EXTERN_API(DWORD, FileSetCurrent, CONST IN HANDLE hFile, CONST IN LONG lDis
 	return FilePosition.CurrentByteOffset.u.LowPart;
 }
 
+#include <stdio.h>
+#include <windows.h>
+
 DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDisposition, IN DWORD dwDesiredAccess)
 {
 	OBJECT_ATTRIBUTES ObjectAttributes;
 	IO_STATUS_BLOCK IoStatusBlock;
+	IO_STATUS_BLOCK_WOW64 IoStatusBlock64;
 	UNICODE_STRING NtPathU;
-	HANDLE FileHandle;
+	HANDLE FileHandle = NULL;
 	NTSTATUS Status;
 	ULONG FileAttributes = FILE_ATTRIBUTE_NORMAL & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY);
 	ULONG Flags = FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE;
@@ -167,6 +449,7 @@ DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDis
 		return INVALID_HANDLE;
 	}
 
+	ZERO(&IoStatusBlock64);
 	ZERO(&IoStatusBlock);
 
 	/* validate & translate the creation disposition */
@@ -209,28 +492,67 @@ DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDis
 		return INVALID_HANDLE;
 	}
 
-	/* build the object attributes */
-	InitializeObjectAttributes(&ObjectAttributes,
-		&NtPathU,
-		0,
-		NULL,
-		NULL);
+	if (HcGlobal.IsWow64)
+	{
+		PTR_64(HANDLE) FileHandle64 = 0;
 
-	ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
+		OBJECT_ATTRIBUTES_WOW64 ObjectAttributes64;
+		UNICODE_STRING64 NtPathU64;
 
-	/* perform the call */
-	Status = HcCreateFile(&FileHandle,
-		dwDesiredAccess,
-		&ObjectAttributes,
-		&IoStatusBlock,
-		NULL,
-		FileAttributes,
-		FILE_SHARE_WRITE | FILE_SHARE_READ,
-		dwCreationDisposition,
-		Flags,
-		EaBuffer,
-		EaLength);
-	
+		ZERO(&ObjectAttributes64);
+		ZERO(&NtPathU64);
+
+		NtPathU64.Buffer = WOW64_CONVERT(LPWSTR) NtPathU.Buffer;
+		NtPathU64.Length = NtPathU.Length;
+		NtPathU64.MaximumLength = NtPathU.MaximumLength;
+
+		InitializeObjectAttributesWow64(&ObjectAttributes64,
+			&NtPathU64,
+			0,
+			0,
+			NULL);
+
+		Status = HcCreateFileWow64(
+			(ULONG64) &FileHandle64,
+			dwDesiredAccess,
+			(ULONG64) &ObjectAttributes64,
+			(ULONG64) &IoStatusBlock64,
+			0,
+			FileAttributes,
+			FILE_SHARE_WRITE | FILE_SHARE_READ,
+			dwCreationDisposition,
+			Flags,
+			0,
+			0);
+
+		if (NT_SUCCESS(Status))
+		{
+			FileHandle = (HANDLE) FileHandle64;
+		}
+	}
+	else
+	{
+		InitializeObjectAttributes(&ObjectAttributes,
+			&NtPathU,
+			0,
+			NULL,
+			NULL);
+
+		ObjectAttributes.Attributes |= OBJ_CASE_INSENSITIVE;
+
+		Status = HcCreateFile(&FileHandle,
+			dwDesiredAccess,
+			&ObjectAttributes,
+			&IoStatusBlock,
+			NULL,
+			FileAttributes,
+			FILE_SHARE_WRITE | FILE_SHARE_READ,
+			dwCreationDisposition,
+			Flags,
+			EaBuffer,
+			EaLength);
+	}
+
 	/* Don't free with HcFree due to RtlDosPathNameToNtPathName_U allocation type. */
 	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
 
@@ -261,15 +583,33 @@ DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDis
 	*/
 	if (dwCreationDisposition == FILE_OPEN_IF)
 	{
-		HcErrorSetDosError(
-			IoStatusBlock.Information == FILE_OPENED ?
-			ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		if (HcGlobal.IsWow64)
+		{
+			HcErrorSetDosError(
+				IoStatusBlock64.Information == FILE_OPENED ?
+				ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		}
+		else
+		{
+			HcErrorSetDosError(
+				IoStatusBlock.Information == FILE_OPENED ?
+				ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		}
 	}
 	else if (dwCreationDisposition == FILE_OVERWRITE_IF)
 	{
-		HcErrorSetDosError(
-			IoStatusBlock.Information == FILE_OVERWRITTEN 
-			? ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		if (HcGlobal.IsWow64)
+		{
+			HcErrorSetDosError(
+				IoStatusBlock64.Information == FILE_OVERWRITTEN
+				? ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		}
+		else
+		{
+			HcErrorSetDosError(
+				IoStatusBlock.Information == FILE_OVERWRITTEN
+				? ERROR_ALREADY_EXISTS : ERROR_SUCCESS);
+		}
 	}
 	else
 	{
@@ -376,7 +716,7 @@ DECL_EXTERN_API(DWORD, FileSizeW, IN LPCWSTR lpPath)
 
 	FileSize = HcFileSize(hFile);
 
-	HcClose(hFile);
+	HcObjectClose(&hFile);
 	return FileSize; 
 }
 
@@ -498,7 +838,7 @@ DECL_EXTERN_API(DWORD, FileReadModuleW, CONST IN HMODULE hModule, IN LPCWSTR lpE
 	}
 
 	/* Acquire path of targetted module. */
-	if (!HcModulePathW(hModule, lpModulePath))
+	if (!HcModulePathAdvancedW(hModule, lpModulePath))
 	{
 		goto done;
 	}
@@ -575,14 +915,14 @@ DECL_EXTERN_API(DWORD, FileReadAddress, IN LPCVOID lpBaseAddress, OUT PBYTE lpBu
 	}
 
 	/* Acquire path of targetted module. */
-	if (!HcModulePathW(hModule, lpModulePath))
+	if (!HcModulePathAdvancedW(hModule, lpModulePath))
 	{
 		goto done;
 	}
 
 	/* Open the file */
 	hFile = HcFileOpenW(lpModulePath, OPEN_EXISTING, GENERIC_READ);
-	if (!hFile)
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		goto done;
 	}
@@ -682,10 +1022,13 @@ DECL_EXTERN_API(DWORD, FileWrite, CONST IN HANDLE hFile, IN LPCVOID lpBuffer, IN
 	/* Wait in case operation is pending */
 	if (Status == STATUS_PENDING)
 	{
-		Status = HcWaitForSingleObject(hFile, FALSE, NULL);
-		if (NT_SUCCESS(Status))
+		if (HcObjectWait(hFile, INFINITE))
 		{
 			Status = Iosb.Status;
+		}
+		else
+		{
+			Status = HcErrorGetLastStatus();
 		}
 	}
 

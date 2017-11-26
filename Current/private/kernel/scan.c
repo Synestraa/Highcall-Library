@@ -249,7 +249,7 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckKernelDebugger)
 	NTSTATUS Status;
 	USHORT KernelDebuggerQuery = 0;
 
-	Status = HcQuerySystemInformation(SystemKernelDebuggerInformation, &KernelDebuggerQuery, sizeof(KernelDebuggerQuery), NULL);
+	Status = HcQuerySystemInformationInternal(SystemKernelDebuggerInformation, &KernelDebuggerQuery, sizeof(KernelDebuggerQuery), NULL);
 	if (NT_SUCCESS(Status))
 	{
 		if ((BYTE) KernelDebuggerQuery && !HIBYTE(KernelDebuggerQuery))
@@ -433,12 +433,12 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckInvalidDebugObject)
 		else
 		{
 			g_LevelHandler++;
-			HcClose(debugObject);
+			HcObjectClose(&debugObject);
 			Status = STATUS_FAIL_CHECK;
 		}
 
 		HcFreePage(Object);
-		HcClose(debugObject);
+		HcObjectClose(&debugObject);
 	}
 	else
 	{

@@ -194,18 +194,38 @@ DECL_EXTERN_API(DWORD, ObjectWait, IN HANDLE hObject, IN DWORD dwMiliseconds)
 	TimePtr = HcObjectMillisecondsToNano(&Time, dwMiliseconds);
 
 	/* Do the wait */
-	Status = HcWaitForSingleObject(hObject, FALSE, TimePtr);
-	if (!NT_SUCCESS(Status))
+	if (HcGlobal.IsWow64)
 	{
-		HcErrorSetNtStatus(Status);
+		Status = HcWaitForSingleObjectWow64((ULONG64) hObject, FALSE, (ULONG64) TimePtr);
+	}
+	else
+	{
+		Status = HcWaitForSingleObject(hObject, FALSE, TimePtr);
 	}
 
+	HcErrorSetNtStatus(Status);
 	return Status;
 }
 
 DECL_EXTERN_API(VOID, ObjectClose, IN PHANDLE hObject)
 {
-	if (NT_SUCCESS(HcClose(*hObject)))
+	NTSTATUS Status;
+
+	if (hObject == NULL)
+	{
+		return;
+	}
+
+	if (HcGlobal.IsWow64)
+	{
+		Status = HcCloseWow64((ULONG64) *hObject);
+	}
+	else
+	{
+		Status = HcClose(*hObject);
+	}
+
+	if (NT_SUCCESS(Status))
 	{
 		*hObject = INVALID_HANDLE;
 	}
@@ -358,7 +378,7 @@ static NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
 
 	for (;;)
 	{
-		*handleList = (PSYSTEM_HANDLE_INFORMATION) HcVirtualAlloc(NULL, dataLength, MEM_COMMIT, PAGE_READWRITE);
+		*handleList = (PSYSTEM_HANDLE_INFORMATION) HcAlloc(dataLength);
 
 		Status = HcQuerySystemInformation(SystemHandleInformation, *handleList, dataLength, &dataLength);
 		if (!NT_SUCCESS(Status))
@@ -368,7 +388,7 @@ static NTSTATUS HCAPI GetHandleEntries(PSYSTEM_HANDLE_INFORMATION* handleList)
 				return Status;
 			}
 
-			HcVirtualFree(*handleList, 0, MEM_RELEASE);
+			HcFree(*handleList);
 			dataLength += 0xffff;
 		}
 		else
@@ -404,7 +424,7 @@ DECL_EXTERN_API(BOOLEAN, ObjectEnumHandleEntries, HandleEntryCallback callback, 
 		}
 	}
 
-	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
+	HcFree(handleInfo);
 	return ReturnValue;
 }
 
@@ -480,6 +500,6 @@ done:
 		HcObjectClose(&hProcess);
 	}
 
-	HcVirtualFree(handleInfo, 0, MEM_RELEASE);
+	HcFree(handleInfo);
 	return ReturnValue;
 }

@@ -8,6 +8,8 @@
 #define PTR_64(Type) ULONGLONG
 #define PTR_32(Type) ULONG
 
+#define WOW64_CONVERT(Type) (ULONGLONG)
+
 #define RTL_CONSTANT_STRING(s) { sizeof(s) - sizeof((s)[0]), sizeof(s), s }
 
 #define THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER	0x00000004
@@ -80,6 +82,15 @@
     (p)->ObjectName = n;                                \
     (p)->SecurityDescriptor = s;                        \
     (p)->SecurityQualityOfService = NULL;               \
+    }
+
+#define InitializeObjectAttributesWow64( p, n, a, r, s ) { \
+    (p)->Length = sizeof( OBJECT_ATTRIBUTES_WOW64 );          \
+    (p)->RootDirectory = WOW64_CONVERT(HANDLE) r;                             \
+    (p)->Attributes = a;                                \
+    (p)->ObjectName = WOW64_CONVERT(PUNICODE_STRING64) n;                                \
+    (p)->SecurityDescriptor = WOW64_CONVERT(HANDLE) s;                        \
+    (p)->SecurityQualityOfService = 0;               \
     }
 
 #define RTL_USER_PROCESS_PARAMETERS_NORMALIZED              0x01
@@ -224,11 +235,42 @@ typedef struct _STRING
 	PCHAR  Buffer;
 } ANSI_STRING, *PANSI_STRING;
 
+typedef struct _CLIENT_ID64 {
+	ULONGLONG UniqueProcess;
+	ULONGLONG UniqueThread;
+} CLIENT_ID64, *PCLIENT_ID64;
+
+typedef struct _STRING64 {
+	USHORT Length;
+	USHORT MaximumLength;
+	ULONGLONG Buffer;
+} STRING64, *PSTRING64;
+
+typedef STRING64 UNICODE_STRING64, *PUNICODE_STRING64;
+typedef STRING64 ANSI_STRING64, *PANSI_STRING64;
+
+#define ConvertStringWow64(str64, str) (str64)->Length = (str)->Length; \
+(str64)->MaximumLength = (str)->MaximumLength; \
+(str64)->Buffer = WOW64_CONVERT(PWSTR) (str)->Buffer;
+
+#define ConvertUnicodeStringFromWow64(str64, str) (str)->Length = (str64)->Length; \
+(str)->MaximumLength = (str64)->MaximumLength; \
+(str)->Buffer = POINTER32_HARDCODED(LPWSTR) (str64)->Buffer;
+
+#define ConvertAnsiStringFromWow64(str64, str) (str)->Length = (str64)->Length; \
+(str)->MaximumLength = (str64)->MaximumLength; \
+(str)->Buffer = POINTER32_HARDCODED(LPSTR) (str64)->Buffer;
+
 typedef struct _CLIENT_ID
 {
 	HANDLE UniqueProcess;
 	HANDLE UniqueThread;
 } CLIENT_ID, *PCLIENT_ID;
+
+typedef struct _CLIENT_ID_WOW64 {
+	PTR_64(HANDLE) UniqueProcess;
+	PTR_64(HANDLE) UniqueThread;
+} CLIENT_ID_WOW64, *PCLIENT_ID_WOW64;
 
 typedef struct _SYSTEM_THREAD_INFORMATION
 {
@@ -245,43 +287,96 @@ typedef struct _SYSTEM_THREAD_INFORMATION
 	ULONG WaitReason;
 } SYSTEM_THREAD_INFORMATION, *PSYSTEM_THREAD_INFORMATION;
 
-typedef struct _SYSTEM_PROCESS_INFORMATION
-{
-	ULONG NextEntryOffset;
-	ULONG NumberOfThreads;
-	LARGE_INTEGER SpareLi1;
-	LARGE_INTEGER SpareLi2;
-	LARGE_INTEGER SpareLi3;
-	LARGE_INTEGER CreateTime;
-	LARGE_INTEGER UserTime;
-	LARGE_INTEGER KernelTime;
-	UNICODE_STRING ImageName;
-	KPRIORITY BasePriority;
-	HANDLE UniqueProcessId;
-	HANDLE InheritedFromUniqueProcessId;
-	ULONG HandleCount;
-	ULONG SessionId;
-	ULONG_PTR PageDirectoryBase;
-	SIZE_T PeakVirtualSize;
-	SIZE_T VirtualSize;
-	ULONG PageFaultCount;
-	SIZE_T PeakWorkingSetSize;
-	SIZE_T WorkingSetSize;
-	SIZE_T QuotaPeakPagedPoolUsage;
-	SIZE_T QuotaPagedPoolUsage;
-	SIZE_T QuotaPeakNonPagedPoolUsage;
-	SIZE_T QuotaNonPagedPoolUsage;
-	SIZE_T PagefileUsage;
-	SIZE_T PeakPagefileUsage;
-	SIZE_T PrivatePageCount;
-	LARGE_INTEGER ReadOperationCount;
-	LARGE_INTEGER WriteOperationCount;
-	LARGE_INTEGER OtherOperationCount;
-	LARGE_INTEGER ReadTransferCount;
-	LARGE_INTEGER WriteTransferCount;
-	LARGE_INTEGER OtherTransferCount;
-	SYSTEM_THREAD_INFORMATION Threads[1];
-} SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
+ typedef struct _SYSTEM_PROCESS_INFORMATION
+ {
+     ULONG NextEntryOffset;
+     ULONG NumberOfThreads;
+     LARGE_INTEGER WorkingSetPrivateSize; // since VISTA
+     ULONG HardFaultCount; // since WIN7
+     ULONG NumberOfThreadsHighWatermark; // since WIN7
+     ULONGLONG CycleTime; // since WIN7
+     LARGE_INTEGER CreateTime;
+     LARGE_INTEGER UserTime;
+     LARGE_INTEGER KernelTime;
+     UNICODE_STRING ImageName;
+     KPRIORITY BasePriority;
+     HANDLE UniqueProcessId;
+     HANDLE InheritedFromUniqueProcessId;
+     ULONG HandleCount;
+     ULONG SessionId;
+     ULONG_PTR UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
+     SIZE_T PeakVirtualSize;
+     SIZE_T VirtualSize;
+     ULONG PageFaultCount;
+     SIZE_T PeakWorkingSetSize;
+     SIZE_T WorkingSetSize;
+     SIZE_T QuotaPeakPagedPoolUsage;
+     SIZE_T QuotaPagedPoolUsage;
+     SIZE_T QuotaPeakNonPagedPoolUsage;
+     SIZE_T QuotaNonPagedPoolUsage;
+     SIZE_T PagefileUsage;
+     SIZE_T PeakPagefileUsage;
+     SIZE_T PrivatePageCount;
+     LARGE_INTEGER ReadOperationCount;
+     LARGE_INTEGER WriteOperationCount;
+     LARGE_INTEGER OtherOperationCount;
+     LARGE_INTEGER ReadTransferCount;
+     LARGE_INTEGER WriteTransferCount;
+     LARGE_INTEGER OtherTransferCount;
+     SYSTEM_THREAD_INFORMATION Threads[1];
+ } SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
+
+ typedef struct _SYSTEM_THREAD_INFORMATION_WOW64 {
+	 LARGE_INTEGER KernelTime;
+	 LARGE_INTEGER UserTime;
+	 LARGE_INTEGER CreateTime;
+	 ULONG WaitTime;
+	 PTR_64(PBYTE) StartAddress;
+	 CLIENT_ID_WOW64 ClientId;
+	 KPRIORITY Priority;
+	 LONG BasePriority;
+	 ULONG ContextSwitches;
+	 ULONG ThreadState;
+	 KWAIT_REASON WaitReason;
+ } SYSTEM_THREAD_INFORMATION_WOW64, *PSYSTEM_THREAD_INFORMATION_WOW64;
+
+ typedef struct _SYSTEM_PROCESS_INFORMATION_WOW64 {
+     ULONG NextEntryOffset;
+     ULONG NumberOfThreads;
+     LARGE_INTEGER WorkingSetPrivateSize; // since VISTA
+     ULONG HardFaultCount; // since WIN7
+     ULONG NumberOfThreadsHighWatermark; // since WIN7
+     ULONGLONG CycleTime; // since WIN7
+     LARGE_INTEGER CreateTime;
+     LARGE_INTEGER UserTime;
+     LARGE_INTEGER KernelTime;
+     UNICODE_STRING64 ImageName;
+	 KPRIORITY BasePriority;
+	 PTR_64(HANDLE) UniqueProcessId;
+	 PTR_64(HANDLE) InheritedFromUniqueProcessId;
+	 ULONG HandleCount;
+	 ULONG SessionId;
+	 PTR_64(ULONG_PTR) UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
+	 PTR_64(SIZE_T) PeakVirtualSize;
+	 PTR_64(SIZE_T) VirtualSize;
+	 ULONG PageFaultCount;
+	 PTR_64(SIZE_T) PeakWorkingSetSize;
+	 PTR_64(SIZE_T) WorkingSetSize;
+	 PTR_64(SIZE_T) QuotaPeakPagedPoolUsage;
+	 PTR_64(SIZE_T) QuotaPagedPoolUsage;
+	 PTR_64(SIZE_T) QuotaPeakNonPagedPoolUsage;
+	 PTR_64(SIZE_T) QuotaNonPagedPoolUsage;
+	 PTR_64(SIZE_T) PagefileUsage;
+	 PTR_64(SIZE_T) PeakPagefileUsage;
+	 PTR_64(SIZE_T) PrivatePageCount;
+	 LARGE_INTEGER ReadOperationCount;
+	 LARGE_INTEGER WriteOperationCount;
+	 LARGE_INTEGER OtherOperationCount;
+	 LARGE_INTEGER ReadTransferCount;
+	 LARGE_INTEGER WriteTransferCount;
+	 LARGE_INTEGER OtherTransferCount;
+	 SYSTEM_THREAD_INFORMATION_WOW64 Threads[1];
+ } SYSTEM_PROCESS_INFORMATION_WOW64, *PSYSTEM_PROCESS_INFORMATION_WOW64;
 
 typedef struct _PEB_LDR_DATA {
 	ULONG Length;
@@ -530,7 +625,7 @@ typedef struct _GDI_TEB_BATCH
 {
 	ULONG Offset;
 	ULONG_PTR HDC;
-	ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
+	ULONG Buffer[310];
 } GDI_TEB_BATCH, *PGDI_TEB_BATCH;
 
 typedef struct _TEB_ACTIVE_FRAME_CONTEXT
@@ -745,6 +840,24 @@ typedef struct _PROCESS_BASIC_INFORMATION
 	HANDLE InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION, *PPROCESS_BASIC_INFORMATION;
 
+typedef struct _PROCESS_BASIC_INFORMATION_WOW64 {
+	NTSTATUS ExitStatus;
+	PTR_64(PPEB) PebBaseAddress;
+	PTR_64(ULONG_PTR) AffinityMask;
+	KPRIORITY BasePriority;
+	PTR_64(HANDLE) UniqueProcessId;
+	PTR_64(HANDLE) InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION_WOW64, *PPROCESS_BASIC_INFORMATION_WOW64;
+
+#define ConvertProcessBasicInformationFromWow64(o64, o) {\
+(o)->ExitStatus = (o64)->ExitStatus;\
+(o)->PebBaseAddress = POINTER32_HARDCODED(PPEB) ((o64)->PebBaseAddress + 0x1000);\
+(o)->AffinityMask = POINTER32_HARDCODED(ULONG_PTR) (o64)->AffinityMask;\
+(o)->BasePriority = (o64)->BasePriority;\
+(o)->UniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->UniqueProcessId;\
+(o)->InheritedFromUniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->InheritedFromUniqueProcessId;\
+}\
+
 typedef struct _PROCESS_BASIC_INFORMATION32
 {
 	NTSTATUS ExitStatus;
@@ -781,6 +894,21 @@ typedef struct _SYSTEM_HANDLE_INFORMATION
 	ULONG NumberOfHandles;
 	SYSTEM_HANDLE_TABLE_ENTRY_INFO Handles[1];
 } SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+
+typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO_WOW64 {
+	USHORT UniqueProcessId;
+	USHORT CreatorBackTraceIndex;
+	UCHAR ObjectTypeIndex;
+	UCHAR HandleAttributes;
+	USHORT HandleValue;
+	PTR_64(PVOID) Object;
+	ULONG GrantedAccess;
+} SYSTEM_HANDLE_TABLE_ENTRY_INFO_WOW64, *PSYSTEM_HANDLE_TABLE_ENTRY_INFO_WOW64;
+
+typedef struct _SYSTEM_HANDLE_INFORMATION_WOW64 {
+	ULONG NumberOfHandles;
+	SYSTEM_HANDLE_TABLE_ENTRY_INFO_WOW64 Handles[1];
+} SYSTEM_HANDLE_INFORMATION_WOW64, *PSYSTEM_HANDLE_INFORMATION_WOW64;
 
 // private
 typedef struct _PROCESS_HANDLE_TABLE_ENTRY_INFO {
@@ -891,6 +1019,27 @@ typedef struct _OBJECT_ATTRIBUTES {
 	PBYTE SecurityDescriptor;
 	PBYTE SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+
+typedef struct __declspec(align(16)) _OBJECT_ATTRIBUTES_WOW64 {
+	ULONG Length;
+	PTR_64(HANDLE) RootDirectory;
+	PTR_64(PUNICODE_STRING64) ObjectName;
+	ULONG Attributes;
+	PTR_64(PBYTE) SecurityDescriptor;
+	PTR_64(PBYTE) SecurityQualityOfService;
+} OBJECT_ATTRIBUTES_WOW64, *POBJECT_ATTRIBUTES_WOW64;
+
+#define ConvertObjectAttributesWow64(Obj64, Obj) { \
+(Obj64)->Attributes = (Obj)->Attributes;\
+(Obj64)->Length = sizeof(OBJECT_ATTRIBUTES_WOW64);\
+(Obj64)->RootDirectory = WOW64_CONVERT(HANDLE) (Obj)->RootDirectory;\
+(Obj64)->SecurityDescriptor = WOW64_CONVERT(PBYTE) (Obj)->SecurityDescriptor;\
+(Obj64)->SecurityQualityOfService = WOW64_CONVERT(PBYTE) (Obj)->SecurityQualityOfService;\
+(Obj64)->ObjectName = WOW64_CONVERT(PUNICODE_STRING64) HcAlloc(sizeof(UNICODE_STRING64));\
+((PUNICODE_STRING64) (Obj64)->ObjectName)->Length = (Obj)->ObjectName->Length; \
+((PUNICODE_STRING64) (Obj64)->ObjectName)->MaximumLength = (Obj)->ObjectName->MaximumLength; \
+((PUNICODE_STRING64) (Obj64)->ObjectName)->Buffer = WOW64_CONVERT(PWSTR) (Obj)->ObjectName->Buffer; \
+}\
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
@@ -1051,11 +1200,28 @@ typedef struct _IO_STATUS_BLOCK {
 	ULONG_PTR Information;
 } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
+typedef struct DECLSPEC_ALIGN(16) _IO_STATUS_BLOCK_WOW64 {
+	union {
+		NTSTATUS Status;
+		PTR_64(PBYTE) Pointer;
+	};
+
+	PTR_64(ULONG_PTR) Information;
+} IO_STATUS_BLOCK_WOW64, *PIO_STATUS_BLOCK_WOW64;
+
 typedef
 VOID
 (NTAPI *PIO_APC_ROUTINE) (
 	IN PBYTE ApcContext,
 	IN PIO_STATUS_BLOCK IoStatusBlock,
+	IN ULONG Reserved
+	);
+
+typedef
+VOID
+(NTAPI *PIO_APC_ROUTINE_WOW64) (
+	IN PTR_64(PBYTE) ApcContext,
+	IN PTR_64(PIO_STATUS_BLOCK_WOW64) IoStatusBlock,
 	IN ULONG Reserved
 	);
 
@@ -1523,12 +1689,12 @@ typedef enum _FILE_INFORMATION_CLASS
 
 
 typedef struct _RTL_BUFFER {
-	PUCHAR    Buffer;
-	PUCHAR    StaticBuffer;
-	SIZE_T    Size;
-	SIZE_T    StaticSize;
-	SIZE_T    ReservedForAllocatedSize; // for future doubling
-	PBYTE     ReservedForIMalloc; // for future pluggable growth
+    PWCHAR    Buffer;
+    PWCHAR    StaticBuffer;
+    SIZE_T    Size;
+    SIZE_T    StaticSize;
+    SIZE_T    ReservedForAllocatedSize; // for future doubling
+    PVOID     ReservedForIMalloc; // for future pluggable growth
 } RTL_BUFFER, *PRTL_BUFFER;
 
 typedef enum _LDR_DLL_LOAD_REASON
@@ -1616,8 +1782,13 @@ typedef enum _WINDOWINFOCLASS
 typedef struct
 {
 	UNICODE_STRING SectionFileName;
-	WCHAR NameBuffer[ANYSIZE_ARRAY];
+	WCHAR NameBuffer[MAX_PATH];
 } MEMORY_SECTION_NAME, *PMEMORY_SECTION_NAME;
+
+typedef struct {
+	UNICODE_STRING64 SectionFileName;
+	WCHAR NameBuffer[MAX_PATH];
+} MEMORY_SECTION_NAME_WOW64, *PMEMORY_SECTION_NAME_WOW64;
 
 typedef struct _NtCreateThreadExBuffer {
 	ULONG Size;
@@ -2123,13 +2294,11 @@ typedef struct _PEB32
 	ULONGLONG CsrServerReadOnlySharedMemoryBase;
 } PEB32, *PPEB32;
 
-#define GDI_BATCH_BUFFER_SIZE 310
-
 typedef struct _GDI_TEB_BATCH32
 {
 	ULONG Offset;
 	PTR_32(ULONG_PTR) HDC;
-	ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
+	ULONG Buffer[310];
 } GDI_TEB_BATCH32, *PGDI_TEB_BATCH32;
 
 typedef struct _TEB32
@@ -2188,22 +2357,6 @@ typedef struct _SINGLE_LIST_ENTRY64
 {
 	ULONG Next;
 } SINGLE_LIST_ENTRY64, *PSINGLE_LIST_ENTRY64;
-
-typedef struct _CLIENT_ID64
-{
-	ULONGLONG UniqueProcess;
-	ULONGLONG UniqueThread;
-} CLIENT_ID64, *PCLIENT_ID64;
-
-typedef struct _STRING64
-{
-	USHORT Length;
-	USHORT MaximumLength;
-	ULONGLONG Buffer;
-} STRING64, *PSTRING64;
-
-typedef STRING64 UNICODE_STRING64, *PUNICODE_STRING64;
-typedef STRING64 ANSI_STRING64, *PANSI_STRING64;
 
 typedef struct _RTL_BALANCED_NODE64
 {
@@ -2540,13 +2693,11 @@ typedef struct _PEB64
 	ULONGLONG CsrServerReadOnlySharedMemoryBase;
 } PEB64, *PPEB64;
 
-#define GDI_BATCH_BUFFER_SIZE 310
-
 typedef struct _GDI_TEB_BATCH64
 {
 	ULONG Offset;
 	PTR_64(ULONG_PTR) HDC;
-	ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
+	ULONG Buffer[310];
 } GDI_TEB_BATCH64, *PGDI_TEB_BATCH64;
 
 typedef struct _TEB64
@@ -2598,5 +2749,57 @@ typedef struct _TEB64
 	PTR_64(PVOID) TlsSlots[64];
 	LIST_ENTRY64 TlsLinks;
 } TEB64, *PTEB64;
+
+//
+// Object Manager Symbolic Link Specific Access Rights.
+//
+
+#define SYMBOLIC_LINK_QUERY (0x0001)
+#define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | 0x1)
+
+typedef struct _OBJECT_DIRECTORY_INFORMATION {
+	UNICODE_STRING Name;
+	UNICODE_STRING TypeName;
+} OBJECT_DIRECTORY_INFORMATION, *POBJECT_DIRECTORY_INFORMATION;
+
+typedef struct  _OBJECT_DIRECTORY_INFORMATION_WOW64 {
+	UNICODE_STRING64 Name;
+	UNICODE_STRING64 TypeName;
+} OBJECT_DIRECTORY_INFORMATION_WOW64, *POBJECT_DIRECTORY_INFORMATION_WOW64;
+
+#define ConvertObjectDirectoryInformationWow64(o64, o) ConvertStringWow64(&((o64)->Name), &((o)->Name)); ConvertStringWow64(&((o64)->TypeName), &((o)->TypeName));
+#define ConvertObjectDirectoryInformationFromWow64(o64, o) ConvertUnicodeStringFromWow64(&((o64)->Name), &((o)->Name)); ConvertUnicodeStringFromWow64(&((o64)->TypeName), &((o)->TypeName));
+
+#define MAX_DOS_DRIVES 26
+
+typedef struct _PROCESS_DEVICEMAP_INFORMATION {
+	union {
+		struct {
+			ULONG DirectoryHandle;
+		} Set;
+		struct {
+			ULONG DriveMap;
+			UCHAR DriveType[32];
+		} Query;
+	} DUMMYUNIONNAME;
+} PROCESS_DEVICEMAP_INFORMATION, *PPROCESS_DEVICEMAP_INFORMATION;
+
+typedef struct __declspec(align(16))_PROCESS_DEVICEMAP_INFORMATION_WOW64 {
+	union {
+		struct {
+			PTR_64(HANDLE) DirectoryHandle;
+		} Set;
+		struct {
+			ULONG DriveMap;
+			UCHAR DriveType[32];
+		} Query;
+	} DUMMYUNIONNAME;
+} PROCESS_DEVICEMAP_INFORMATION_WOW64, *PPROCESS_DEVICEMAP_INFORMATION_WOW64;
+
+#define ConvertProcessDeviceMapInformationFromWow64(o64, o){\
+(o)->Set.DirectoryHandle = POINTER32_HARDCODED(HANDLE) ((o64)->Set.DirectoryHandle);\
+(o)->Query.DriveMap = POINTER32_HARDCODED(ULONG) ((o64)->Query.DriveMap);\
+HcInternalCopy((o)->Query.DriveType, (o64)->Query.DriveType, sizeof((o64)->Query.DriveType));\
+}\
 
 #endif

@@ -21,7 +21,15 @@ DECL_EXTERN_API(VOID, Sleep, CONST IN DWORD dwMilliseconds)
 	}
 
 	/* Do the delay */
-	Status = HcDelayExecution(FALSE, TimePtr);
+	if (HcGlobal.IsWow64)
+	{
+		Status = HcDelayExecutionWow64(FALSE, (ULONG64) TimePtr);
+	}
+	else
+	{
+		Status = HcDelayExecution(FALSE, TimePtr);
+	}
+
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);

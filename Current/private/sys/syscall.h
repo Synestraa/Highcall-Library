@@ -411,7 +411,15 @@ NTSTATUS SYSCALLAPI HcCreateKey(
   IN       ULONG              TitleIndex,
   IN   	   PUNICODE_STRING    Class OPTIONAL,
   IN       ULONG              CreateOptions,
-  OUT  	   PULONG             Disposition OPTIONAL);
+  OUT  	   PULONG             Disposition OPTIONAL); 
+
+NTSTATUS SYSCALLAPI HcOpenSymbolicLinkObject(OUT PHANDLE LinkHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes);
+
+NTSTATUS SYSCALLAPI HcQuerySymbolicLinkObject(IN HANDLE LinkHandle,
+	OUT PUNICODE_STRING LinkTarget,
+	OUT PULONG ResultLength OPTIONAL);
 
 NTSTATUS 
 SYSCALLAPI 
@@ -432,6 +440,14 @@ HcSetDebugFilterState(
 	ULONG Level, 
 	BOOLEAN State);
 
+NTSTATUS SYSCALLAPI HcQueryDirectoryObject(IN HANDLE DirectoryHandle,
+	OUT PVOID Buffer,
+	IN ULONG BufferLength,
+	IN BOOLEAN ReturnSingleEntry,
+	IN BOOLEAN RestartScan,
+	IN OUT PULONG Context,
+	OUT PULONG ReturnLength OPTIONAL);
+
 NTSTATUS
 SYSCALLAPI
 HcCreateDebugObject(
@@ -440,15 +456,47 @@ HcCreateDebugObject(
 	IN POBJECT_ATTRIBUTES ObjectAttributes,
 	IN ULONG Flags);
 
+NTSTATUS SYSCALLAPI HcReadFileWow64(
+	IN  PTR_64(HANDLE)			 FileHandle,
+	IN  PTR_64(HANDLE)			 Event OPTIONAL,
+	IN  PTR_64(PIO_APC_ROUTINE_WOW64)  ApcRoutine OPTIONAL,
+	IN  PTR_64(PVOID)			 ApcContext OPTIONAL,
+	OUT PTR_64(PIO_STATUS_BLOCK_WOW64) IoStatusBlock,
+	OUT PTR_64(PVOID)            Buffer,
+	IN  ULONG					 Length,
+	IN  PTR_64(PLARGE_INTEGER_WOW64)   ByteOffset OPTIONAL,
+	IN  PTR_64(PULONG)           Key OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcCreateFileWow64(
+	OUT		 PTR_64(PHANDLE)			FileHandle,
+	IN		 ACCESS_MASK				DesiredAccess,
+	IN		 PTR_64(POBJECT_ATTRIBUTES_WOW64)	ObjectAttributes,
+	OUT		 PTR_64(PIO_STATUS_BLOCK_WOW64)	IoStatusBlock,
+	_In_opt_ PTR_64(PLARGE_INTEGER_WOW64)     AllocationSize,
+	IN		 ULONG						FileAttributes,
+	IN		 ULONG						ShareAccess,
+	IN		 ULONG						CreateDisposition,
+	IN		 ULONG						CreateOptions,
+	IN		 PTR_64(PVOID)				EaBuffer,
+	IN		 ULONG						EaLength);
+
+NTSTATUS SYSCALLAPI HcOpenProcessTokenWow64(CONST IN PTR_64(HANDLE) hProcess,
+	CONST IN ACCESS_MASK DesiredAccess,
+	OUT PTR_64(PHANDLE) TokenHandle);
+
+NTSTATUS SYSCALLAPI HcWaitForSingleObjectWow64(IN PTR_64(HANDLE) hObject,
+	IN BOOLEAN bAlertable,
+	IN PTR_64(PLARGE_INTEGER) Timeout);
+
 NTSTATUS
 SYSCALLAPI
-HcClose64(IN PTR_64(HANDLE) hObj);
+HcCloseWow64(IN PTR_64(HANDLE) hObj);
 
 NTSTATUS
 SYSCALLAPI 
-HcCreateThreadEx64(OUT PTR_64(PHANDLE) PtrThreadHandle,
+HcCreateThreadExWow64(OUT PTR_64(PHANDLE) PtrThreadHandle,
 	IN ACCESS_MASK DesiredAccess,
-	IN PTR_64(POBJECT_ATTRIBUTES) PtrObjectAttributes OPTIONAL,
+	IN PTR_64(OBJECT_ATTRIBUTES_WOW64) PtrObjectAttributes OPTIONAL,
 	IN PTR_64(HANDLE) ProcessHandle,
 	IN PTR_64(PVOID) StartRoutine,
 	IN PTR_64(PVOID) Argument OPTIONAL,
@@ -457,6 +505,99 @@ HcCreateThreadEx64(OUT PTR_64(PHANDLE) PtrThreadHandle,
 	IN PTR_64(SIZE_T) StackSize OPTIONAL,
 	IN PTR_64(SIZE_T) MaximumStackSize OPTIONAL,
 	IN PTR_64(PVOID) AttributeList OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcAllocateVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProcess,
+	IN PTR_64(LPVOID*) UBaseAddress,
+	IN ULONG64 ZeroBits,
+	IN OUT PTR_64(PSIZE_T) URegionSize,
+	CONST IN PTR_64(ULONG) AllocationType,
+	CONST IN PTR_64(ULONG) Protect);
+
+NTSTATUS SYSCALLAPI HcFreeVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProcess,
+	IN PTR_64(LPVOID*) UBaseAddress,
+	IN PTR_64(PSIZE_T) URegionSize,
+	CONST IN PTR_64(ULONG) FreeType);
+
+NTSTATUS SYSCALLAPI HcOpenProcessWow64(
+	OUT PTR_64(PHANDLE)	ProcessHandle,
+	CONST IN PTR_64(ACCESS_MASK) DesiredAccess,
+	CONST IN PTR_64(POBJECT_ATTRIBUTES_WOW64) ObjectAttributes,
+	IN PTR_64(PCLIENT_ID_WOW64) ClientId OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcProtectVirtualMemoryWow64(CONST IN PTR_64(HANDLE) ProcessHandle,
+	IN OUT PTR_64(PVOID*) BaseAddress,
+	IN OUT PTR_64(PSIZE_T) NumberOfBytesToProtect,
+	CONST IN ULONG NewAccessProtection,
+	OUT PTR_64(PULONG) OldAccessProtection);
+
+NTSTATUS SYSCALLAPI HcReadVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
+	CONST PTR_64(PVOID) BaseAddress,
+	PTR_64(LPVOID) Buffer,
+	CONST SIZE_T BufferSize,
+	PTR_64(PSIZE_T) NumberOfBytesRead);
+
+NTSTATUS SYSCALLAPI HcWriteVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
+	CONST PTR_64(LPVOID) BaseAddress,
+	CONST PTR_64(VOID*) Buffer,
+	CONST SIZE_T BufferSize,
+	PTR_64(PSIZE_T) NumberOfBytesWritten);
+
+NTSTATUS SYSCALLAPI HcAdjustPrivilegesTokenWow64(PTR_64(HANDLE) TokenHandle,
+	BOOLEAN DisableAllPrivileges,
+	PTR_64(PTOKEN_PRIVILEGES) NewState,
+	DWORD BufferLength,
+	PTR_64(PTOKEN_PRIVILEGES) PreviousState,
+	PTR_64(PDWORD) ReturnLength);
+
+NTSTATUS SYSCALLAPI HcDelayExecutionWow64(IN BOOLEAN Alertable,
+	IN PTR_64(PLARGE_INTEGER) DelayInterval);
+
+NTSTATUS SYSCALLAPI HcQueryVirtualMemoryWow64(IN PTR_64(HANDLE) ProcessHandle,
+	IN PTR_64(LPVOID) BaseAddress,
+	IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
+	OUT PTR_64(LPVOID) MemoryInformation,
+	IN PTR_64(SIZE_T) MemoryInformationLength,
+	OUT PTR_64(PSIZE_T) ReturnLength);
+
+NTSTATUS SYSCALLAPI HcResumeProcessWow64(CONST IN PTR_64(HANDLE) ProcessHandle);
+
+NTSTATUS SYSCALLAPI HcSuspendProcessWow64(CONST IN PTR_64(HANDLE) ProcessHandle);
+
+NTSTATUS SYSCALLAPI HcQuerySystemInformationWow64(IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
+	OUT PTR_64(LPVOID) SystemInformation,
+	IN ULONG SystemInformationLength,
+	OUT PULONG ReturnLength);
+
+NTSTATUS SYSCALLAPI HcOpenDirectoryObjectWow64(OUT PTR_64(PHANDLE) DirectoryHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN PTR_64(POBJECT_ATTRIBUTES_WOW64) ObjectAttributes);
+
+NTSTATUS SYSCALLAPI HcOpenSymbolicLinkObjectWow64(OUT PTR_64(PHANDLE) LinkHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN PTR_64(POBJECT_ATTRIBUTES_WOW64) ObjectAttributes);
+
+NTSTATUS SYSCALLAPI HcQuerySymbolicLinkObjectWow64(IN PTR_64(HANDLE) LinkHandle,
+	OUT PTR_64(PUNICODE_STRING64) LinkTarget,
+	OUT PTR_64(PULONG) ResultLength OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcQueryDirectoryObjectWow64(IN PTR_64(HANDLE) DirectoryHandle,
+	OUT PTR_64(VOID) Buffer,
+	IN ULONG BufferLength,
+	IN BOOLEAN ReturnSingleEntry,
+	IN BOOLEAN RestartScan,
+	IN OUT PTR_64(PULONG) Context,
+	OUT PTR_64(PULONG) ReturnLength OPTIONAL); 
+
+NTSTATUS SYSCALLAPI HcQueryInformationProcessWow64(
+	IN PTR_64(HANDLE) ProcessHandle,
+	IN PROCESSINFOCLASS ProcessInformationClass,
+	OUT PTR_64(LPVOID) ProcessInformation,
+	IN ULONG ProcessInformationLength,
+	OUT PTR_64(PULONG) ReturnLength OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcFlushInstructionCacheWow64(CONST IN PTR_64(HANDLE) ProcessHandle,
+	CONST IN PTR_64(LPVOID) BaseAddress,
+	CONST IN SIZE_T NumberOfBytesToFlush);
 
 DWORD64
 SYSCALLAPI

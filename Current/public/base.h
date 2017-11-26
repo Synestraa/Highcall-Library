@@ -80,6 +80,7 @@ typedef long SYS_INDEX;
 #define WINDOWS_10_1507			4
 #define WINDOWS_10_1511			5
 #define WINDOWS_10_1607			6
+#define WINDOWS_10_1703			7
 #define WINDOWS_NOT_SUPPORTED	0
 #define WINDOWS_NOT_DEFINED	   -1
 #pragma endregion

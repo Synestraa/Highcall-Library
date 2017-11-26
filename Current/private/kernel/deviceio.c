@@ -110,8 +110,14 @@ DECL_EXTERN_API(BOOLEAN, DeviceIoControl,
 		if (Status == STATUS_PENDING)
 		{
 			/* Wait for it and get the final status */
-			Status = HcWaitForSingleObject(hDevice, FALSE, NULL);
-			if (NT_SUCCESS(Status)) Status = Iosb.Status;
+			if (HcObjectWait(hDevice, INFINITE))
+			{
+				Status = Iosb.Status;
+			}
+			else
+			{
+				Status = HcErrorGetLastStatus();
+			}
 		}
 
 		/* Check for success */

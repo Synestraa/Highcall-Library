@@ -109,25 +109,158 @@ DECL_EXTERN_API(PIMAGE_EXPORT_DIRECTORY, ImageGetExportDirectory64, CONST IN ULO
 	return lpExportDirectory;
 }
 
-DECL_EXTERN_API(ULONG, ImageOffsetFromRVA, IN PIMAGE_NT_HEADERS pImageHeader, IN DWORD RVA)
+DECL_EXTERN_API(BOOLEAN, ImageRemoteSectionByNameA, IN HANDLE hProcess, OUT PIMAGE_SECTION_HEADER Section, IN HMODULE hModule, IN LPSTR lpSection)
+{
+	IMAGE_DOS_HEADER DosHeader;
+	PIMAGE_SECTION_HEADER Sections;
+	PIMAGE_SECTION_HEADER CurrentSection;
+	PIMAGE_NT_HEADERS NtHeader;
+	IMAGE_NT_HEADERS NtCopiedHeader;
+	BOOLEAN Success = FALSE;
+	DWORD SectionCount = 0;
+
+	ZERO(&NtCopiedHeader);
+	ZERO(&DosHeader);
+
+	if (!HcImageRemoteDosHeaderFromModule(hProcess, hModule, &DosHeader))
+	{
+		goto done;
+	}
+
+	NtHeader = (PIMAGE_NT_HEADERS) ((ULONG_PTR) hModule + DosHeader.e_lfanew);
+
+	if (!HcProcessReadMemory(hProcess, NtHeader, &NtCopiedHeader, sizeof(NtCopiedHeader), NULL))
+	{
+		goto done;
+	}
+
+	if (NtCopiedHeader.Signature != IMAGE_NT_SIGNATURE)
+	{
+		goto done;
+	}
+
+	SectionCount = NtCopiedHeader.FileHeader.NumberOfSections;
+	if (!SectionCount)
+	{
+		goto done;
+	}
+
+	Sections = HcAlloc(sizeof(IMAGE_SECTION_HEADER) * SectionCount);
+	if (!Sections)
+	{
+		goto done;
+	}
+
+	if (!HcProcessReadMemory(hProcess,
+		NtHeader + 1,
+		Sections,
+		sizeof(IMAGE_SECTION_HEADER) * SectionCount,
+		NULL))
+	{
+		goto done;
+	}
+
+	CurrentSection = Sections;
+
+	for (DWORD i = 0; i < SectionCount; i++, CurrentSection++)
+	{
+		if (!HcStringIsBad(CurrentSection->Name) && HcStringEqualA(CurrentSection->Name, lpSection, TRUE))
+		{
+			HcInternalCopy(Section, CurrentSection, sizeof(IMAGE_SECTION_HEADER));
+			Success = TRUE;
+			goto done;
+		}
+	}
+
+	if (Sections != NULL)
+	{
+		HcFree(Sections);
+	}
+
+done:
+	return Success;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageSectionByNameA, OUT PIMAGE_SECTION_HEADER Section, IN PIMAGE_NT_HEADERS pImageHeader, IN LPSTR lpSection)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
 
 	/* Search through all sections */
 	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
 	{
-		/* Check if the section we hit is the one we need */
-		if (sectionHeader->VirtualAddress <= RVA)
+		if (!HcStringIsBad(sectionHeader->Name) && HcStringEqualA(sectionHeader->Name, lpSection, TRUE))
 		{
-			if ((sectionHeader->VirtualAddress + sectionHeader->Misc.VirtualSize) > RVA)
-			{
-				/* The section is good, calculate our offset */
+			HcInternalCopy(Section, sectionHeader, sizeof(IMAGE_SECTION_HEADER));
+			return TRUE;
+		}
+	}
 
-				RVA -= sectionHeader->VirtualAddress;
-				RVA += sectionHeader->PointerToRawData;
+	return FALSE;
+}
 
-				return RVA;
-			}
+DECL_EXTERN_API(BOOLEAN, ImageSectionByName32A, OUT PIMAGE_SECTION_HEADER Section, IN PIMAGE_NT_HEADERS32 pImageHeader, IN LPSTR lpSection)
+{
+	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+
+	/* Search through all sections */
+	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
+	{
+		if (!HcStringIsBad(sectionHeader->Name) && HcStringEqualA(sectionHeader->Name, lpSection, TRUE))
+		{
+			HcInternalCopy(Section, sectionHeader, sizeof(IMAGE_SECTION_HEADER));
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+DECL_EXTERN_API(BOOLEAN, ImageSectionByName64A, OUT PIMAGE_SECTION_HEADER Section, IN PIMAGE_NT_HEADERS64 pImageHeader, IN LPSTR lpSection)
+{
+	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+
+	/* Search through all sections */
+	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
+	{
+		if (!HcStringIsBad(sectionHeader->Name) && HcStringEqualA(sectionHeader->Name, lpSection, TRUE))
+		{
+			HcInternalCopy(Section, sectionHeader, sizeof(IMAGE_SECTION_HEADER));
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+DECL_EXTERN_API(ULONG, ImageOffset, IN PIMAGE_SECTION_HEADER pSection, IN DWORD RVA)
+{
+	/* Check if the section we hit is the one we need */
+	if (pSection->VirtualAddress <= RVA)
+	{
+		if ((pSection->VirtualAddress + pSection->Misc.VirtualSize) > RVA)
+		{
+			RVA -= pSection->VirtualAddress;
+			RVA += pSection->PointerToRawData;
+
+			return RVA;
+		}
+	}
+
+	return 0;
+}
+
+DECL_EXTERN_API(ULONG, ImageOffsetFromRVA, IN PIMAGE_NT_HEADERS pImageHeader, IN DWORD RVA)
+{
+	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+	DWORD Result;
+
+	/* Search through all sections */
+	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
+	{
+		Result = HcImageOffset(sectionHeader, RVA);
+		if (Result)
+		{
+			return Result;
 		}
 	}
 
@@ -137,22 +270,15 @@ DECL_EXTERN_API(ULONG, ImageOffsetFromRVA, IN PIMAGE_NT_HEADERS pImageHeader, IN
 DECL_EXTERN_API(ULONG, ImageOffsetFromRVA32, IN PIMAGE_NT_HEADERS32 pImageHeader, IN DWORD RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+	DWORD Result;
 
 	/* Search through all sections */
 	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
 	{
-		/* Check if the section we hit is the one we need */
-		if (sectionHeader->VirtualAddress <= RVA)
+		Result = HcImageOffset(sectionHeader, RVA);
+		if (Result)
 		{
-			if ((sectionHeader->VirtualAddress + sectionHeader->Misc.VirtualSize) > RVA)
-			{
-				/* The section is good, calculate our offset */
-
-				RVA -= sectionHeader->VirtualAddress;
-				RVA += sectionHeader->PointerToRawData;
-
-				return RVA;
-			}
+			return Result;
 		}
 	}
 
@@ -163,22 +289,15 @@ DECL_EXTERN_API(ULONG, ImageOffsetFromRVA32, IN PIMAGE_NT_HEADERS32 pImageHeader
 DECL_EXTERN_API(ULONG, ImageOffsetFromRVA64, IN PIMAGE_NT_HEADERS64 pImageHeader, IN DWORD RVA)
 {
 	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(pImageHeader);
+	DWORD Result;
 
 	/* Search through all sections */
 	for (unsigned i = 0, sections = pImageHeader->FileHeader.NumberOfSections; i < sections; i++, sectionHeader++)
 	{
-		/* Check if the section we hit is the one we need */
-		if (sectionHeader->VirtualAddress <= RVA)
+		Result = HcImageOffset(sectionHeader, RVA);
+		if (Result)
 		{
-			if ((sectionHeader->VirtualAddress + sectionHeader->Misc.VirtualSize) > RVA)
-			{
-				/* The section is good, calculate our offset */
-
-				RVA -= sectionHeader->VirtualAddress;
-				RVA += sectionHeader->PointerToRawData;
-
-				return RVA;
-			}
+			return Result;
 		}
 	}
 	return 0;

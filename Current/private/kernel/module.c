@@ -32,6 +32,7 @@ DECL_EXTERN_API(PLDR_DATA_TABLE_ENTRY, ModuleEntryW, IN LPCWSTR lpModuleName, CO
 	LdrUnlockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_TRY_ONLY, Cookie);
 	return NULL;
 }
+
 DECL_EXTERN_API(BOOLEAN, ModuleRemoteEntry64W, CONST IN HANDLE hProcess, IN LPCWSTR lpModuleName, CONST IN BOOLEAN CaseInsensitive, PLDR_DATA_TABLE_ENTRY64 pLdrEntry)
 {
 	PEB64 Peb;
@@ -368,6 +369,13 @@ DECL_EXTERN_API(HMODULE, ModuleHandleWow64W, IN LPCWSTR lpModuleName)
 #ifdef _WIN64
 	PTEB32 pTeb32 = (PTEB32) ((LPBYTE) NtCurrentTeb() + 0x2000);
 	PPEB32 pPeb32 = POINTER32_HARDCODED(PPEB32) pTeb32->ProcessEnvironmentBlock;
+
+	if (pPeb32 == NULL || pPeb32->Ldr == 0) /* If we inject early enough, this is null.*/
+	{
+		return hReturn;
+	}
+
+
 	PPEB_LDR_DATA32 pLdr32 = POINTER32_HARDCODED(PPEB_LDR_DATA32) pPeb32->Ldr;
 	PLIST_ENTRY32 pListHead = POINTER32_HARDCODED(PLIST_ENTRY32) &(pLdr32->InLoadOrderModuleList);
 	PLIST_ENTRY32 pListEntry = POINTER32_HARDCODED(PLIST_ENTRY32) pListHead->Flink;
@@ -491,7 +499,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 
 	ZERO(&basicInfo);
 
-	Status = HcQueryVirtualMemory(
+	Status = HcQueryVirtualMemoryEx(
 		ProcessHandle,
 		baseAddress,
 		MemoryBasicInformation,
@@ -516,7 +524,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 				baseAddress = (PVOID) ((ULONG_PTR) baseAddress + basicInfo.RegionSize);
 				allocationSize += basicInfo.RegionSize;
 
-				Status = HcQueryVirtualMemory(ProcessHandle,
+				Status = HcQueryVirtualMemoryEx(ProcessHandle,
 					baseAddress,
 					MemoryBasicInformation,
 					&basicInfo,
@@ -561,7 +569,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedExW, CONST IN HANDLE ProcessHandle,
 		{
 			baseAddress = (PVOID) ((ULONG_PTR) baseAddress + basicInfo.RegionSize);
 
-			Status = HcQueryVirtualMemory(ProcessHandle,
+			Status = HcQueryVirtualMemoryEx(ProcessHandle,
 				baseAddress,
 				MemoryBasicInformation,
 				&basicInfo,
@@ -599,14 +607,14 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedW, IN LPCWSTR lpModuleName, CONST I
 	return HcModuleHandleAdvancedExW(NtCurrentProcess(), lpModuleName, bBit32);
 }
 
-DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32, IN BOOLEAN bBit64)
+DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN BOOLEAN bBit32)
 {
 	HMODULE hReturn = NULL;
 	LPWSTR lpConverted;
 
 	if (!lpModuleName)
 	{
-		return HcModuleHandleAdvancedW(NULL, bBit32, bBit64);
+		return HcModuleHandleAdvancedW(NULL, bBit32);
 	}
 
 	lpConverted = HcStringConvertAtoW(lpModuleName);
@@ -615,7 +623,7 @@ DECL_EXTERN_API(HMODULE, ModuleHandleAdvancedA, IN LPCSTR lpModuleName, CONST IN
 		return hReturn;
 	}
 
-	hReturn = HcModuleHandleAdvancedW(lpConverted, bBit32, bBit64);
+	hReturn = HcModuleHandleAdvancedW(lpConverted, bBit32);
 	
 	HcFree(lpConverted);
 	return hReturn;
@@ -632,10 +640,12 @@ DECL_EXTERN_API(ULONG64, ModuleRemoteHandle64W, CONST IN HANDLE hProcess, IN LPC
 
 	if (!lpModuleName)
 	{
-		HcProcessGetPeb64(hProcess, &Peb);
+		if (!HcProcessGetPeb64(hProcess, &Peb))
+		{
+			return 0;
+		}
 
-		hReturn = (ULONG64) Peb.ImageBaseAddress;
-		return hReturn;
+		return (ULONG64) Peb.ImageBaseAddress;
 	}
 
 	if (!HcModuleRemoteEntry64W(hProcess, lpModuleName, TRUE, &Entry))
@@ -643,9 +653,7 @@ DECL_EXTERN_API(ULONG64, ModuleRemoteHandle64W, CONST IN HANDLE hProcess, IN LPC
 		return hReturn;
 	}
 
-	hReturn = (ULONG64) Entry.DllBase;
-
-	return hReturn;
+	return (ULONG64) Entry.DllBase;;
 }
 
 DECL_EXTERN_API(DWORD, ModulePathAdvancedExA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, OUT LPSTR lpPath)
@@ -672,17 +680,14 @@ DECL_EXTERN_API(DWORD, ModulePathAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 {
 	SIZE_T tFileNameSize = 0;
 	NTSTATUS Status;
-	DWORD Length;
 	HMODULE Module = hModule;
+	MEMORY_SECTION_NAME Name;
 
-	struct {
-		MEMORY_SECTION_NAME memSection;
-		WCHAR CharBuffer[MAX_PATH];
-	} SectionName;
+	ZERO(&Name);
 
 	if (!Module)
 	{
-		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE, FALSE);
+		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE);
 		if (!Module)
 		{
 			return 0;
@@ -690,8 +695,8 @@ DECL_EXTERN_API(DWORD, ModulePathAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 	}
 
 	/* Query section name */
-	Status = HcQueryVirtualMemory(hProcess, Module, MemoryMappedFilenameInformation,
-		&SectionName, sizeof(SectionName), &tFileNameSize);
+	Status = HcQueryVirtualMemoryEx(hProcess, Module, MemoryMappedFilenameInformation,
+		&Name, sizeof(Name), &tFileNameSize);
 
 	if (!NT_SUCCESS(Status))
 	{
@@ -699,10 +704,13 @@ DECL_EXTERN_API(DWORD, ModulePathAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 		return 0;
 	}
 
-	Length = SectionName.memSection.SectionFileName.Length / sizeof(WCHAR);
+	/* Try converting it to a DOS Path. */
+	if (!HcVolumePathFromNtPath(Name.SectionFileName.Buffer, lpPath))
+	{
+		return 0;
+	}
 
-	HcStringCopyW(lpPath, SectionName.memSection.SectionFileName.Buffer, Length);
-	return Length;
+	return Name.SectionFileName.Length / sizeof(WCHAR);
 }
 
 DECL_EXTERN_API(DWORD, ModuleNameAdvancedExA, CONST IN HANDLE hProcess, CONST IN HMODULE hModule, OUT LPSTR lpName)
@@ -739,7 +747,7 @@ DECL_EXTERN_API(DWORD, ModuleNameAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 
 	if (!Module)
 	{
-		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE, FALSE);
+		Module = HcModuleHandleAdvancedExW(hProcess, NULL, FALSE);
 		if (!Module)
 		{
 			return 0;
@@ -747,7 +755,7 @@ DECL_EXTERN_API(DWORD, ModuleNameAdvancedExW, CONST IN HANDLE hProcess, CONST IN
 	}
 
 	/* Query section name */
-	Status = HcQueryVirtualMemory(hProcess, Module, MemoryMappedFilenameInformation,
+	Status = HcQueryVirtualMemoryEx(hProcess, Module, MemoryMappedFilenameInformation,
 		&SectionName, sizeof(SectionName), &tFileNameSize);
 
 	if (!NT_SUCCESS(Status))
@@ -865,7 +873,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleEnumAdvancedExW, CONST IN HANDLE ProcessHandle, C
 	ZERO(&Module);
 	ZERO(&basicInfo);
 
-	Status = HcQueryVirtualMemory(
+	Status = HcQueryVirtualMemoryEx(
 		ProcessHandle,
 		baseAddress,
 		MemoryBasicInformation,
@@ -888,7 +896,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleEnumAdvancedExW, CONST IN HANDLE ProcessHandle, C
 				baseAddress = (PVOID) ((ULONG_PTR) baseAddress + basicInfo.RegionSize);
 				allocationSize += basicInfo.RegionSize;
 
-				Status = HcQueryVirtualMemory(ProcessHandle,
+				Status = HcQueryVirtualMemoryEx(ProcessHandle,
 					baseAddress,
 					MemoryBasicInformation,
 					&basicInfo,
@@ -931,7 +939,7 @@ DECL_EXTERN_API(BOOLEAN, ModuleEnumAdvancedExW, CONST IN HANDLE ProcessHandle, C
 		{
 			baseAddress = (PVOID) ((ULONG_PTR) baseAddress + basicInfo.RegionSize);
 
-			Status = HcQueryVirtualMemory(ProcessHandle,
+			Status = HcQueryVirtualMemoryEx(ProcessHandle,
 				baseAddress,
 				MemoryBasicInformation,
 				&basicInfo,

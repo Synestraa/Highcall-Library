@@ -17,7 +17,7 @@ DECL_EXTERN_API(BOOLEAN, InternalCompare, IN PBYTE pbFirst, IN PBYTE pbSecond, I
 	return TRUE;
 }
 
-DECL_EXTERN_API(PVOID, InternalCopy, IN PVOID pDst, CONST IN LPCVOID pSrc, CONST IN SIZE_T tCount)
+DECL_EXTERN_API(PVOID, InternalCopy, IN PVOID pDst, IN LPCVOID pSrc, CONST IN SIZE_T tCount)
 {
 	PVOID ret = pDst;
 	SIZE_T sz = tCount;
