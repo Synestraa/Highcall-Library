@@ -1,8 +1,8 @@
 ## Highcall-Library
 
-Designed to avoid generic methods used in windows, avoiding common detection routines, while being a helpful library to work with in general. Residing in usermode, it communicates with the kernel through system calls, without leaving a trace.
+Designed for avoiding detection from behavior analytics, sandboxes, anti-cheats, anti-viruses used in windows, avoiding common detection routines. Slightly complicated to maintain. In the near certain future, the next Windows 10 update will likely change some system call indices. When that happens, some functions of highcall will consequentally be broken. Since I don't keep track of this repo very often, It will likely take some time for me to update it.
 
-Supported systems are Windows 7, Windows 8, Windows 8.1, Windows 10.
+Supported systems are Windows 7, Windows 8, Windows 8.1, Windows 10. Highcall is capable of running both in native x86/64 and as x86_64 in a wow64 process. Some procedures, in a wow64 environment while highcall is used, are going to use a gate to call the x86_64 version of a system call, instead of the windows wow64's version of it. This avoids the old trick of hooking the callgate procedure.
 
 * External/Internal Process 
   * List, find and open processes.
