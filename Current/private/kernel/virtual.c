@@ -70,7 +70,7 @@ DECL_EXTERN_API(ULONG64, VirtualAllocWow64Ex,
 {
 	NTSTATUS Status;
 
-	Status = HcWow64AllocateVirtualMemory64(hProcess, &Address, 0, &Size, flAllocationType, flProtect);
+	Status = HcAllocateVirtualMemoryWow64((DWORD64) hProcess, (DWORD64) &Address, (DWORD64) 0, (DWORD64) &Size, (DWORD64) flAllocationType, (DWORD64) flProtect);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);

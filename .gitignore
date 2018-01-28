@@ -321,4 +321,6 @@ __pycache__/
 *.out
 *.app
 
-Current/vs
+Current/vs/
+Current/vs/*
+*.tlog

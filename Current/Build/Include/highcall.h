@@ -1017,7 +1017,7 @@ extern "C" {
 	/* defined in scan.c */
 	DECL_EXTERN_API(NTSTATUS, ScanPageMinesCreate, PSCAN_PAGE_MINES ScanInformation);
 	DECL_EXTERN_API(NTSTATUS, ScanPageMinesCheck, PSCAN_PAGE_MINES ScanInformation);
-	DECL_EXTERN_API(ULONG, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggermines);
+	DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggermines);
 	DECL_EXTERN_API(NTSTATUS, ScanHideCurrentThread);
 	DECL_EXTERN_API(NTSTATUS, ScanApplyDebuggerMines);
 	DECL_EXTERN_API(NTSTATUS, ScanCheckProcessDebuggerFlags);

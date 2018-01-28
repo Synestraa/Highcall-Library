@@ -378,6 +378,15 @@ typedef struct _SYSTEM_THREAD_INFORMATION
 	 SYSTEM_THREAD_INFORMATION_WOW64 Threads[1];
  } SYSTEM_PROCESS_INFORMATION_WOW64, *PSYSTEM_PROCESS_INFORMATION_WOW64;
 
+#define ConvertProcessBasicInformationFromWow64(o64, o) {\
+(o)->ExitStatus = (o64)->ExitStatus;\
+(o)->PebBaseAddress = POINTER32_HARDCODED(PPEB) ((o64)->PebBaseAddress + 0x1000);\
+(o)->AffinityMask = POINTER32_HARDCODED(ULONG_PTR) (o64)->AffinityMask;\
+(o)->BasePriority = (o64)->BasePriority;\
+(o)->UniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->UniqueProcessId;\
+(o)->InheritedFromUniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->InheritedFromUniqueProcessId;\
+}\
+
 typedef struct _PEB_LDR_DATA {
 	ULONG Length;
 	BOOLEAN Initialized;
@@ -848,15 +857,6 @@ typedef struct _PROCESS_BASIC_INFORMATION_WOW64 {
 	PTR_64(HANDLE) UniqueProcessId;
 	PTR_64(HANDLE) InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION_WOW64, *PPROCESS_BASIC_INFORMATION_WOW64;
-
-#define ConvertProcessBasicInformationFromWow64(o64, o) {\
-(o)->ExitStatus = (o64)->ExitStatus;\
-(o)->PebBaseAddress = POINTER32_HARDCODED(PPEB) ((o64)->PebBaseAddress + 0x1000);\
-(o)->AffinityMask = POINTER32_HARDCODED(ULONG_PTR) (o64)->AffinityMask;\
-(o)->BasePriority = (o64)->BasePriority;\
-(o)->UniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->UniqueProcessId;\
-(o)->InheritedFromUniqueProcessId = POINTER32_HARDCODED(HANDLE) (o64)->InheritedFromUniqueProcessId;\
-}\
 
 typedef struct _PROCESS_BASIC_INFORMATION32
 {

@@ -71,7 +71,6 @@ DECL_EXTERN_API(NTSTATUS, ScanPageMinesCreate, PSCAN_PAGE_MINES ScanInformation)
 	return STATUS_SUCCESS;
 }
 
-static int g_LevelHandler = 0;
 static BOOLEAN g_vehContained = TRUE;
 
 LONG NTAPI ExceptionDebuggerDetectionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
@@ -81,7 +80,7 @@ LONG NTAPI ExceptionDebuggerDetectionHandler(struct _EXCEPTION_POINTERS *Excepti
 
 	if (ctx->Dr0 != 0 || ctx->Dr1 != 0 || ctx->Dr2 != 0 || ctx->Dr3 != 0)
 	{
-		g_LevelHandler++;
+		g_vehContained = TRUE;
 	}
 
 	if (exception->ExceptionCode == EXCEPTION_INVALID_HANDLE)
@@ -169,13 +168,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckProcessDebuggerFlags)
 	{
 		if (ReturnSize != sizeof(Flags) || Flags == 0)
 		{
-			g_LevelHandler++;
 			return STATUS_DEBUGGER_ATTACHED;
 		}
 	}
 	else
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -188,7 +185,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckPebFlags)
 	if (Peb == NULL)
 	{
 		/* this is pretty fucking weird if im being honest. unless we're a mini process. */
-		g_LevelHandler++;
 		return STATUS_INVALID_ADDRESS;
 	}
 
@@ -196,13 +192,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckPebFlags)
 	if (Peb->BeingDebugged)
 	{
 		/* does it get more basic? */
-		g_LevelHandler++;
 		return STATUS_DEBUGGER_ATTACHED;
 	}
 
 	if (Peb->NtGlobalFlag & NT_GLOBAL_FLAG_DEBUGGED)
 	{
-		g_LevelHandler++;
 		return STATUS_DEBUGGER_ATTACHED;
 	}
 
@@ -219,13 +213,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerPort)
 	{
 		if (DebugPort != NULL)
 		{
-			g_LevelHandler++;
 			return STATUS_DEBUGGER_ATTACHED;
 		}
 	}
 	else
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -237,7 +229,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckKernelFlag)
 	LPBYTE KUSER_SHARED_DATA = (LPBYTE) 0x7ffe0000;
 	if (*(KUSER_SHARED_DATA + 0x2d4) == 0x3)
 	{
-		g_LevelHandler++;
 		return STATUS_DEBUGGER_ATTACHED;
 	}
 
@@ -254,13 +245,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckKernelDebugger)
 	{
 		if ((BYTE) KernelDebuggerQuery && !HIBYTE(KernelDebuggerQuery))
 		{
-			g_LevelHandler++;
 			return STATUS_DEBUGGER_ATTACHED;
 		}
 	}
 	else
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -282,13 +271,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckThreadHook)
 	{
 		if (ThreadStartAddressInformation < Base || ThreadStartAddressInformation > Base + Size)
 		{
-			g_LevelHandler++;
 			return STATUS_DEBUGGER_ATTACHED;
 		}
 	}
 	else
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -311,7 +298,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckHeaderFlags)
 
 	if (pImageLoadConfigDirectory->GlobalFlagsClear != 0)
 	{
-		g_LevelHandler++;
 		return STATUS_DEBUGGER_ATTACHED;
 	}
 
@@ -329,7 +315,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckDebugHandle)
 	{
 		if (DebugHandle != NULL)
 		{
-			g_LevelHandler++;
 			return STATUS_DEBUGGER_ATTACHED;
 		}
 	}
@@ -337,7 +322,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckDebugHandle)
 	{
 		/* STATUS_PORT_NOT_SET is a totally legit value... others are not */
 
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -353,7 +337,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckModification)
 
 	if (*fnDbgBreakPoint != 0xc3 || *fnDbgUserBreakPoint != 0xc3)
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
@@ -368,14 +351,12 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckIsThreadHidden)
 	Status = HcQueryInformationThread(NtCurrentThread(), ThreadHideFromDebugger, &IsHidden, sizeof(IsHidden), NULL);
 	if (!NT_SUCCESS(Status))
 	{
-		g_LevelHandler++; /* this should never fail. */
 		return STATUS_FAIL_CHECK;
 	}
 	else
 	{
 		if (!IsHidden)
 		{
-			g_LevelHandler++;
 			return STATUS_FAIL_CHECK;
 		}
 	}
@@ -394,14 +375,12 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckHardwareBreakpoints)
 	* should check other threads. */
 	if (!HcThreadGetContext(NtCurrentThread(), &Context))
 	{
-		g_LevelHandler++;
 		return STATUS_FAIL_CHECK;
 	}
 
 	/* Is there a bp set in any of the 4 (max) bp slots? */
 	if (Context.Dr0 != 0 || Context.Dr1 != 0 || Context.Dr2 != 0 || Context.Dr3 != 0)
 	{
-		g_LevelHandler++;
 		return STATUS_DEBUGGER_ATTACHED;
 	}
 
@@ -426,13 +405,11 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckInvalidDebugObject)
 		{
 			if (Object->TotalNumberOfObjects == 0) //there must be 1 object...
 			{
-				g_LevelHandler++;
 				Status = STATUS_DEBUGGER_ATTACHED;
 			}
 		}
 		else
 		{
-			g_LevelHandler++;
 			HcObjectClose(&debugObject);
 			Status = STATUS_FAIL_CHECK;
 		}
@@ -442,7 +419,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckInvalidDebugObject)
 	}
 	else
 	{
-		g_LevelHandler++;
 		STATUS_FAIL_CHECK;
 	}
 
@@ -463,7 +439,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckVEH)
 	Status = HcClose((HANDLE) (ULONG_PTR) 0xDE4DBEEF);
 	if (Status != STATUS_INVALID_HANDLE)
 	{
-		g_LevelHandler++;
 		Status = STATUS_FAIL_CHECK;
 		goto done;
 	}
@@ -471,7 +446,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckVEH)
 	if (g_vehContained)
 	{
 		/* swallowed.. */
-		g_LevelHandler++;
 		Status = STATUS_DEBUGGER_ATTACHED;
 		goto done;
 	}
@@ -482,7 +456,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckVEH)
 
 	if (!g_vehContained)
 	{
-		g_LevelHandler++;
 		Status = STATUS_DEBUGGER_ATTACHED;
 		goto done;
 	}
@@ -501,7 +474,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckVEH)
 
 	if (!HcVirtualProtect(Page, 0x1000, PAGE_EXECUTE_READWRITE | PAGE_GUARD, &Protect))
 	{
-		g_LevelHandler++; /* unusual */
 		Status = STATUS_FAIL_CHECK;
 	}
 	else
@@ -518,7 +490,6 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckVEH)
 
 		if (!g_vehContained)
 		{
-			g_LevelHandler++;
 			Status = STATUS_DEBUGGER_ATTACHED;
 		}
 	}
@@ -535,27 +506,88 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckMemoryModificationSelf)
 
 }
 
-DECL_EXTERN_API(ULONG, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggerMines)
+DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggerMines)
 {
-	g_LevelHandler = 0;
+	NTSTATUS Status = HcScanCheckProcessDebuggerFlags();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
 
-	HcScanCheckProcessDebuggerFlags();
-	HcScanCheckPebFlags();
-	HcScanCheckDebuggerPort();
-	HcScanCheckKernelFlag();
-	HcScanCheckKernelDebugger();
-	HcScanCheckThreadHook();
-	HcScanCheckHeaderFlags();
-	HcScanCheckDebugHandle();
-	HcScanCheckHardwareBreakpoints();
-	HcScanCheckInvalidDebugObject();
-	HcScanCheckVEH();
+	Status = HcScanCheckPebFlags();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckDebuggerPort();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckKernelFlag();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckKernelDebugger();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckThreadHook();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckHeaderFlags();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckDebugHandle();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckHardwareBreakpoints();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckInvalidDebugObject();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
+
+	Status = HcScanCheckVEH();
+	if (Status == STATUS_DEBUGGER_ATTACHED)
+	{
+		return Status;
+	}
 
 	if (CheckDebuggerMines)
 	{
-		HcScanCheckModification();
-		HcScanCheckIsThreadHidden();
+		Status = HcScanCheckModification();
+		if (Status == STATUS_DEBUGGER_ATTACHED)
+		{
+			return Status;
+		}
+
+		Status = HcScanCheckIsThreadHidden();
+		if (Status == STATUS_DEBUGGER_ATTACHED)
+		{
+			return Status;
+		}
 	}
 
-	return g_LevelHandler;
+	return Status;
 }

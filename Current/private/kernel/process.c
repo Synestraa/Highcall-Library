@@ -453,14 +453,13 @@ DECL_EXTERN_API(BOOLEAN, ProcessWriteMemoryWow64, CONST IN HANDLE hProcess,
 	OUT PULONG64 lpNumberOfBytesWritten)
 {
 	NTSTATUS Status;
-	ULONG OldValue = 0;
 
 	/* Write the memory */
-	Status = HcWow64WriteVirtualMemory64(hProcess,
-		lpBaseAddress,
-		(LPVOID) lpBuffer,
-		nSize,
-		&nSize);
+	Status = HcWriteVirtualMemoryWow64((DWORD64) hProcess,
+		(DWORD64) lpBaseAddress,
+		(DWORD64) lpBuffer,
+		(DWORD64) nSize,
+		(DWORD64) &nSize);
 
 	/* In Win32, the parameter is optional, so handle this case */
 	if (lpNumberOfBytesWritten) *lpNumberOfBytesWritten = nSize;
@@ -537,11 +536,11 @@ DECL_EXTERN_API(BOOLEAN, ProcessReadMemoryWow64, CONST IN HANDLE hProcess,
 	ULONGLONG ReadBytes = 0;
 
 	/* Do the read */
-	Status = HcWow64ReadVirtualMemory64(hProcess,
-		lpBaseAddress,
-		lpBuffer,
-		nSize,
-		&ReadBytes);
+	Status = HcReadVirtualMemoryWow64((DWORD64) hProcess,
+		(DWORD64) lpBaseAddress,
+		(DWORD64) lpBuffer,
+		(DWORD64) nSize,
+		(DWORD64) &ReadBytes);
 
 	/* In user-mode, this parameter is optional */
 	if (lpNumberOfBytesRead)
@@ -966,6 +965,36 @@ DECL_EXTERN_API(NTSTATUS, ProcessFlushInstructionCache, CONST IN HANDLE ProcessH
 	}
 
 	return HcFlushInstructionCache(ProcessHandle, BaseAddress, NumberOfBytesToFlush);
+}
+
+DECL_EXTERN_API(NTSTATUS, QueryInformationProcess64,
+	IN HANDLE ProcessHandle,
+	IN PROCESSINFOCLASS ProcessInformationClass,
+	OUT LPVOID ProcessInformation,
+	IN ULONG ProcessInformationLength,
+	OUT PULONG ReturnLength OPTIONAL)
+{
+	NTSTATUS Status;
+
+#ifdef _WIN64
+
+	Status = HcQueryInformationProcess(ProcessHandle,
+		ProcessInformationClass,
+		ProcessInformation,
+		ProcessInformationLength,
+		ReturnLength);
+
+#else
+
+	Status = HcQueryInformationProcessWow64((ULONG64) ProcessHandle,
+		ProcessInformationClass,
+		(ULONG64) ProcessInformation,
+		ProcessInformationLength,
+		(ULONG64) ReturnLength);
+
+#endif // _WIN64
+
+	return Status;
 }
 
 DECL_EXTERN_API(NTSTATUS, QueryInformationProcessEx,
@@ -1412,20 +1441,12 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetPeb64, CONST IN HANDLE hProcess, OUT PPEB64 p
 
 	ZERO(&ProcInfo);
 
-#ifdef _WIN64
 	/* Query the process information to get its PEB address */
-	Status = HcQueryInformationProcessEx(hProcess,
+	Status = HcQueryInformationProcess64(hProcess,
 		ProcessBasicInformation,
 		&ProcInfo,
 		sizeof(ProcInfo),
 		&Len);
-#else
-	Status = HcWow64QueryInformationProcess64(hProcess,
-		ProcessBasicInformation,
-		&ProcInfo,
-		sizeof(ProcInfo),
-		&Len);
-#endif
 
 	if (!NT_SUCCESS(Status))
 	{

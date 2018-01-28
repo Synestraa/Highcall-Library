@@ -338,35 +338,6 @@ NTSTATUS SYSCALLAPI HcReadFile(
 	IN  PLARGE_INTEGER   ByteOffset OPTIONAL,
 	IN  PULONG           Key OPTIONAL);
 
-NTSTATUS SYSCALLAPI HcWow64QueryInformationProcess64(
-	IN HANDLE ProcessHandle,
-	IN PROCESSINFOCLASS ProcessInformationClass,
-	OUT PVOID ProcessInformation64,
-	IN ULONG ProcessInformationLength,
-	OUT PULONG ReturnLength OPTIONAL);
-
-NTSTATUS SYSCALLAPI HcWow64ReadVirtualMemory64(
-	IN HANDLE ProcessHandle,
-	IN PVOID64 BaseAddress OPTIONAL,
-	IN PVOID Buffer,
-	IN ULONG64 BufferSize,
-	OUT PULONGLONG NumberOfBytesRead OPTIONAL);
-
-NTSTATUS SYSCALLAPI HcWow64WriteVirtualMemory64(
-	IN HANDLE ProcessHandle,
-	IN PVOID64 BaseAddress OPTIONAL,
-	IN PVOID Buffer,
-	IN ULONG64 BufferSize,
-	OUT PULONG64 NumberOfBytesWritten OPTIONAL);
-
-NTSTATUS SYSCALLAPI HcWow64AllocateVirtualMemory64(
-	IN  HANDLE   ProcessHandle,
-	IN  PULONG64 BaseAddress,
-	IN  ULONG64  ZeroBits,
-	IN  PULONG64 Size,
-	IN  ULONG    AllocationType,
-	IN  ULONG    Protection);
-
 NTSTATUS SYSCALLAPI HcFlushBuffersFile(
 	IN HANDLE hFile, 
 	OUT PIO_STATUS_BLOCK IoStatusBlock);
@@ -506,13 +477,6 @@ HcCreateThreadExWow64(OUT PTR_64(PHANDLE) PtrThreadHandle,
 	IN PTR_64(SIZE_T) MaximumStackSize OPTIONAL,
 	IN PTR_64(PVOID) AttributeList OPTIONAL);
 
-NTSTATUS SYSCALLAPI HcAllocateVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProcess,
-	IN PTR_64(LPVOID*) UBaseAddress,
-	IN ULONG64 ZeroBits,
-	IN OUT PTR_64(PSIZE_T) URegionSize,
-	CONST IN PTR_64(ULONG) AllocationType,
-	CONST IN PTR_64(ULONG) Protect);
-
 NTSTATUS SYSCALLAPI HcFreeVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProcess,
 	IN PTR_64(LPVOID*) UBaseAddress,
 	IN PTR_64(PSIZE_T) URegionSize,
@@ -529,18 +493,6 @@ NTSTATUS SYSCALLAPI HcProtectVirtualMemoryWow64(CONST IN PTR_64(HANDLE) ProcessH
 	IN OUT PTR_64(PSIZE_T) NumberOfBytesToProtect,
 	CONST IN ULONG NewAccessProtection,
 	OUT PTR_64(PULONG) OldAccessProtection);
-
-NTSTATUS SYSCALLAPI HcReadVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
-	CONST PTR_64(PVOID) BaseAddress,
-	PTR_64(LPVOID) Buffer,
-	CONST SIZE_T BufferSize,
-	PTR_64(PSIZE_T) NumberOfBytesRead);
-
-NTSTATUS SYSCALLAPI HcWriteVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
-	CONST PTR_64(LPVOID) BaseAddress,
-	CONST PTR_64(VOID*) Buffer,
-	CONST SIZE_T BufferSize,
-	PTR_64(PSIZE_T) NumberOfBytesWritten);
 
 NTSTATUS SYSCALLAPI HcAdjustPrivilegesTokenWow64(PTR_64(HANDLE) TokenHandle,
 	BOOLEAN DisableAllPrivileges,
@@ -597,7 +549,26 @@ NTSTATUS SYSCALLAPI HcQueryInformationProcessWow64(
 
 NTSTATUS SYSCALLAPI HcFlushInstructionCacheWow64(CONST IN PTR_64(HANDLE) ProcessHandle,
 	CONST IN PTR_64(LPVOID) BaseAddress,
-	CONST IN SIZE_T NumberOfBytesToFlush);
+	CONST IN SIZE_T NumberOfBytesToFlush); 
+
+NTSTATUS SYSCALLAPI HcWriteVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
+		CONST PTR_64(LPVOID) BaseAddress,
+		CONST PTR_64(VOID*) Buffer,
+		CONST PTR_64(SIZE_T) BufferSize,
+		PTR_64(PSIZE_T) NumberOfBytesWritten);
+
+NTSTATUS SYSCALLAPI HcReadVirtualMemoryWow64(CONST PTR_64(HANDLE) ProcessHandle,
+	CONST PTR_64(LPVOID) BaseAddress,
+	PTR_64(LPVOID) Buffer,
+	CONST PTR_64(SIZE_T) BufferSize,
+	PTR_64(PSIZE_T) NumberOfBytesRead); 
+
+NTSTATUS SYSCALLAPI HcAllocateVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProcess,
+		IN PTR_64(LPVOID*) UBaseAddress,
+		IN PTR_64(ULONG_PTR) ZeroBits,
+		IN OUT PTR_64(PSIZE_T) URegionSize,
+		CONST IN ULONG AllocationType,
+		CONST IN ULONG Protect);
 
 DWORD64
 SYSCALLAPI
