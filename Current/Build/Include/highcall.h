@@ -927,7 +927,9 @@ extern "C" {
 	DECL_EXTERN_API(VOID, StringUInt64ToStringW, ULONG64 value, LPWSTR buffer);
 	DECL_EXTERN_API(VOID, StringUInt64ToStringA, ULONG64 value, LPSTR buffer);
 	DECL_EXTERN_API(VOID, StringInt64ToStringW, LONG64 value, LPWSTR buffer);
-	DECL_EXTERN_API(VOID, StringInt64ToStringA, LONG64 value, LPSTR buffer);
+	DECL_EXTERN_API(VOID, StringInt64ToStringA, LONG64 value, LPSTR buffer); 
+	DECL_EXTERN_API(VOID, StringUInt32ToHexStringA, ULONG n, LPSTR outbuf);
+	DECL_EXTERN_API(VOID, StringUInt32ToHexStringW, ULONG n, LPWSTR outbuf);
 
 	/* defined in privilege.c
 	** @unimplemented
@@ -1031,6 +1033,24 @@ extern "C" {
 	DECL_EXTERN_API(NTSTATUS, ScanCheckHardwareBreakpoints);
 	DECL_EXTERN_API(NTSTATUS, ScanCheckInvalidDebugObject);
 	DECL_EXTERN_API(NTSTATUS, ScanCheckVEH);
+
+	/* defined in hash.c */
+	typedef struct _SHA_256 {
+		BYTE data[64];
+		ULONG datalen;
+		unsigned long long bitlen;
+		ULONG state[8];
+	} SHA_256, *PSHA_256;
+
+	DECL_EXTERN_API(LPSTR, HashSha256A, LPVOID pData, SIZE_T Size);
+	DECL_EXTERN_API(LPWSTR, HashSha256W, LPVOID pData, SIZE_T Size);
+	DECL_EXTERN_API(VOID, HashSha256Transform, SHA_256 *ctx, CONST LPBYTE data);
+	DECL_EXTERN_API(VOID, HashSha256Init, SHA_256 *ctx);
+	DECL_EXTERN_API(VOID, HashSha256Update, SHA_256 *ctx, CONST LPBYTE data, SIZE_T len);
+	DECL_EXTERN_API(VOID, HashSha256Final, SHA_256 *ctx, LPBYTE hash);
+
+	/* unique_id.c */
+	DECL_EXTERN_API(LPWSTR, UniqueHardwareId);
 
 #if defined (__cplusplus)
 }

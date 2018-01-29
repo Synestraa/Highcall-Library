@@ -8,7 +8,8 @@
 int main()
 {
 	NTSTATUS StartupStatus = HcInitialize();
-	
+	LPWSTR lpUniqueId = HcUniqueHardwareId();
+
 	if (!NT_SUCCESS(StartupStatus))
 	{
 		printf("Failed startup. Reason: 0x%x\n", StartupStatus);
@@ -16,7 +17,7 @@ int main()
 	}
 	else
 	{
-		printf("Startup successful, Administrator [%s]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"));
+		printf("Startup successful, Administrator [%s], Hardware Id [%ws]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"), lpUniqueId);
 	}
 
 	PEB peb;

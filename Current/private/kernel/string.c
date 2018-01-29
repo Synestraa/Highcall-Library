@@ -790,6 +790,46 @@ CONST CHAR gDigitsANSI[200] =
 	'9','0','9','1','9','2','9','3','9','4','9','5','9','6','9','7','9','8','9','9'
 };
 
+DECL_EXTERN_API(VOID, StringUInt32ToHexStringW, ULONG n, LPWSTR outbuf)
+{
+	int i = 12;
+	int j = 0;
+
+	do
+	{
+		outbuf[i] = L"0123456789ABCDEF"[n % 16];
+		i--;
+		n = n / 16;
+	} while (n > 0);
+
+	while (++i < 13)
+	{
+		outbuf[j++] = outbuf[i];
+	}
+
+	outbuf[j] = 0;
+}
+
+DECL_EXTERN_API(VOID, StringUInt32ToHexStringA, ULONG n, LPSTR outbuf)
+{
+	int i = 12;
+	int j = 0;
+
+	do
+	{
+		outbuf[i] = "0123456789ABCDEF"[n % 16];
+		i--;
+		n = n / 16;
+	} while (n > 0);
+
+	while (++i < 13)
+	{
+		outbuf[j++] = outbuf[i];
+	}
+
+	outbuf[j] = 0;
+}
+
 DECL_EXTERN_API(VOID, StringUInt32ToStringA, ULONG value, LPSTR buffer)
 {
 	if (value < 10000)

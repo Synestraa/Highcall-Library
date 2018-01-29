@@ -84,6 +84,8 @@
     </ClCompile>
     <ClCompile Include="private\sys\table.c" />
     <ClCompile Include="private\kernel\scan.c" />
+    <ClCompile Include="private\kernel\hash.c" />
+    <ClCompile Include="private\kernel\unique_id.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">

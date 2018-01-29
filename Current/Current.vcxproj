@@ -309,6 +309,7 @@
     <ClCompile Include="private\kernel\deviceio.c" />
     <ClCompile Include="private\kernel\error.c" />
     <ClCompile Include="private\kernel\file.c" />
+    <ClCompile Include="private\kernel\hash.c" />
     <ClCompile Include="private\kernel\hook.c" />
     <ClCompile Include="private\kernel\inject.c" />
     <ClCompile Include="private\kernel\internal.c" />
@@ -319,6 +320,7 @@
     <ClCompile Include="private\kernel\string.c" />
     <ClCompile Include="private\kernel\thread.c" />
     <ClCompile Include="private\kernel\token.c" />
+    <ClCompile Include="private\kernel\unique_id.cpp" />
     <ClCompile Include="private\kernel\util.c" />
     <ClCompile Include="private\kernel\virtual.c" />
     <ClCompile Include="private\kernel\volume.c" />
