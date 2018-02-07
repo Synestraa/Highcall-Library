@@ -23,11 +23,6 @@ int main()
 		printf("Startup successful, Administrator [%s], Hardware Id [%ws]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"), lpUniqueId);
 	}
 
-	PROCESS_INFORMATION_W procs[200];
-	ULONG Count = 0;
-
-	HcProcessGetAllByNameW(L"svchost.exe", procs, &Count);
-
 	PEB peb;
 	if (!HcProcessGetPeb(NtCurrentProcess(), &peb))
 	{

@@ -328,6 +328,7 @@
     <ClCompile Include="private\kernel\scan.c" />
     <ClCompile Include="private\sys\syscall.c" />
     <ClCompile Include="private\sys\table.c" />
+    <ClCompile Include="private\user\input.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build\Include\highcall.h" />
@@ -346,6 +347,7 @@
     <ClInclude Include="private\sys\table.h" />
     <ClInclude Include="private\sys\version_table_86.h" />
     <ClInclude Include="private\sys\version_table_86_64.h" />
+    <ClInclude Include="private\sys\version_table_ntuser_86_64.h" />
     <ClInclude Include="private\sys\version_table_wow64.h" />
     <ClInclude Include="public\base.h" />
     <ClInclude Include="public\imports.h" />

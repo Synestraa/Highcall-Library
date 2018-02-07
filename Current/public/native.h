@@ -2802,4 +2802,38 @@ typedef struct __declspec(align(16))_PROCESS_DEVICEMAP_INFORMATION_WOW64 {
 HcInternalCopy((o)->Query.DriveType, (o64)->Query.DriveType, sizeof((o64)->Query.DriveType));\
 }\
 
+typedef struct tagMOUSEINPUT {
+	LONG dx;
+	LONG dy;
+	DWORD mouseData;
+	DWORD dwFlags;
+	DWORD time;
+	ULONG_PTR dwExtraInfo;
+} MOUSEINPUT, *PMOUSEINPUT;
+
+typedef struct tagKEYBDINPUT {
+	WORD wVk;
+	WORD wScan;
+	DWORD dwFlags;
+	DWORD time;
+	ULONG_PTR dwExtraInfo;
+} KEYBDINPUT, *PKEYBDINPUT;
+
+typedef struct tagHARDWAREINPUT {
+	DWORD uMsg;
+	WORD wParamL;
+	WORD wParamH;
+} HARDWAREINPUT, *PHARDWAREINPUT;
+
+typedef struct tagINPUT {
+	DWORD type;
+	union {
+	    MOUSEINPUT mi;
+	    KEYBDINPUT ki;
+	    HARDWAREINPUT hi;
+
+	} DUMMYUNIONNAME;
+	
+} INPUT, *PINPUT, *LPINPUT;
+
 #endif

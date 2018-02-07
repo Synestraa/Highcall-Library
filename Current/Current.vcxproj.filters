@@ -86,6 +86,7 @@
     <ClCompile Include="private\kernel\scan.c" />
     <ClCompile Include="private\kernel\hash.c" />
     <ClCompile Include="private\kernel\unique_id.cpp" />
+    <ClCompile Include="private\user\input.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -149,6 +150,7 @@
     <ClInclude Include="private\sys\version_table_86_64.h" />
     <ClInclude Include="private\sys\version_table_86.h" />
     <ClInclude Include="private\sys\version_table_wow64.h" />
+    <ClInclude Include="private\sys\version_table_ntuser_86_64.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="private\sys\asm\AdjustPrivilegesToken.asm">
