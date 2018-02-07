@@ -6,6 +6,7 @@
 #include "../../private/sys/version_table_86.h"
 #include "../../private/sys/version_table_86_64.h"
 #include "../../private/sys/version_table_wow64.h"
+#include "../../private/sys/version_table_ntuser_86_64.h"
 
 HcGlobalEnv HcGlobal;
 

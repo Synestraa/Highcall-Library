@@ -4,6 +4,8 @@
 #include "wintype.h"
 #include "status.h"
 
+#include <winuser.h>
+
 // different architecture processes
 #define PTR_64(Type) ULONGLONG
 #define PTR_32(Type) ULONG
@@ -2801,39 +2803,5 @@ typedef struct __declspec(align(16))_PROCESS_DEVICEMAP_INFORMATION_WOW64 {
 (o)->Query.DriveMap = POINTER32_HARDCODED(ULONG) ((o64)->Query.DriveMap);\
 HcInternalCopy((o)->Query.DriveType, (o64)->Query.DriveType, sizeof((o64)->Query.DriveType));\
 }\
-
-typedef struct tagMOUSEINPUT {
-	LONG dx;
-	LONG dy;
-	DWORD mouseData;
-	DWORD dwFlags;
-	DWORD time;
-	ULONG_PTR dwExtraInfo;
-} MOUSEINPUT, *PMOUSEINPUT;
-
-typedef struct tagKEYBDINPUT {
-	WORD wVk;
-	WORD wScan;
-	DWORD dwFlags;
-	DWORD time;
-	ULONG_PTR dwExtraInfo;
-} KEYBDINPUT, *PKEYBDINPUT;
-
-typedef struct tagHARDWAREINPUT {
-	DWORD uMsg;
-	WORD wParamL;
-	WORD wParamH;
-} HARDWAREINPUT, *PHARDWAREINPUT;
-
-typedef struct tagINPUT {
-	DWORD type;
-	union {
-	    MOUSEINPUT mi;
-	    KEYBDINPUT ki;
-	    HARDWAREINPUT hi;
-
-	} DUMMYUNIONNAME;
-	
-} INPUT, *PINPUT, *LPINPUT;
 
 #endif
