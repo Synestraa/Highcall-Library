@@ -717,7 +717,8 @@ extern "C" {
 	DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
 		OUT LPVOID SystemInformation,
 		IN ULONG SystemInformationLength,
-		OUT PULONG ReturnLength);
+		OUT PULONG ReturnLength,
+		OUT LPVOID* SystemInformation64);
 
 	DECL_EXTERN_API(NTSTATUS, QueryInformationProcessEx,
 		IN HANDLE ProcessHandle,

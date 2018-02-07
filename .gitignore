@@ -48,6 +48,7 @@ project.fragment.lock.json
 artifacts/
 **/Properties/launchSettings.json
 
+*.rar
 *_i.c
 *_p.c
 *_i.h
@@ -321,6 +322,10 @@ __pycache__/
 *.out
 *.app
 
+*.tlog
+
 Current/vs/
 Current/vs/*
 *.tlog
+*.tlog
+*.exp

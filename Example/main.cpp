@@ -5,11 +5,14 @@
 #include <stdlib.h>
 #include <conio.h>
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 int main()
 {
 	NTSTATUS StartupStatus = HcInitialize();
 	LPWSTR lpUniqueId = HcUniqueHardwareId();
-
 	if (!NT_SUCCESS(StartupStatus))
 	{
 		printf("Failed startup. Reason: 0x%x\n", StartupStatus);
@@ -19,6 +22,11 @@ int main()
 	{
 		printf("Startup successful, Administrator [%s], Hardware Id [%ws]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"), lpUniqueId);
 	}
+
+	PROCESS_INFORMATION_W procs[200];
+	ULONG Count = 0;
+
+	HcProcessGetAllByNameW(L"svchost.exe", procs, &Count);
 
 	PEB peb;
 	if (!HcProcessGetPeb(NtCurrentProcess(), &peb))
@@ -112,8 +120,8 @@ int main()
 		HcFree(processName);
 		HcFree(convertedProcessName);
 	}
-
 done:
+	_CrtDumpMemoryLeaks();
 	_getch();
 	return 0;
 }

@@ -706,14 +706,15 @@ static void internal_spi_to_highcall_struct_detailed(PSYSTEM_PROCESS_INFORMATION
 	}
 }
 
-static NTSTATUS internal_process_list(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation)
+static NTSTATUS internal_process_list(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMATION* pSystemInformation, LPVOID* processInfo64)
 {
 	DWORD ReturnLength = 0;
 	LPVOID Buffer;
 	PSYSTEM_PROCESS_INFORMATION pSysList;
 	NTSTATUS Status;
+	LPVOID SystemInformation64 = NULL;
 	
-	Status = HcQuerySystemInformationInternal(SystemProcessInformation, NULL, 0, &ReturnLength);
+	Status = HcQuerySystemInformationInternal(SystemProcessInformation, NULL, 0, &ReturnLength, &SystemInformation64);
 	if (Status != STATUS_INFO_LENGTH_MISMATCH)
 	{
 		return Status;
@@ -725,7 +726,7 @@ static NTSTATUS internal_process_list(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMAT
 	for (;;)
 	{
 		/* Query the process list. */
-		Status = HcQuerySystemInformationInternal(SystemProcessInformation, pSysList, ReturnLength, &ReturnLength);
+		Status = HcQuerySystemInformationInternal(SystemProcessInformation, pSysList, ReturnLength, &ReturnLength, &SystemInformation64);
 
 		if (Status != STATUS_INFO_LENGTH_MISMATCH)
 		{
@@ -746,6 +747,7 @@ static NTSTATUS internal_process_list(LPVOID* ppBuffer, PSYSTEM_PROCESS_INFORMAT
 	{
 		*ppBuffer = Buffer;
 		*pSystemInformation = pSysList;
+		*processInfo64 = SystemInformation64;
 	}
 	else
 	{
@@ -763,9 +765,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, IN LPCWSTR lpProcessName,
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PROCESS_INFORMATION_EX_W hcpInformation;
 	PVOID Buffer = NULL;
+	LPVOID processInfo64 = NULL;
 
 	/* Query the process list. */
-	Status = internal_process_list(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo, &processInfo64);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -799,6 +802,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameExW, IN LPCWSTR lpProcessName,
 		processInfo = (PSYSTEM_PROCESS_INFORMATION)((SIZE_T)processInfo + processInfo->NextEntryOffset);
 	}
 
+	HcFree(processInfo64);
 	HcFree(Buffer);
 	return FALSE;
 }
@@ -809,9 +813,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PPROCES
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PVOID Buffer = NULL;
 	BOOLEAN ReturnValue = FALSE;
+	LPVOID processInfo64 = NULL;
 
 	/* Query the process list. */
-	Status = internal_process_list(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo, &processInfo64);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -844,6 +849,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetById, CONST IN DWORD dwProcessId, OUT PPROCES
 	}
 
 end:
+	HcFree(processInfo64);
 	HcFree(Buffer);
 	return ReturnValue;
 }
@@ -852,24 +858,27 @@ end:
 DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	OUT LPVOID SystemInformation,
 	IN ULONG SystemInformationLength,
-	OUT PULONG ReturnLength)
+	OUT PULONG ReturnLength,
+	OUT LPVOID* SystemInformation64)
 {
 	NTSTATUS Status;
 
 	if (HcGlobal.IsWow64)
 	{
-		PTR_64(LPVOID) SystemInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(SystemInformationLength);
+		*SystemInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(SystemInformationLength);
 
-		Status = HcQuerySystemInformationWow64(SystemInformationClass, SystemInformation64, SystemInformationLength, ReturnLength);
+		Status = HcQuerySystemInformationWow64(SystemInformationClass, *SystemInformation64, SystemInformationLength, ReturnLength);
 		if (NT_SUCCESS(Status))
 		{
 			/* Praise thy conversions. */
 			if (SystemInformationClass == SystemProcessInformation)
 			{
-				PSYSTEM_PROCESS_INFORMATION_WOW64 SystemInfo64 = (PSYSTEM_PROCESS_INFORMATION_WOW64) SystemInformation64;
+				PSYSTEM_PROCESS_INFORMATION_WOW64 SystemInfo64 = (PSYSTEM_PROCESS_INFORMATION_WOW64) *SystemInformation64;
 				PSYSTEM_PROCESS_INFORMATION SystemOriginal = (PSYSTEM_PROCESS_INFORMATION) SystemInformation;
 
 				/* Loop through the process list */
+				LPVOID previousAddress = NULL;
+
 				while (TRUE)
 				{
 					HcInternalCopy(SystemOriginal, SystemInfo64, FIELD_OFFSET(SYSTEM_PROCESS_INFORMATION_WOW64, ImageName));
@@ -920,8 +929,12 @@ DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_
 						break;
 					}
 
+					previousAddress = SystemOriginal;
+
 					SystemOriginal = (PSYSTEM_PROCESS_INFORMATION) ((ULONG64) SystemOriginal + SystemInfo64->NextEntryOffset);
 					SystemInfo64 = (PSYSTEM_PROCESS_INFORMATION_WOW64) ((ULONG64) SystemInfo64 + SystemInfo64->NextEntryOffset);
+
+					SystemOriginal->NextEntryOffset = (ULONG_PTR) ((ULONG_PTR) SystemOriginal - (ULONG_PTR) previousAddress);
 				}
 			}
 			else if (SystemInformationClass == SystemHandleInformation)
@@ -943,8 +956,6 @@ DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_
 				HcInternalCopy(SystemInformation, (LPVOID) (ULONG_PTR) SystemInformation64, SystemInformationLength);
 			}
 		}
-
-		HcFree((LPVOID) SystemInformation64);
 	}
 	else
 	{
@@ -1055,9 +1066,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, IN LPCWSTR lpName, OUT PPROCESS_INFO
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PVOID Buffer = NULL;
 	BOOLEAN ReturnValue = FALSE;
+	LPVOID processInfo64 = NULL;
 
 	/* Query the process list. */
-	Status = internal_process_list(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo, &processInfo64);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -1088,6 +1100,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetByNameW, IN LPCWSTR lpName, OUT PPROCESS_INFO
 	}
 
 end:
+	HcFree(processInfo64);
 	HcFree(Buffer);
 	return ReturnValue;
 }
@@ -1097,6 +1110,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetAllByNameW, IN LPCWSTR lpName, OUT PROCESS_IN
 	NTSTATUS Status;
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PVOID Buffer = NULL;
+	PVOID processInfo64 = NULL;
 	BOOLEAN ReturnValue = FALSE;
 
 	if (Count == NULL || ProcessList == NULL)
@@ -1108,7 +1122,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetAllByNameW, IN LPCWSTR lpName, OUT PROCESS_IN
 	*Count = 0;
 
 	/* Query the process list. */
-	Status = internal_process_list(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo, &processInfo64);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -1144,6 +1158,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessGetAllByNameW, IN LPCWSTR lpName, OUT PROCESS_IN
 		processInfo = (PSYSTEM_PROCESS_INFORMATION) ((SIZE_T) processInfo + processInfo->NextEntryOffset);
 	}
 
+	HcFree(processInfo64);
 	HcFree(Buffer);
 	return ReturnValue;
 }
@@ -1156,9 +1171,10 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, IN LPCWSTR lpProcessName,
 	PSYSTEM_PROCESS_INFORMATION processInfo = NULL;
 	PROCESS_INFORMATION_W hcpInformation;
 	PVOID Buffer = NULL;
+	LPVOID processInfo64 = NULL;
 
 	/* Query the process list. */
-	Status = internal_process_list(&Buffer, &processInfo);
+	Status = internal_process_list(&Buffer, &processInfo, &processInfo64);
 	if (!NT_SUCCESS(Status))
 	{
 		HcErrorSetNtStatus(Status);
@@ -1194,6 +1210,7 @@ DECL_EXTERN_API(BOOLEAN, ProcessEnumByNameW, IN LPCWSTR lpProcessName,
 		processInfo = (PSYSTEM_PROCESS_INFORMATION)((SIZE_T)processInfo + processInfo->NextEntryOffset);
 	}
 
+	HcFree(processInfo64);
 	HcFree(Buffer);
 	return FALSE;
 }

@@ -432,17 +432,19 @@ DECL_EXTERN_API(LPVOID, Alloc32, CONST IN SIZE_T Size)
 
 DECL_EXTERN_API(PVOID, Alloc, CONST IN SIZE_T Size)
 {
-	LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
-	if (!Alloc)
-	{
-		HcErrorSetNtStatus(STATUS_MEMORY_NOT_ALLOCATED);
-	}
-	return Alloc;
+	return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	//LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
+	//if (!Alloc)
+	//{
+	//	HcErrorSetNtStatus(STATUS_MEMORY_NOT_ALLOCATED);
+	//}
+	//return Alloc;
 }
 
 DECL_EXTERN_API(VOID, Free, CONST IN LPVOID lpAddress)
 {
-	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
+	HcVirtualFree(lpAddress, 0, MEM_RELEASE);
+	//RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
 }
 
 DECL_EXTERN_API(PVOID, AllocPage, CONST IN SIZE_T Size)

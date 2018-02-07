@@ -240,7 +240,7 @@ DECL_EXTERN_API(NTSTATUS, ScanCheckKernelDebugger)
 	NTSTATUS Status;
 	USHORT KernelDebuggerQuery = 0;
 
-	Status = HcQuerySystemInformationInternal(SystemKernelDebuggerInformation, &KernelDebuggerQuery, sizeof(KernelDebuggerQuery), NULL);
+	Status = HcQuerySystemInformationInternal(SystemKernelDebuggerInformation, &KernelDebuggerQuery, sizeof(KernelDebuggerQuery), NULL, NULL);
 	if (NT_SUCCESS(Status))
 	{
 		if ((BYTE) KernelDebuggerQuery && !HIBYTE(KernelDebuggerQuery))
