@@ -54,7 +54,10 @@ extern "C" {
 BOOLEAN
 HcIsWow64();
 
-#pragma region Native System Call Definitions
+UINT SYSCALLAPI HcUserSendInput(
+	UINT nInputs,
+	LPINPUT pInput,
+	INT cbSize);
 
 NTSTATUS SYSCALLAPI HcQueryInformationToken(CONST IN HANDLE TokenHandle,
 	CONST IN TOKEN_INFORMATION_CLASS TokenInformationClass,
