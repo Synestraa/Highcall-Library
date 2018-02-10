@@ -23,6 +23,8 @@ int main()
 		printf("Startup successful, Administrator [%s], Hardware Id [%ws]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"), lpUniqueId);
 	}
 
+	LPVOID recreated = HcHookRecreateCode(HcModuleProcedureA(HcModuleLoadA("user32.dll"), "GetWindowThreadProcessId"), 10);
+
 	PEB peb;
 	if (!HcProcessGetPeb(NtCurrentProcess(), &peb))
 	{

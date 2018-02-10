@@ -317,10 +317,11 @@ DECL_EXTERN_API(NTSTATUS, QueryVirtualMemoryEx, IN HANDLE ProcessHandle,
 				PMEMORY_SECTION_NAME_WOW64 Section64 = (PMEMORY_SECTION_NAME_WOW64) MemoryInformation64;
 				PMEMORY_SECTION_NAME SectionOriginal = (PMEMORY_SECTION_NAME) MemoryInformation;
 
-				SectionOriginal->SectionFileName.Buffer = (LPWSTR) (ULONG_PTR) Section64->SectionFileName.Buffer;
 				SectionOriginal->SectionFileName.Length = Section64->SectionFileName.Length;
 				SectionOriginal->SectionFileName.MaximumLength = Section64->SectionFileName.MaximumLength;
+				SectionOriginal->SectionFileName.Buffer = HcAlloc(Section64->SectionFileName.Length);
 
+				HcInternalCopy(SectionOriginal->SectionFileName.Buffer, (LPVOID) Section64->SectionFileName.Buffer, SectionOriginal->SectionFileName.Length);
 				HcInternalCopy(SectionOriginal->NameBuffer, Section64->NameBuffer, sizeof(SectionOriginal->NameBuffer));
 			}
 			else
