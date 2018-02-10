@@ -12,7 +12,7 @@
 int main()
 {
 	NTSTATUS StartupStatus = HcInitialize();
-	LPWSTR lpUniqueId = HcUniqueHardwareId();
+	LPWSTR lpUniqueId = L"id";
 	if (!NT_SUCCESS(StartupStatus))
 	{
 		printf("Failed startup. Reason: 0x%x\n", StartupStatus);

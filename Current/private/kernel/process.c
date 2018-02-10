@@ -859,21 +859,22 @@ DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_
 	OUT LPVOID SystemInformation,
 	IN ULONG SystemInformationLength,
 	OUT PULONG ReturnLength,
-	OUT LPVOID* SystemInformation64)
+	OUT LPVOID* outSystemInfo64)
 {
 	NTSTATUS Status;
+	LPVOID SystemInformation64;
 
 	if (HcGlobal.IsWow64)
 	{
-		*SystemInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(SystemInformationLength);
+		SystemInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(SystemInformationLength);
 
-		Status = HcQuerySystemInformationWow64(SystemInformationClass, *SystemInformation64, SystemInformationLength, ReturnLength);
+		Status = HcQuerySystemInformationWow64(SystemInformationClass, SystemInformation64, SystemInformationLength, ReturnLength);
 		if (NT_SUCCESS(Status))
 		{
 			/* Praise thy conversions. */
 			if (SystemInformationClass == SystemProcessInformation)
 			{
-				PSYSTEM_PROCESS_INFORMATION_WOW64 SystemInfo64 = (PSYSTEM_PROCESS_INFORMATION_WOW64) *SystemInformation64;
+				PSYSTEM_PROCESS_INFORMATION_WOW64 SystemInfo64 = (PSYSTEM_PROCESS_INFORMATION_WOW64) SystemInformation64;
 				PSYSTEM_PROCESS_INFORMATION SystemOriginal = (PSYSTEM_PROCESS_INFORMATION) SystemInformation;
 
 				/* Loop through the process list */
@@ -954,6 +955,11 @@ DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_
 			else
 			{
 				HcInternalCopy(SystemInformation, (LPVOID) (ULONG_PTR) SystemInformation64, SystemInformationLength);
+			}
+
+			if (outSystemInfo64)
+			{
+				*outSystemInfo64 = SystemInformation64;
 			}
 		}
 	}

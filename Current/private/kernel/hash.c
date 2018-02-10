@@ -34,7 +34,7 @@ DECL_EXTERN_API(LPSTR, HashSha256A, LPVOID pData, SIZE_T Size)
 		return NULL;
 	}
 
-	pOut = HcStringAllocA(SHA256_BLOCK_SIZE);
+	pOut = HcStringAllocA(SHA256_BLOCK_SIZE * sizeof(UINT));
 	if (pOut == NULL)
 	{
 		return NULL;
@@ -51,7 +51,7 @@ DECL_EXTERN_API(LPSTR, HashSha256A, LPVOID pData, SIZE_T Size)
 		HcStringUInt32ToHexStringA((ULONG) lpDigestHash[i], &pOut[i]);
 	}
 
-	pOut[SHA256_BLOCK_SIZE] = '\0';
+	pOut[SHA256_BLOCK_SIZE * sizeof(UINT)] = '\0';
 
 	return pOut;
 }
@@ -67,7 +67,7 @@ DECL_EXTERN_API(LPWSTR, HashSha256W, LPVOID pData, SIZE_T Size)
 		return NULL;
 	}
 
-	pOut = HcStringAllocW(SHA256_BLOCK_SIZE);
+	pOut = HcStringAllocW(SHA256_BLOCK_SIZE * sizeof(UINT));
 	if (pOut == NULL)
 	{
 		return NULL;
@@ -76,7 +76,7 @@ DECL_EXTERN_API(LPWSTR, HashSha256W, LPVOID pData, SIZE_T Size)
 	HcInternalSet(lpDigestHash, 0, sizeof(lpDigestHash));
 
 	HcHashSha256Init(&Context);
-	HcHashSha256Update(&Context, (LPBYTE) pData, Size * sizeof(WCHAR));
+	HcHashSha256Update(&Context, (LPBYTE) pData, Size);
 	HcHashSha256Final(&Context, (LPBYTE) lpDigestHash);
 
 	for (ULONG i = 0; i < SHA256_BLOCK_SIZE; i++)
@@ -84,7 +84,7 @@ DECL_EXTERN_API(LPWSTR, HashSha256W, LPVOID pData, SIZE_T Size)
 		HcStringUInt32ToHexStringW((ULONG) lpDigestHash[i], &pOut[i]);
 	}
 
-	pOut[SHA256_BLOCK_SIZE] = L'\0';
+	pOut[SHA256_BLOCK_SIZE * sizeof(UINT)] = L'\0';
 
 	return pOut;
 }

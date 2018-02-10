@@ -22,9 +22,7 @@ DECL_EXTERN_API(LPWSTR, UniqueHardwareId)
 		}
 	}
 
-	lpCpuID[256] = L'\0';
-
-	LPWSTR lpDataHashed = HcHashSha256W(lpCpuID, 256);
+	LPWSTR lpDataHashed = HcHashSha256W(lpCpuID, 255);
 
 	HcFree(lpCpuID);
 	return lpDataHashed;
