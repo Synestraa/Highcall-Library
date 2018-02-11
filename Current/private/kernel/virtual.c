@@ -436,7 +436,7 @@ DECL_EXTERN_API(LPVOID, Alloc32, CONST IN SIZE_T Size)
 DECL_EXTERN_API(PVOID, Alloc, CONST IN SIZE_T Size)
 {
 	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size + 100);
+	LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
 	if (!Alloc)
 	{
 		HcErrorSetNtStatus(STATUS_MEMORY_NOT_ALLOCATED);
