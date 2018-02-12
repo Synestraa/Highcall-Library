@@ -12,7 +12,7 @@
 int main()
 {
 	NTSTATUS StartupStatus = HcInitialize();
-	LPWSTR lpUniqueId = L"id";
+	LPWSTR lpUniqueId = HcUniqueHardwareId();
 	if (!NT_SUCCESS(StartupStatus))
 	{
 		printf("Failed startup. Reason: 0x%x\n", StartupStatus);
@@ -22,6 +22,23 @@ int main()
 	{
 		printf("Startup successful, Administrator [%s], Hardware Id [%ws]\n",  (HcGlobal.IsElevated ? "TRUE" : "FALSE"), lpUniqueId);
 	}
+
+	INPUT ip;
+
+	ip.type = INPUT_KEYBOARD;
+	ip.ki.wScan = 0; 
+	ip.ki.time = 0;
+	ip.ki.dwExtraInfo = 0;
+
+	ip.ki.wVk = 0x41; 
+	ip.ki.dwFlags = 0;
+
+	HcSleep(5000);
+	HcUserSendInput(1, &ip, sizeof(INPUT)); // down
+
+	ip.ki.dwFlags = KEYEVENTF_KEYUP;
+
+	HcUserSendInput(1, &ip, sizeof(INPUT)); // release
 
 	PEB peb;
 	if (!HcProcessGetPeb(NtCurrentProcess(), &peb))
