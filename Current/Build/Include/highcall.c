@@ -7,6 +7,7 @@
 #include "../../private/sys/version_table_86_64.h"
 #include "../../private/sys/version_table_wow64.h"
 #include "../../private/sys/version_table_ntuser_86_64.h"
+#include "../../private/sys/version_table_ntuser_86.h"
 
 HcGlobalEnv HcGlobal;
 
@@ -4206,26 +4207,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiD3dContextDestroy = sciTable_86_NtGdiD3dContextDestroy[v];
 		sciGdiD3dContextDestroyAll = sciTable_86_NtGdiD3dContextDestroyAll[v];
 		sciGdiD3dDrawPrimitives2 = sciTable_86_NtGdiD3dDrawPrimitives2[v];
-		sciGdiD3dExecute = sciTable_86_NtGdiD3dExecute[v];
-		sciGdiD3dExecuteClipped = sciTable_86_NtGdiD3dExecuteClipped[v];
-		sciGdiD3dGetState = sciTable_86_NtGdiD3dGetState[v];
-		sciGdiD3dLightSet = sciTable_86_NtGdiD3dLightSet[v];
-		sciGdiD3dMaterialCreate = sciTable_86_NtGdiD3dMaterialCreate[v];
-		sciGdiD3dMaterialDestroy = sciTable_86_NtGdiD3dMaterialDestroy[v];
-		sciGdiD3dMaterialGetData = sciTable_86_NtGdiD3dMaterialGetData[v];
-		sciGdiD3dMaterialSetData = sciTable_86_NtGdiD3dMaterialSetData[v];
-		sciGdiD3dMatrixCreate = sciTable_86_NtGdiD3dMatrixCreate[v];
-		sciGdiD3dMatrixDestroy = sciTable_86_NtGdiD3dMatrixDestroy[v];
-		sciGdiD3dMatrixGetData = sciTable_86_NtGdiD3dMatrixGetData[v];
-		sciGdiD3dMatrixSetData = sciTable_86_NtGdiD3dMatrixSetData[v];
-		sciGdiD3dRenderPrimitive = sciTable_86_NtGdiD3dRenderPrimitive[v];
-		sciGdiD3dRenderState = sciTable_86_NtGdiD3dRenderState[v];
-		sciGdiD3dSceneCapture = sciTable_86_NtGdiD3dSceneCapture[v];
-		sciGdiD3dSetViewportData = sciTable_86_NtGdiD3dSetViewportData[v];
-		sciGdiD3dTextureCreate = sciTable_86_NtGdiD3dTextureCreate[v];
-		sciGdiD3dTextureDestroy = sciTable_86_NtGdiD3dTextureDestroy[v];
-		sciGdiD3dTextureGetSurf = sciTable_86_NtGdiD3dTextureGetSurf[v];
-		sciGdiD3dTextureSwap = sciTable_86_NtGdiD3dTextureSwap[v];
 		sciGdiD3dValidateTextureStageState = sciTable_86_NtGdiD3dValidateTextureStageState[v];
 		sciGdiDDCCIGetCapabilitiesString = sciTable_86_NtGdiDDCCIGetCapabilitiesString[v];
 		sciGdiDDCCIGetCapabilitiesStringLength = sciTable_86_NtGdiDDCCIGetCapabilitiesStringLength[v];
@@ -4556,7 +4537,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiEnumFonts = sciTable_86_NtGdiEnumFonts[v];
 		sciGdiEnumObjects = sciTable_86_NtGdiEnumObjects[v];
 		sciGdiEqualRgn = sciTable_86_NtGdiEqualRgn[v];
-		sciGdiEudcEnumFaceNameLinkW = sciTable_86_NtGdiEudcEnumFaceNameLinkW[v];
 		sciGdiEudcLoadUnloadLink = sciTable_86_NtGdiEudcLoadUnloadLink[v];
 		sciGdiExcludeClipRect = sciTable_86_NtGdiExcludeClipRect[v];
 		sciGdiExtCreatePen = sciTable_86_NtGdiExtCreatePen[v];
@@ -4576,10 +4556,8 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiFONTOBJ_vGetInfo = sciTable_86_NtGdiFONTOBJ_vGetInfo[v];
 		sciGdiFillPath = sciTable_86_NtGdiFillPath[v];
 		sciGdiFillRgn = sciTable_86_NtGdiFillRgn[v];
-		sciGdiFixUpHandle = sciTable_86_NtGdiFixUpHandle[v];
 		sciGdiFlattenPath = sciTable_86_NtGdiFlattenPath[v];
 		sciGdiFlush = sciTable_86_NtGdiFlush[v];
-		sciGdiFlushUserBatch = sciTable_86_NtGdiFlushUserBatch[v];
 		sciGdiFontIsLinked = sciTable_86_NtGdiFontIsLinked[v];
 		sciGdiForceUFIMapping = sciTable_86_NtGdiForceUFIMapping[v];
 		sciGdiFrameRgn = sciTable_86_NtGdiFrameRgn[v];
@@ -4666,7 +4644,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiGetTextMetricsW = sciTable_86_NtGdiGetTextMetricsW[v];
 		sciGdiGetTransform = sciTable_86_NtGdiGetTransform[v];
 		sciGdiGetUFI = sciTable_86_NtGdiGetUFI[v];
-		sciGdiGetUFIBits = sciTable_86_NtGdiGetUFIBits[v];
 		sciGdiGetUFIPathname = sciTable_86_NtGdiGetUFIPathname[v];
 		sciGdiGetWidthTable = sciTable_86_NtGdiGetWidthTable[v];
 		sciGdiGradientFill = sciTable_86_NtGdiGradientFill[v];
@@ -4700,7 +4677,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiPATHOBJ_vGetBounds = sciTable_86_NtGdiPATHOBJ_vGetBounds[v];
 		sciGdiPatBlt = sciTable_86_NtGdiPatBlt[v];
 		sciGdiPathToRegion = sciTable_86_NtGdiPathToRegion[v];
-		sciGdiPerf = sciTable_86_NtGdiPerf[v];
 		sciGdiPlgBlt = sciTable_86_NtGdiPlgBlt[v];
 		sciGdiPolyDraw = sciTable_86_NtGdiPolyDraw[v];
 		sciGdiPolyPatBlt = sciTable_86_NtGdiPolyPatBlt[v];
@@ -4734,7 +4710,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiSelectBrush = sciTable_86_NtGdiSelectBrush[v];
 		sciGdiSelectClipPath = sciTable_86_NtGdiSelectClipPath[v];
 		sciGdiSelectFont = sciTable_86_NtGdiSelectFont[v];
-		sciGdiSelectPalette = sciTable_86_NtGdiSelectPalette[v];
 		sciGdiSelectPen = sciTable_86_NtGdiSelectPen[v];
 		sciGdiSetBitmapAttributes = sciTable_86_NtGdiSetBitmapAttributes[v];
 		sciGdiSetBitmapBits = sciTable_86_NtGdiSetBitmapBits[v];
@@ -4762,7 +4737,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciGdiSetRectRgn = sciTable_86_NtGdiSetRectRgn[v];
 		sciGdiSetSizeDevice = sciTable_86_NtGdiSetSizeDevice[v];
 		sciGdiSetSystemPaletteUse = sciTable_86_NtGdiSetSystemPaletteUse[v];
-		sciGdiSetTextCharacterExtra = sciTable_86_NtGdiSetTextCharacterExtra[v];
 		sciGdiSetTextJustification = sciTable_86_NtGdiSetTextJustification[v];
 		sciGdiSetUMPDSandboxState = sciTable_86_NtGdiSetUMPDSandboxState[v];
 		sciGdiSetVirtualResolution = sciTable_86_NtGdiSetVirtualResolution[v];
@@ -4872,7 +4846,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserBeginPaint = sciTable_86_NtUserBeginPaint[v];
 		sciUserBitBltSysBmp = sciTable_86_NtUserBitBltSysBmp[v];
 		sciUserBlockInput = sciTable_86_NtUserBlockInput[v];
-		sciUserBreak = sciTable_86_NtUserBreak[v];
 		sciUserBroadcastThemeChangeEvent = sciTable_86_NtUserBroadcastThemeChangeEvent[v];
 		sciUserBuildHimcList = sciTable_86_NtUserBuildHimcList[v];
 		sciUserBuildHwndList = sciTable_86_NtUserBuildHwndList[v];
@@ -4888,9 +4861,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserCallMsgFilter = sciTable_86_NtUserCallMsgFilter[v];
 		sciUserCallNextHookEx = sciTable_86_NtUserCallNextHookEx[v];
 		sciUserCallNoParam = sciTable_86_NtUserCallNoParam[v];
-		sciUserCallNoParamTranslate = sciTable_86_NtUserCallNoParamTranslate[v];
 		sciUserCallOneParam = sciTable_86_NtUserCallOneParam[v];
-		sciUserCallOneParamTranslate = sciTable_86_NtUserCallOneParamTranslate[v];
 		sciUserCallTwoParam = sciTable_86_NtUserCallTwoParam[v];
 		sciUserCanBrokerForceForeground = sciTable_86_NtUserCanBrokerForceForeground[v];
 		sciUserChangeClipboardChain = sciTable_86_NtUserChangeClipboardChain[v];
@@ -4900,7 +4871,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserCheckDesktopByThreadId = sciTable_86_NtUserCheckDesktopByThreadId[v];
 		sciUserCheckImeHotKey = sciTable_86_NtUserCheckImeHotKey[v];
 		sciUserCheckMenuItem = sciTable_86_NtUserCheckMenuItem[v];
-		sciUserCheckMenuRadioItem = sciTable_86_NtUserCheckMenuRadioItem[v];
 		sciUserCheckProcessForClipboardAccess = sciTable_86_NtUserCheckProcessForClipboardAccess[v];
 		sciUserCheckProcessSession = sciTable_86_NtUserCheckProcessSession[v];
 		sciUserCheckWindowThreadDesktop = sciTable_86_NtUserCheckWindowThreadDesktop[v];
@@ -4968,7 +4938,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserDwmStartRedirection = sciTable_86_NtUserDwmStartRedirection[v];
 		sciUserDwmStopRedirection = sciTable_86_NtUserDwmStopRedirection[v];
 		sciUserDwmValidateWindow = sciTable_86_NtUserDwmValidateWindow[v];
-		sciUserECQueryInputLangChange = sciTable_86_NtUserECQueryInputLangChange[v];
 		sciUserEmptyClipboard = sciTable_86_NtUserEmptyClipboard[v];
 		sciUserEnableChildWindowDpiMessage = sciTable_86_NtUserEnableChildWindowDpiMessage[v];
 		sciUserEnableIAMAccess = sciTable_86_NtUserEnableIAMAccess[v];
@@ -4995,7 +4964,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserFindWindowEx = sciTable_86_NtUserFindWindowEx[v];
 		sciUserFlashWindowEx = sciTable_86_NtUserFlashWindowEx[v];
 		sciUserFrostCrashedWindow = sciTable_86_NtUserFrostCrashedWindow[v];
-		sciUserFullscreenControl = sciTable_86_NtUserFullscreenControl[v];
 		sciUserFunctionalizeDisplayConfig = sciTable_86_NtUserFunctionalizeDisplayConfig[v];
 		sciUserGetActiveProcessesDpis = sciTable_86_NtUserGetActiveProcessesDpis[v];
 		sciUserGetAltTabInfo = sciTable_86_NtUserGetAltTabInfo[v];
@@ -5008,7 +4976,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserGetCPD = sciTable_86_NtUserGetCPD[v];
 		sciUserGetCaretBlinkTime = sciTable_86_NtUserGetCaretBlinkTime[v];
 		sciUserGetCaretPos = sciTable_86_NtUserGetCaretPos[v];
-		sciUserGetClassInfo = sciTable_86_NtUserGetClassInfo[v];
 		sciUserGetClassInfoEx = sciTable_86_NtUserGetClassInfoEx[v];
 		sciUserGetClassName = sciTable_86_NtUserGetClassName[v];
 		sciUserGetClipCursor = sciTable_86_NtUserGetClipCursor[v];
@@ -5050,7 +5017,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserGetIconSize = sciTable_86_NtUserGetIconSize[v];
 		sciUserGetImeHotKey = sciTable_86_NtUserGetImeHotKey[v];
 		sciUserGetImeInfoEx = sciTable_86_NtUserGetImeInfoEx[v];
-		sciUserGetInputEvent = sciTable_86_NtUserGetInputEvent[v];
 		sciUserGetInputLocaleInfo = sciTable_86_NtUserGetInputLocaleInfo[v];
 		sciUserGetInteractiveControlDeviceInfo = sciTable_86_NtUserGetInteractiveControlDeviceInfo[v];
 		sciUserGetInteractiveControlInfo = sciTable_86_NtUserGetInteractiveControlInfo[v];
@@ -5063,8 +5029,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserGetKeyboardState = sciTable_86_NtUserGetKeyboardState[v];
 		sciUserGetLayeredWindowAttributes = sciTable_86_NtUserGetLayeredWindowAttributes[v];
 		sciUserGetListBoxInfo = sciTable_86_NtUserGetListBoxInfo[v];
-		sciUserGetListboxString = sciTable_86_NtUserGetListboxString[v];
-		sciUserGetMediaChangeEvents = sciTable_86_NtUserGetMediaChangeEvents[v];
 		sciUserGetMenuBarInfo = sciTable_86_NtUserGetMenuBarInfo[v];
 		sciUserGetMenuIndex = sciTable_86_NtUserGetMenuIndex[v];
 		sciUserGetMenuItemRect = sciTable_86_NtUserGetMenuItemRect[v];
@@ -5101,7 +5065,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserGetRegisteredRawInputDevices = sciTable_86_NtUserGetRegisteredRawInputDevices[v];
 		sciUserGetResizeDCompositionSynchronizationObject = sciTable_86_NtUserGetResizeDCompositionSynchronizationObject[v];
 		sciUserGetScrollBarInfo = sciTable_86_NtUserGetScrollBarInfo[v];
-		sciUserGetStats = sciTable_86_NtUserGetStats[v];
 		sciUserGetSystemMenu = sciTable_86_NtUserGetSystemMenu[v];
 		sciUserGetThreadDesktop = sciTable_86_NtUserGetThreadDesktop[v];
 		sciUserGetThreadState = sciTable_86_NtUserGetThreadState[v];
@@ -5112,7 +5075,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserGetUpdateRect = sciTable_86_NtUserGetUpdateRect[v];
 		sciUserGetUpdateRgn = sciTable_86_NtUserGetUpdateRgn[v];
 		sciUserGetUpdatedClipboardFormats = sciTable_86_NtUserGetUpdatedClipboardFormats[v];
-		sciUserGetUserStartupInfoFlags = sciTable_86_NtUserGetUserStartupInfoFlags[v];
 		sciUserGetWOWClass = sciTable_86_NtUserGetWOWClass[v];
 		sciUserGetWindowBand = sciTable_86_NtUserGetWindowBand[v];
 		sciUserGetWindowCompositionAttribute = sciTable_86_NtUserGetWindowCompositionAttribute[v];
@@ -5134,7 +5096,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserHwndSetRedirectionInfo = sciTable_86_NtUserHwndSetRedirectionInfo[v];
 		sciUserImpersonateDdeClientWindow = sciTable_86_NtUserImpersonateDdeClientWindow[v];
 		sciUserInheritWindowMonitor = sciTable_86_NtUserInheritWindowMonitor[v];
-		sciUserInitBrushes = sciTable_86_NtUserInitBrushes[v];
 		sciUserInitTask = sciTable_86_NtUserInitTask[v];
 		sciUserInitialize = sciTable_86_NtUserInitialize[v];
 		sciUserInitializeClientPfnArrays = sciTable_86_NtUserInitializeClientPfnArrays[v];
@@ -5205,7 +5166,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserPeekMessage = sciTable_86_NtUserPeekMessage[v];
 		sciUserPerMonitorDPIPhysicalToLogicalPoint = sciTable_86_NtUserPerMonitorDPIPhysicalToLogicalPoint[v];
 		sciUserPhysicalToLogicalPoint = sciTable_86_NtUserPhysicalToLogicalPoint[v];
-		sciUserPlayEventSound = sciTable_86_NtUserPlayEventSound[v];
 		sciUserPostMessage = sciTable_86_NtUserPostMessage[v];
 		sciUserPostThreadMessage = sciTable_86_NtUserPostThreadMessage[v];
 		sciUserPrintWindow = sciTable_86_NtUserPrintWindow[v];
@@ -5218,7 +5178,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserQueryInformationThread = sciTable_86_NtUserQueryInformationThread[v];
 		sciUserQueryInputContext = sciTable_86_NtUserQueryInputContext[v];
 		sciUserQuerySendMessage = sciTable_86_NtUserQuerySendMessage[v];
-		sciUserQueryUserCounters = sciTable_86_NtUserQueryUserCounters[v];
 		sciUserQueryWindow = sciTable_86_NtUserQueryWindow[v];
 		sciUserRealChildWindowFromPoint = sciTable_86_NtUserRealChildWindowFromPoint[v];
 		sciUserRealInternalGetMessage = sciTable_86_NtUserRealInternalGetMessage[v];
@@ -5226,7 +5185,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserRedrawWindow = sciTable_86_NtUserRedrawWindow[v];
 		sciUserRegisterBSDRWindow = sciTable_86_NtUserRegisterBSDRWindow[v];
 		sciUserRegisterClassExWOW = sciTable_86_NtUserRegisterClassExWOW[v];
-		sciUserRegisterClipboardFormat = sciTable_86_NtUserRegisterClipboardFormat[v];
 		sciUserRegisterDManipHook = sciTable_86_NtUserRegisterDManipHook[v];
 		sciUserRegisterEdgy = sciTable_86_NtUserRegisterEdgy[v];
 		sciUserRegisterErrorReportingDialog = sciTable_86_NtUserRegisterErrorReportingDialog[v];
@@ -5263,8 +5221,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserSendEventMessage = sciTable_86_NtUserSendEventMessage[v];
 		sciUserSendInput = sciTable_86_NtUserSendInput[v];
 		sciUserSendInteractiveControlHapticsReport = sciTable_86_NtUserSendInteractiveControlHapticsReport[v];
-		sciUserSendMessageCallback = sciTable_86_NtUserSendMessageCallback[v];
-		sciUserSendNotifyMessage = sciTable_86_NtUserSendNotifyMessage[v];
 		sciUserSendTouchInput = sciTable_86_NtUserSendTouchInput[v];
 		sciUserSetActivationFilter = sciTable_86_NtUserSetActivationFilter[v];
 		sciUserSetActiveProcess = sciTable_86_NtUserSetActiveProcess[v];
@@ -5287,8 +5243,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserSetCursorContents = sciTable_86_NtUserSetCursorContents[v];
 		sciUserSetCursorIconData = sciTable_86_NtUserSetCursorIconData[v];
 		sciUserSetCursorPos = sciTable_86_NtUserSetCursorPos[v];
-		sciUserSetDbgTag = sciTable_86_NtUserSetDbgTag[v];
-		sciUserSetDebugErrorLevel = sciTable_86_NtUserSetDebugErrorLevel[v];
 		sciUserSetDesktopColorTransform = sciTable_86_NtUserSetDesktopColorTransform[v];
 		sciUserSetDialogControlDpiChangeBehavior = sciTable_86_NtUserSetDialogControlDpiChangeBehavior[v];
 		sciUserSetDisplayAutoRotationPreferences = sciTable_86_NtUserSetDisplayAutoRotationPreferences[v];
@@ -5327,7 +5281,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserSetProcessUIAccessZorder = sciTable_86_NtUserSetProcessUIAccessZorder[v];
 		sciUserSetProcessWindowStation = sciTable_86_NtUserSetProcessWindowStation[v];
 		sciUserSetProp = sciTable_86_NtUserSetProp[v];
-		sciUserSetRipFlags = sciTable_86_NtUserSetRipFlags[v];
 		sciUserSetScrollInfo = sciTable_86_NtUserSetScrollInfo[v];
 		sciUserSetSensorPresence = sciTable_86_NtUserSetSensorPresence[v];
 		sciUserSetShellWindowEx = sciTable_86_NtUserSetShellWindowEx[v];
@@ -5341,7 +5294,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserSetThreadLayoutHandles = sciTable_86_NtUserSetThreadLayoutHandles[v];
 		sciUserSetThreadState = sciTable_86_NtUserSetThreadState[v];
 		sciUserSetTimer = sciTable_86_NtUserSetTimer[v];
-		sciUserSetUserStartupInfoFlags = sciTable_86_NtUserSetUserStartupInfoFlags[v];
 		sciUserSetWinEventHook = sciTable_86_NtUserSetWinEventHook[v];
 		sciUserSetWindowArrangement = sciTable_86_NtUserSetWindowArrangement[v];
 		sciUserSetWindowBand = sciTable_86_NtUserSetWindowBand[v];
@@ -5419,7 +5371,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserValidateTimerCallback = sciTable_86_NtUserValidateTimerCallback[v];
 		sciUserVkKeyScanEx = sciTable_86_NtUserVkKeyScanEx[v];
 		sciUserWOWCleanup = sciTable_86_NtUserWOWCleanup[v];
-		sciUserWOWFindWindow = sciTable_86_NtUserWOWFindWindow[v];
 		sciUserWaitAvailableMessageEx = sciTable_86_NtUserWaitAvailableMessageEx[v];
 		sciUserWaitForInputIdle = sciTable_86_NtUserWaitForInputIdle[v];
 		sciUserWaitForMsgAndEvent = sciTable_86_NtUserWaitForMsgAndEvent[v];
@@ -5430,53 +5381,6 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserWindowFromPhysicalPoint = sciTable_86_NtUserWindowFromPhysicalPoint[v];
 		sciUserWindowFromPoint = sciTable_86_NtUserWindowFromPoint[v];
 		sciUserYieldTask = sciTable_86_NtUserYieldTask[v];
-		sciUserfnCOPYDATA = sciTable_86_NtUserfnCOPYDATA[v];
-		sciUserfnCOPYGLOBALDATA = sciTable_86_NtUserfnCOPYGLOBALDATA[v];
-		sciUserfnDDEINIT = sciTable_86_NtUserfnDDEINIT[v];
-		sciUserfnDWORD = sciTable_86_NtUserfnDWORD[v];
-		sciUserfnDWORDOPTINLPMSG = sciTable_86_NtUserfnDWORDOPTINLPMSG[v];
-		sciUserfnGETTEXTLENGTHS = sciTable_86_NtUserfnGETTEXTLENGTHS[v];
-		sciUserfnHkINDWORD = sciTable_86_NtUserfnHkINDWORD[v];
-		sciUserfnHkINLPCBTACTIVATESTRUCT = sciTable_86_NtUserfnHkINLPCBTACTIVATESTRUCT[v];
-		sciUserfnHkINLPCBTCREATESTRUCT = sciTable_86_NtUserfnHkINLPCBTCREATESTRUCT[v];
-		sciUserfnHkINLPDEBUGHOOKSTRUCT = sciTable_86_NtUserfnHkINLPDEBUGHOOKSTRUCT[v];
-		sciUserfnHkINLPKBDLLHOOKSTRUCT = sciTable_86_NtUserfnHkINLPKBDLLHOOKSTRUCT[v];
-		sciUserfnHkINLPMOUSEHOOKSTRUCT = sciTable_86_NtUserfnHkINLPMOUSEHOOKSTRUCT[v];
-		sciUserfnHkINLPMSG = sciTable_86_NtUserfnHkINLPMSG[v];
-		sciUserfnHkINLPMSLLHOOKSTRUCT = sciTable_86_NtUserfnHkINLPMSLLHOOKSTRUCT[v];
-		sciUserfnHkINLPRECT = sciTable_86_NtUserfnHkINLPRECT[v];
-		sciUserfnHkOPTINLPEVENTMSG = sciTable_86_NtUserfnHkOPTINLPEVENTMSG[v];
-		sciUserfnINCNTOUTSTRING = sciTable_86_NtUserfnINCNTOUTSTRING[v];
-		sciUserfnINCNTOUTSTRINGNULL = sciTable_86_NtUserfnINCNTOUTSTRINGNULL[v];
-		sciUserfnINDEVICECHANGE = sciTable_86_NtUserfnINDEVICECHANGE[v];
-		sciUserfnINLPCOMPAREITEMSTRUCT = sciTable_86_NtUserfnINLPCOMPAREITEMSTRUCT[v];
-		sciUserfnINLPCREATESTRUCT = sciTable_86_NtUserfnINLPCREATESTRUCT[v];
-		sciUserfnINLPDELETEITEMSTRUCT = sciTable_86_NtUserfnINLPDELETEITEMSTRUCT[v];
-		sciUserfnINLPDRAWITEMSTRUCT = sciTable_86_NtUserfnINLPDRAWITEMSTRUCT[v];
-		sciUserfnINLPHELPINFOSTRUCT = sciTable_86_NtUserfnINLPHELPINFOSTRUCT[v];
-		sciUserfnINLPHLPSTRUCT = sciTable_86_NtUserfnINLPHLPSTRUCT[v];
-		sciUserfnINLPMDICREATESTRUCT = sciTable_86_NtUserfnINLPMDICREATESTRUCT[v];
-		sciUserfnINLPWINDOWPOS = sciTable_86_NtUserfnINLPWINDOWPOS[v];
-		sciUserfnINOUTDRAG = sciTable_86_NtUserfnINOUTDRAG[v];
-		sciUserfnINOUTLPMEASUREITEMSTRUCT = sciTable_86_NtUserfnINOUTLPMEASUREITEMSTRUCT[v];
-		sciUserfnINOUTLPPOINT5 = sciTable_86_NtUserfnINOUTLPPOINT5[v];
-		sciUserfnINOUTLPRECT = sciTable_86_NtUserfnINOUTLPRECT[v];
-		sciUserfnINOUTLPSCROLLINFO = sciTable_86_NtUserfnINOUTLPSCROLLINFO[v];
-		sciUserfnINOUTLPWINDOWPOS = sciTable_86_NtUserfnINOUTLPWINDOWPOS[v];
-		sciUserfnINOUTNCCALCSIZE = sciTable_86_NtUserfnINOUTNCCALCSIZE[v];
-		sciUserfnINOUTNEXTMENU = sciTable_86_NtUserfnINOUTNEXTMENU[v];
-		sciUserfnINOUTSTYLECHANGE = sciTable_86_NtUserfnINOUTSTYLECHANGE[v];
-		sciUserfnINPAINTCLIPBRD = sciTable_86_NtUserfnINPAINTCLIPBRD[v];
-		sciUserfnINSIZECLIPBRD = sciTable_86_NtUserfnINSIZECLIPBRD[v];
-		sciUserfnINSTRING = sciTable_86_NtUserfnINSTRING[v];
-		sciUserfnINSTRINGNULL = sciTable_86_NtUserfnINSTRINGNULL[v];
-		sciUserfnOPTOUTLPDWORDOPTOUTLPDWORD = sciTable_86_NtUserfnOPTOUTLPDWORDOPTOUTLPDWORD[v];
-		sciUserfnOUTDWORDINDWORD = sciTable_86_NtUserfnOUTDWORDINDWORD[v];
-		sciUserfnOUTLPRECT = sciTable_86_NtUserfnOUTLPRECT[v];
-		sciUserfnOUTSTRING = sciTable_86_NtUserfnOUTSTRING[v];
-		sciUserfnPOPTINLPUINT = sciTable_86_NtUserfnPOPTINLPUINT[v];
-		sciUserfnPOUTLPINT = sciTable_86_NtUserfnPOUTLPINT[v];
-		sciUserfnSENTDDEMSG = sciTable_86_NtUserfnSENTDDEMSG[v];
 		sciValidateCompositionSurfaceHandle = sciTable_86_NtValidateCompositionSurfaceHandle[v];
 		sciVisualCaptureBits = sciTable_86_NtVisualCaptureBits[v];
 
