@@ -151,6 +151,7 @@
     <ClInclude Include="private\sys\version_table_86.h" />
     <ClInclude Include="private\sys\version_table_wow64.h" />
     <ClInclude Include="private\sys\version_table_ntuser_86_64.h" />
+    <ClInclude Include="private\sys\version_table_ntuser_86.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="private\sys\asm\AdjustPrivilegesToken.asm">
