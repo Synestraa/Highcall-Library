@@ -375,48 +375,7 @@
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
     </MASM>
-    <MASM Include="private\sys\asm\UserGetAsyncKeyState.asm">
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
-    </MASM>
-    <MASM Include="private\sys\asm\UserMessageCall.asm">
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
-    </MASM>
-    <MASM Include="private\sys\asm\UserPostThreadMessage.asm">
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
-    </MASM>
+    <MASM Include="private\sys\asm\UserMessageCall.asm" />
     <MASM Include="private\sys\asm\UserSendInput.asm">
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>

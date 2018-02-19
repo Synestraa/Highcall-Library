@@ -1666,6 +1666,9 @@
     <MASM Include="private\sys\asm\UserWindowFromPhysicalPoint.asm" />
     <MASM Include="private\sys\asm\UserWindowFromPoint.asm" />
     <MASM Include="private\sys\asm\UserWOWCleanup.asm" />
+    <MASM Include="private\sys\asm\UserMessageCall.asm" />
+    <MASM Include="private\sys\asm\UserPostThreadMessage.asm" />
+    <MASM Include="private\sys\asm\UserGetAsyncKeyState.asm" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">

@@ -503,7 +503,7 @@ done:
 
 DECL_EXTERN_API(NTSTATUS, ScanCheckMemoryModificationSelf)
 {
-
+	return 0;
 }
 
 DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggerMines)

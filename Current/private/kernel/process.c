@@ -868,7 +868,7 @@ DECL_EXTERN_API(NTSTATUS, QuerySystemInformationInternal, IN SYSTEM_INFORMATION_
 	{
 		SystemInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(SystemInformationLength);
 
-		Status = HcQuerySystemInformationWow64(SystemInformationClass, SystemInformation64, SystemInformationLength, ReturnLength);
+		Status = HcQuerySystemInformationWow64(SystemInformationClass, (ULONG64) SystemInformation64, SystemInformationLength, ReturnLength);
 		if (NT_SUCCESS(Status))
 		{
 			/* Praise thy conversions. */

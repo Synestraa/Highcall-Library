@@ -1053,6 +1053,12 @@ extern "C" {
 	/* unique_id.c */
 	DECL_EXTERN_API(LPWSTR, UniqueHardwareId);
 
+	/* input.c */
+	DECL_EXTERN_API(SHORT, GetAsyncKeyState, INT vKey);
+	DECL_EXTERN_API(BOOL, PostThreadMessageA, DWORD idThread, UINT Msg, WPARAM wParam, LPARAM lParam);
+	DECL_EXTERN_API(BOOL, PostThreadMessageW, DWORD idThread, UINT Msg, WPARAM wParam, LPARAM lParam);
+	DECL_EXTERN_API(LRESULT, SendMessageW, HWND Wnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
 #if defined (__cplusplus)
 }
 #endif

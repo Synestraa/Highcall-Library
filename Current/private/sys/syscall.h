@@ -54,6 +54,21 @@ extern "C" {
 BOOLEAN
 HcIsWow64();
 
+SHORT SYSCALLAPI HcUserGetAsyncKeyState(INT Key);
+
+BOOL SYSCALLAPI HcUserPostThreadMessage(DWORD idThread,
+	UINT Msg,
+	WPARAM wParam,
+	LPARAM lParam);
+
+BOOL SYSCALLAPI HcUserMessageCall(HWND hWnd,
+	UINT Msg,
+	WPARAM wParam,
+	LPARAM lParam,
+	ULONG_PTR ResultInfo,
+	DWORD dwType,
+	BOOL Ansi);
+
 UINT SYSCALLAPI HcUserSendInput(
 	UINT nInputs,
 	LPINPUT pInput,
