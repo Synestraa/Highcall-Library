@@ -52,7 +52,25 @@ extern "C" {
 #endif
 
 BOOLEAN
-HcIsWow64();
+HcIsWow64(); 
+
+BOOL SYSCALLAPI HcUserFlashWindowEx(IN PFLASHWINFO pfwi);
+
+NTSTATUS SYSCALLAPI HcUserBuildHwndList(HDESK hDesktop,
+	HWND hwndParent,
+	BOOLEAN bChildren,
+	ULONG dwThreadId,
+	ULONG lParam,
+	HWND* pWnd,
+	ULONG* pBufSize,
+	VOID* cache);
+
+DWORD_PTR SYSCALLAPI HcUserQueryWindow(HWND hWnd,
+	DWORD Index);
+
+INT SYSCALLAPI HcUserGetClassName(IN HWND hWnd,
+	IN BOOL Real,
+	OUT PUNICODE_STRING ClassName);
 
 SHORT SYSCALLAPI HcUserGetAsyncKeyState(INT Key);
 
@@ -533,6 +551,10 @@ NTSTATUS SYSCALLAPI HcResumeProcessWow64(CONST IN PTR_64(HANDLE) ProcessHandle);
 
 NTSTATUS SYSCALLAPI HcSuspendProcessWow64(CONST IN PTR_64(HANDLE) ProcessHandle);
 
+NTSTATUS SYSCALLAPI HcTerminateProcessWow64(
+	IN PTR_64(HANDLE) ProcessHandle OPTIONAL,
+	IN NTSTATUS ExitStatus);
+
 NTSTATUS SYSCALLAPI HcQuerySystemInformationWow64(IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	OUT PTR_64(LPVOID) SystemInformation,
 	IN ULONG SystemInformationLength,
@@ -588,9 +610,83 @@ NTSTATUS SYSCALLAPI HcAllocateVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProces
 		CONST IN ULONG AllocationType,
 		CONST IN ULONG Protect);
 
+NTSTATUS SYSCALLAPI HcCreateMutantWow64(
+	OUT PTR_64(PHANDLE)            MutantHandle,
+	IN  ACCESS_MASK        DesiredAccess,
+	IN	PTR_64(POBJECT_ATTRIBUTES) ObjectAttributes,
+	IN  BOOLEAN            InitialOwner);
+
+DWORD_PTR SYSCALLAPI HcUserCallOneParam(DWORD_PTR Param, DWORD Routine);
+
+DWORD_PTR SYSCALLAPI HcUserGetThreadState(DWORD Routine);
+
+NTSTATUS SYSCALLAPI HcUserProcessConnect(IN HANDLE ProcessHandle,
+	OUT PUSERCONNECT pUserConnect,
+	IN ULONG Size);
+
+NTSTATUS SYSCALLAPI HcQuerySection(_In_ HANDLE 	SectionHandle,
+	_In_ SECTION_INFORMATION_CLASS 	SectionInformationClass,
+	_Out_ PVOID 	SectionInformation,
+	_In_ SIZE_T 	Length,
+	_Out_opt_ PSIZE_T 	ResultLength);
+
+NTSTATUS SYSCALLAPI HcCreateProcess(_Out_ PHANDLE 	ProcessHandle,
+	_In_ ACCESS_MASK 	DesiredAccess,
+	_In_opt_ POBJECT_ATTRIBUTES 	ObjectAttributes,
+	_In_ HANDLE 	ParentProcess,
+	_In_ BOOLEAN 	InheritObjectTable,
+	_In_opt_ HANDLE 	SectionHandle,
+	_In_opt_ HANDLE 	DebugPort,
+	_In_opt_ HANDLE 	ExceptionPort);
+
+NTSTATUS SYSCALLAPI HcOpenFile(OUT PHANDLE 	phFile,
+	IN ACCESS_MASK 	DesiredAccess,
+	IN POBJECT_ATTRIBUTES 	ObjectAttributes,
+	OUT PIO_STATUS_BLOCK 	pIoStatusBlock,
+	IN ULONG 	ShareMode,
+	IN ULONG 	OpenMode);
+
+NTSTATUS SYSCALLAPI HcCreateSection(OUT PHANDLE 	SectionHandle,
+	IN ACCESS_MASK 	DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes 	OPTIONAL,
+	IN PLARGE_INTEGER MaximumSize 	OPTIONAL,
+	IN ULONG SectionPageProtection 	OPTIONAL,
+	IN ULONG 	AllocationAttributes,
+	IN HANDLE FileHandle 	OPTIONAL);
+
+NTSTATUS SYSCALLAPI HcCreateProcessEx(OUT PHANDLE 	ProcessHandle,
+	IN ACCESS_MASK 	DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes 	OPTIONAL,
+	IN HANDLE 	ParentProcess,
+	IN ULONG 	Flags,
+	IN HANDLE SectionHandle 	OPTIONAL,
+	IN HANDLE DebugPort 	OPTIONAL,
+	IN HANDLE ExceptionPort 	OPTIONAL,
+	IN BOOLEAN 	InJob);
+
+NTSTATUS SYSCALLAPI HcQueueApcThread(HANDLE ThreadHandle, 
+	PIO_APC_ROUTINE ApcRoutine,
+	PVOID ApcRoutineContext OPTIONAL, 
+	PIO_STATUS_BLOCK ApcStatusBlock OPTIONAL, 
+	ULONG ApcReserved OPTIONAL);
+
 DWORD64
 SYSCALLAPI
 HcWow64Syscall(int idx, int argC, ...);
+
+NTSTATUS SYSCALLAPI HcQueryDefaultLocale(IN BOOLEAN UserProfile,
+	OUT PLCID DefaultLocaleId);
+
+NTSTATUS SYSCALLAPI HcQueryDefaultLocaleWow64(IN BOOLEAN UserProfile,
+	OUT PLCID DefaultLocaleId);
+
+NTSTATUS
+SYSCALLAPI
+HcSetInformationProcess(
+	IN HANDLE               ProcessHandle,
+	IN PROCESS_INFORMATION_CLASS ProcessInformationClass,
+	IN PVOID                ProcessInformation,
+	IN ULONG                ProcessInformationLength);
 
 #if defined (__cplusplus)
 }

@@ -77,6 +77,11 @@ DECL_EXTERN_API(PVOID, InternalSet, IN PVOID pDst, CONST IN BYTE bVal, IN SIZE_T
 	return (start);
 }
 
+DECL_EXTERN_API(PVOID, InternalZero, IN PVOID pDst, IN SIZE_T tCount)
+{
+	return HcInternalSet(pDst, 0, tCount);
+}
+
 DECL_EXTERN_API(BOOLEAN, InternalValidate, IN LPCVOID lpcAddress)
 {
 	MEMORY_BASIC_INFORMATION mbi;
@@ -236,13 +241,14 @@ DECL_EXTERN_API(LPBYTE, InternalPatternFind, IN LPCSTR Pattern, IN LPCSTR szcMas
 	return NULL;
 }
 
-DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LPCSTR szcMask, IN LPBYTE lpBuffer, CONST IN SIZE_T Size)
+DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LPBYTE lpBuffer, CONST IN SIZE_T Size)
 {
 	LPBYTE CurrentAddress;
 	LPBYTE ProbeAddress;
 	SIZE_T MaskSize;
+	LPBYTE bytePattern = (BYTE*) szcPattern;
 
-	MaskSize = HcStringLenA(szcMask);
+	MaskSize = HcStringLenA(szcPattern);
 	if (!MaskSize || !HcStringLenA(szcPattern))
 	{
 		return 0;
@@ -252,21 +258,21 @@ DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LP
 	for (CurrentAddress = lpBuffer; CurrentAddress < lpBuffer + Size - MaskSize; CurrentAddress++)
 	{
 		/* Check for an initial match to start our larger pattern. */
-		if (*CurrentAddress == (szcPattern[0] & 0xff) || szcMask[0] == '?')
+		if (*CurrentAddress == (bytePattern[0] & 0xff) || bytePattern[0] == 0xCC)
 		{
 			ProbeAddress = CurrentAddress;
 
 			/* Loop through the address that contained our first byte. */
-			for (int i = 0; szcMask[i] != '\0'; i++, ProbeAddress++)
+			for (int i = 0; i < MaskSize; i++, ProbeAddress++)
 			{
 				/* This is not our pattern. */
-				if ((szcPattern[i] & 0xff) != *ProbeAddress && szcMask[i] != '?')
+				if ((bytePattern[i] & 0xff) != *ProbeAddress && bytePattern[i] != 0xCC)
 				{
 					break;
 				}
 
 				/* This is a match. */
-				if (((szcPattern[i] & 0xff) == *ProbeAddress || szcMask[i] == '?') && szcMask[i + 1] == '\0')
+				if (((bytePattern[i] & 0xff) == *ProbeAddress || bytePattern[i] == 0xCC) && MaskSize == i + 1)
 				{
 					return CurrentAddress;
 				}
@@ -276,4 +282,19 @@ DECL_EXTERN_API(LPBYTE, InternalPatternFindInBuffer, IN LPCSTR szcPattern, IN LP
 
 	/* We found nothing. */
 	return NULL;
+}
+
+
+DECL_EXTERN_API(LPBYTE, InternalPatternFindCurrent, IN LPCSTR szcPattern)
+{
+	BYTE* base = (BYTE*) HcModuleHandleAdvancedExW(NtCurrentProcess(), NULL, TRUE);
+	SIZE_T size = HcModuleSize(NULL);
+	DWORD oldProtect = 0;
+	
+
+	HcVirtualProtect(base, size, PAGE_EXECUTE_READWRITE, &oldProtect);
+	LPBYTE retn = HcInternalPatternFindInBuffer(szcPattern, base, size);
+	HcVirtualProtect(base, size, oldProtect, &oldProtect);
+
+	return retn;
 }

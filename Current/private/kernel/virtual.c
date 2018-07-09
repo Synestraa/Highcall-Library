@@ -3,8 +3,6 @@
 #include "../sys/syscall.h"
 #include "../../public/imports.h"
 
-#include <malloc.h>
-
 DECL_EXTERN_API(LPVOID, VirtualAllocEx, 
 	CONST IN HANDLE hProcess,
 	IN LPVOID lpAddress,
@@ -285,7 +283,7 @@ DECL_EXTERN_API(NTSTATUS, QueryVirtualMemoryEx, IN HANDLE ProcessHandle,
 			MemoryInformationLength = sizeof(MEMORY_SECTION_NAME_WOW64);
 		}
 
-		MemoryInformation64 = WOW64_CONVERT(LPVOID) HcAlloc(MemoryInformationLength);
+		MemoryInformation64 = WOW64_CONVERT(LPVOID) HcAllocPage(MemoryInformationLength);
 
 		NTSTATUS Status = HcQueryVirtualMemoryWow64((ULONG64) ProcessHandle, 
 			(ULONG64) BaseAddress,
@@ -332,7 +330,7 @@ DECL_EXTERN_API(NTSTATUS, QueryVirtualMemoryEx, IN HANDLE ProcessHandle,
 			}
 		}
 
-		HcFree((LPVOID) MemoryInformation64);
+		HcFreePage((LPVOID) MemoryInformation64);
 		
 		return Status;
 	}
@@ -433,26 +431,37 @@ DECL_EXTERN_API(LPVOID, Alloc32, CONST IN SIZE_T Size)
 	return (LPVOID) FreeSpace;
 }
 
+DECL_EXTERN_API(PVOID, Realloc, IN LPVOID lpAddress, CONST IN SIZE_T Size, CONST IN SIZE_T newSize)
+{
+	LPVOID alloc = HcAlloc(Size + newSize);
+	if (alloc)
+	{
+		HcInternalCopy(alloc, lpAddress, Size);
+		HcFree(lpAddress);
+	}
+	return alloc;
+}
+
 DECL_EXTERN_API(PVOID, Alloc, CONST IN SIZE_T Size)
 {
-	//return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
+	return HcVirtualAlloc(NULL, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	/*LPVOID Alloc = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, Size);
 	if (!Alloc)
 	{
 		HcErrorSetNtStatus(STATUS_MEMORY_NOT_ALLOCATED);
-	}
+	}*/
 	/*LPVOID Alloc = malloc(Size);
 	if (Alloc)
 	{
 		HcInternalSet(Alloc, 0, Size);
 	}*/
-	return Alloc;
+	//return Alloc;
 }
 
 DECL_EXTERN_API(VOID, Free, CONST IN LPVOID lpAddress)
 {
-	//HcVirtualFree(lpAddress, 0, MEM_RELEASE);
-	RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
+	HcVirtualFree(lpAddress, 0, MEM_RELEASE);
+	//RtlFreeHeap(RtlGetProcessHeap(), 0, lpAddress);
 	//free(lpAddress);
 }
 

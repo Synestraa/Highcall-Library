@@ -18,11 +18,6 @@ HcGlobalEnv HcGlobal;
 #define BASESRV_SERVERDLL_INDEX     1
 #define BASESRV_FIRST_API_NUMBER    0
 
-//
-// no context
-//
-
-UNICODE_STRING Restricted = RTL_CONSTANT_STRING(L"Restricted");
 
 static NTSTATUS INITIALIZATION_ROUTINE InitializeModules(VOID)
 {
@@ -100,9 +95,13 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeVersion(VOID)
 	/* Windows 10 */
 	else if (majorVersion == 10 && minorVersion == 0)
 	{
-		if (buildNumber > 16299)
+		if (buildNumber >= 17134)
 		{
 			HcGlobal.WindowsVersion = WINDOWS_10_1803;
+		}
+		else if (buildNumber > 16299)
+		{
+			HcGlobal.WindowsVersion = WINDOWS_10_1713;
 		}
 		else if (buildNumber == 16299)
 		{
@@ -1334,7 +1333,7 @@ static NTSTATUS InitializeSyscall(VOID)
 	sciTokenManagerThread = sciTable_86_64_NtTokenManagerThread[v];
 	sciUnBindCompositionSurface = sciTable_86_64_NtUnBindCompositionSurface[v];
 	sciUpdateInputSinkTransforms = sciTable_86_64_NtUpdateInputSinkTransforms[v];
-	sciUserAcquireIAMKey = sciTable_86_64_NtUserAcquireIAMKey[v];
+	/*sciUserAcquireIAMKey = sciTable_86_64_NtUserAcquireIAMKey[v];
 	sciUserAcquireInteractiveControlBackgroundAccess = sciTable_86_64_NtUserAcquireInteractiveControlBackgroundAccess[v];
 	sciUserActivateKeyboardLayout = sciTable_86_64_NtUserActivateKeyboardLayout[v];
 	sciUserAddClipboardFormatListener = sciTable_86_64_NtUserAddClipboardFormatListener[v];
@@ -1885,7 +1884,7 @@ static NTSTATUS InitializeSyscall(VOID)
 	sciUserWindowFromPoint = sciTable_86_64_NtUserWindowFromPoint[v];
 	sciUserYieldTask = sciTable_86_64_NtUserYieldTask[v];
 	sciValidateCompositionSurfaceHandle = sciTable_86_64_NtValidateCompositionSurfaceHandle[v];
-	sciVisualCaptureBits = sciTable_86_64_NtVisualCaptureBits[v];
+	sciVisualCaptureBits = sciTable_86_64_NtVisualCaptureBits[v];*/
 #else
 	if (HcGlobal.IsWow64)
 	{
@@ -3497,7 +3496,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciTokenManagerThread = sciTable_86_64_NtTokenManagerThread[v];
 		sciUnBindCompositionSurface = sciTable_86_64_NtUnBindCompositionSurface[v];
 		sciUpdateInputSinkTransforms = sciTable_86_64_NtUpdateInputSinkTransforms[v];
-		sciUserAcquireIAMKey = sciTable_86_64_NtUserAcquireIAMKey[v];
+		/*sciUserAcquireIAMKey = sciTable_86_64_NtUserAcquireIAMKey[v];
 		sciUserAcquireInteractiveControlBackgroundAccess = sciTable_86_64_NtUserAcquireInteractiveControlBackgroundAccess[v];
 		sciUserActivateKeyboardLayout = sciTable_86_64_NtUserActivateKeyboardLayout[v];
 		sciUserAddClipboardFormatListener = sciTable_86_64_NtUserAddClipboardFormatListener[v];
@@ -4048,7 +4047,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserWindowFromPoint = sciTable_86_64_NtUserWindowFromPoint[v];
 		sciUserYieldTask = sciTable_86_64_NtUserYieldTask[v];
 		sciValidateCompositionSurfaceHandle = sciTable_86_64_NtValidateCompositionSurfaceHandle[v];
-		sciVisualCaptureBits = sciTable_86_64_NtVisualCaptureBits[v];
+		sciVisualCaptureBits = sciTable_86_64_NtVisualCaptureBits[v];*/
 	}
 	else
 	{
@@ -4837,7 +4836,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserAcquireInteractiveControlBackgroundAccess = sciTable_86_NtUserAcquireInteractiveControlBackgroundAccess[v];
 		sciUserActivateKeyboardLayout = sciTable_86_NtUserActivateKeyboardLayout[v];
 		sciUserAddClipboardFormatListener = sciTable_86_NtUserAddClipboardFormatListener[v];
-		sciUserAlterWindowStyle = sciTable_86_NtUserAlterWindowStyle[v];
+		sciUserAlterWindowStyle = sciTable_86_NtUserAlterWindowStyle[v];/*
 		sciUserAssociateInputContext = sciTable_86_NtUserAssociateInputContext[v];
 		sciUserAttachThreadInput = sciTable_86_NtUserAttachThreadInput[v];
 		sciUserAutoPromoteMouseInPointer = sciTable_86_NtUserAutoPromoteMouseInPointer[v];
@@ -5382,7 +5381,7 @@ static NTSTATUS InitializeSyscall(VOID)
 		sciUserWindowFromPoint = sciTable_86_NtUserWindowFromPoint[v];
 		sciUserYieldTask = sciTable_86_NtUserYieldTask[v];
 		sciValidateCompositionSurfaceHandle = sciTable_86_NtValidateCompositionSurfaceHandle[v];
-		sciVisualCaptureBits = sciTable_86_NtVisualCaptureBits[v];
+		sciVisualCaptureBits = sciTable_86_NtVisualCaptureBits[v];*/
 
 		sciAcceptConnectPort = sciTable_86_NtAcceptConnectPort[v];
 		sciAccessCheck = sciTable_86_NtAccessCheck[v];
@@ -5790,6 +5789,31 @@ static NTSTATUS InitializeSyscall(VOID)
 	return STATUS_SUCCESS;
 }
 
+static NTSTATUS INITIALIZATION_ROUTINE InitializeUser(VOID)
+{
+	NTSTATUS Status;
+	USERCONNECT UserCon;
+
+	HcInternalSet(&UserCon, 0, sizeof(UserCon));
+
+	/* Minimal setup of the connect info structure */
+	UserCon.ulVersion = 1;
+
+	Status = HcUserProcessConnect(NtCurrentProcess(),
+		&UserCon,
+		sizeof(UserCon));
+	if (!NT_SUCCESS(Status)) return Status;
+
+	/* Retrieve data */
+	HcGlobal.ulSharedDelta = UserCon.siClient.ulSharedDelta;
+	HcGlobal.psi = HcSharedPtrToUser(UserCon.siClient.psi);
+	HcGlobal.HandleTable = HcSharedPtrToUser(UserCon.siClient.aheList);
+	HcGlobal.HandleEntries = HcSharedPtrToUser(HcGlobal.HandleTable->handles);
+	HcGlobal.SharedInfo = UserCon.siClient;
+
+	return STATUS_SUCCESS;
+}
+
 static NTSTATUS INITIALIZATION_ROUTINE InitializeSecurity(VOID)
 {
 	HANDLE hToken = 0;
@@ -5818,106 +5842,102 @@ static NTSTATUS INITIALIZATION_ROUTINE InitializeSecurity(VOID)
 	return Status;
 }
 
-static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
-{
-	OBJECT_ATTRIBUTES ObjectAttributes;
-	NTSTATUS Status;
-	HANDLE DirHandle, BnoHandle, Token, NewToken;
-
-	if (NtCurrentTeb()->IsImpersonating)
-	{
-		Status = HcOpenThreadToken(
-			NtCurrentThread(),
-			TOKEN_IMPERSONATE,
-			TRUE,
-			&Token);
-
-		if (!NT_SUCCESS(Status))
-		{
-			return Status;
-		}
-
-		NewToken = NULL;
-
-		Status = HcSetInformationThread(
-			NtCurrentThread(),
-			ThreadImpersonationToken,
-			&NewToken,
-			sizeof(HANDLE));
-
-		if (!NT_SUCCESS(Status))
-		{
-			HcObjectClose(&Token);
-			return Status;
-		}
-	}
-	else
-	{
-		Token = NULL;
-	}
-
-	RtlAcquirePebLock();
-
-	InitializeObjectAttributes(
-		&ObjectAttributes,
-		&HcGlobal.BaseStaticServerData->NamedObjectDirectory,
-		OBJ_CASE_INSENSITIVE,
-		NULL,
-		NULL);
-
-	Status = HcOpenDirectoryObject(
-		&BnoHandle,
-		DIRECTORY_QUERY |
-		DIRECTORY_TRAVERSE |
-		DIRECTORY_CREATE_OBJECT |
-		DIRECTORY_CREATE_SUBDIRECTORY,
-		&ObjectAttributes);
-
-	if (!NT_SUCCESS(Status))
-	{
-		Status = HcOpenDirectoryObject(&DirHandle,
-			DIRECTORY_TRAVERSE,
-			&ObjectAttributes);
-
-		if (NT_SUCCESS(Status))
-		{
-			InitializeObjectAttributes(
-				&ObjectAttributes,
-				(PUNICODE_STRING) &Restricted,
-				OBJ_CASE_INSENSITIVE,
-				DirHandle,
-				NULL);
-
-			Status = HcOpenDirectoryObject(&BnoHandle,
-				DIRECTORY_QUERY |
-				DIRECTORY_TRAVERSE |
-				DIRECTORY_CREATE_OBJECT |
-				DIRECTORY_CREATE_SUBDIRECTORY,
-				&ObjectAttributes);
-
-			HcObjectClose(&DirHandle);
-		}
-	}
-
-	if (NT_SUCCESS(Status))
-	{
-		HcGlobal.BaseNamedObjectDirectory = BnoHandle;
-	}
-
-	RtlReleasePebLock();
-
-	if (Token)
-	{
-		HcSetInformationThread(NtCurrentThread(),
-			ThreadImpersonationToken,
-			&Token,
-			sizeof(Token));
-
-		HcObjectClose(&Token);
-	}
-
-	return Status;
-}
+//static NTSTATUS INITIALIZATION_ROUTINE InitializeNamedObjectDirectory()
+//{
+//	OBJECT_ATTRIBUTES ObjectAttributes;
+//	NTSTATUS Status;
+//	HANDLE DirHandle, BnoHandle, Token, NewToken;
+//
+//	if (NtCurrentTeb()->IsImpersonating)
+//	{
+//		Status = HcOpenThreadToken(
+//			NtCurrentThread(),
+//			TOKEN_IMPERSONATE,
+//			TRUE,
+//			&Token);
+//
+//		if (!NT_SUCCESS(Status))
+//		{
+//			return Status;
+//		}
+//
+//		NewToken = NULL;
+//
+//		Status = HcSetInformationThread(
+//			NtCurrentThread(),
+//			ThreadImpersonationToken,
+//			&NewToken,
+//			sizeof(HANDLE));
+//
+//		if (!NT_SUCCESS(Status))
+//		{
+//			HcObjectClose(&Token);
+//			return Status;
+//		}
+//	}
+//	else
+//	{
+//		Token = NULL;
+//	}
+//
+//	InitializeObjectAttributes(
+//		&ObjectAttributes,
+//		&HcGlobal.BaseStaticServerData->NamedObjectDirectory,
+//		OBJ_CASE_INSENSITIVE,
+//		NULL,
+//		NULL);
+//
+//	Status = HcOpenDirectoryObject(
+//		&BnoHandle,
+//		DIRECTORY_QUERY |
+//		DIRECTORY_TRAVERSE |
+//		DIRECTORY_CREATE_OBJECT |
+//		DIRECTORY_CREATE_SUBDIRECTORY,
+//		&ObjectAttributes);
+//
+//	if (!NT_SUCCESS(Status))
+//	{
+//		Status = HcOpenDirectoryObject(&DirHandle,
+//			DIRECTORY_TRAVERSE,
+//			&ObjectAttributes);
+//
+//		if (NT_SUCCESS(Status))
+//		{
+//			InitializeObjectAttributes(
+//				&ObjectAttributes,
+//				(PUNICODE_STRING) &Restricted,
+//				OBJ_CASE_INSENSITIVE,
+//				DirHandle,
+//				NULL);
+//
+//			Status = HcOpenDirectoryObject(&BnoHandle,
+//				DIRECTORY_QUERY |
+//				DIRECTORY_TRAVERSE |
+//				DIRECTORY_CREATE_OBJECT |
+//				DIRECTORY_CREATE_SUBDIRECTORY,
+//				&ObjectAttributes);
+//
+//			HcObjectClose(&DirHandle);
+//		}
+//	}
+//
+//	if (NT_SUCCESS(Status))
+//	{
+//		HcGlobal.BaseNamedObjectDirectory = BnoHandle;
+//	}
+//
+//	if (Token)
+//	{
+//		HcSetInformationThread(NtCurrentThread(),
+//			ThreadImpersonationToken,
+//			&Token,
+//			sizeof(Token));
+//
+//		HcObjectClose(&Token);
+//	}
+//
+//	return Status;
+//}
 
 NTSTATUS INITIALIZATION_ROUTINE HcInitialize()
 {
@@ -5944,6 +5964,8 @@ NTSTATUS INITIALIZATION_ROUTINE HcInitialize()
 	{
 		return Status;
 	}
+
+	//InitializeUser();
 
 	/* will need to initialize with csrss before this makes any sense */
 	//Status = InitializeNamedObjectDirectory(); 

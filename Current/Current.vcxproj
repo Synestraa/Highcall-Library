@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -37,28 +37,28 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{95ADA766-E8FB-4379-A859-47B81B6D2D8D}</ProjectGuid>
     <RootNamespace>HighcallLibrary</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>Current</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
@@ -66,7 +66,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
@@ -74,21 +74,21 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
@@ -96,7 +96,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
@@ -320,7 +320,7 @@
     <ClCompile Include="private\kernel\string.c" />
     <ClCompile Include="private\kernel\thread.c" />
     <ClCompile Include="private\kernel\token.c" />
-    <ClCompile Include="private\kernel\unique_id.cpp" />
+    <ClCompile Include="private\kernel\unique_id.c" />
     <ClCompile Include="private\kernel\util.c" />
     <ClCompile Include="private\kernel\virtual.c" />
     <ClCompile Include="private\kernel\volume.c" />
@@ -328,7 +328,10 @@
     <ClCompile Include="private\kernel\scan.c" />
     <ClCompile Include="private\sys\syscall.c" />
     <ClCompile Include="private\sys\table.c" />
+    <ClCompile Include="private\user\class.c" />
+    <ClCompile Include="private\user\draw.c" />
     <ClCompile Include="private\user\input.c" />
+    <ClCompile Include="private\user\window.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build\Include\highcall.h" />
@@ -376,19 +379,103 @@
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
     </MASM>
+    <MASM Include="private\sys\asm\SwitchMode.ASM">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+    </MASM>
+    <MASM Include="private\sys\asm\UserBuildHwndList.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+    </MASM>
+    <MASM Include="private\sys\asm\UserCallOneParam.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+    </MASM>
+    <MASM Include="private\sys\asm\UserFlashWindowEx.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+    </MASM>
     <MASM Include="private\sys\asm\UserGetAsyncKeyState.asm">
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
-      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+    </MASM>
+    <MASM Include="private\sys\asm\UserGetClassName.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+    </MASM>
+    <MASM Include="private\sys\asm\UserGetThreadState.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
     </MASM>
     <MASM Include="private\sys\asm\UserMessageCall.asm">
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
@@ -405,6 +492,34 @@
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
     </MASM>
     <MASM Include="private\sys\asm\UserPostThreadMessage.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+    </MASM>
+    <MASM Include="private\sys\asm\UserProcessConnect.asm">
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
+      <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</CallingConvention>
+    </MASM>
+    <MASM Include="private\sys\asm\UserQueryWindow.asm">
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
@@ -6503,14 +6618,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -6633,14 +6748,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -6711,14 +6826,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -9181,14 +9296,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -9467,14 +9582,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -10613,14 +10728,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -11448,14 +11563,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -11918,14 +12033,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -13686,14 +13801,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>
@@ -15194,14 +15309,14 @@
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|x64'">false</ExcludedFromBuild>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_DEBUG|Win32'">1</CallingConvention>
       <CallingConvention Condition="'$(Configuration)|$(Platform)'=='DYNAMIC_RELEASE|Win32'">1</CallingConvention>

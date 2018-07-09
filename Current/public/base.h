@@ -2,9 +2,11 @@
 
 #pragma region General Includes
 #include "native.h" /* contains native.h, wintype.h */
+#include "ntuser.h"
 
 #include <winerror.h> /* for DOS error codes */
 #include <WinBase.h> /* definitions */
+
 #pragma endregion
 
 #pragma region General Usage Definitions
@@ -82,7 +84,8 @@ typedef long SYS_INDEX;
 #define WINDOWS_10_1607			6
 #define WINDOWS_10_1703			7
 #define WINDOWS_10_1709			8
-#define WINDOWS_10_1803			9
+#define WINDOWS_10_1713			9
+#define WINDOWS_10_1803			10
 #define WINDOWS_NOT_SUPPORTED	0
 #define WINDOWS_NOT_DEFINED	   -1
 #pragma endregion

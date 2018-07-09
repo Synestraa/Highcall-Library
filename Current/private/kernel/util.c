@@ -45,3 +45,46 @@ DECL_EXTERN_API(POBJECT_ATTRIBUTES, UtilFormatObjectAttributes,
 
 	return ObjectAttributes;
 }
+
+DECL_EXTERN_API(POBJECT_ATTRIBUTES_WOW64, UtilFormatObjectAttributesWow64, OUT POBJECT_ATTRIBUTES_WOW64 ObjectAttributes, IN PSECURITY_ATTRIBUTES SecurityAttributes OPTIONAL, IN PUNICODE_STRING ObjectName)
+{
+	ULONG Attributes;
+	HANDLE RootDirectory;
+	PVOID SecurityDescriptor;
+
+	/* Get the attributes if present */
+	if (SecurityAttributes)
+	{
+		Attributes = SecurityAttributes->bInheritHandle ? OBJ_INHERIT : 0;
+		SecurityDescriptor = SecurityAttributes->lpSecurityDescriptor;
+	}
+	else
+	{
+		if (!ObjectName)
+		{
+			return NULL;
+		}
+
+		Attributes = 0;
+		SecurityDescriptor = NULL;
+	}
+
+	if (ObjectName)
+	{
+		Attributes |= OBJ_OPENIF;
+		RootDirectory = HcGlobal.BaseNamedObjectDirectory;
+	}
+	else
+	{
+		RootDirectory = NULL;
+	}
+
+	/* Create the Object Attributes */
+	InitializeObjectAttributesWow64(ObjectAttributes,
+		ObjectName,
+		Attributes,
+		RootDirectory,
+		SecurityDescriptor);
+
+	return ObjectAttributes;
+}

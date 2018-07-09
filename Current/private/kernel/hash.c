@@ -180,7 +180,7 @@ DECL_EXTERN_API(VOID, HashSha256Final, SHA_256 *ctx, LPBYTE hash)
 		while (i < 64)
 			ctx->data[i++] = 0x00;
 		HcHashSha256Transform(ctx, ctx->data);
-		memset(ctx->data, 0, 56);
+		HcInternalSet(ctx->data, 0, 56);
 	}
 
 	ctx->bitlen += (BYTE) (ctx->datalen * 8);

@@ -1,6 +1,4 @@
 #include <highcall.h>
-#include <stdio.h>
-#include <intrin.h>
 
 DECL_EXTERN_API(NTSTATUS, ScanPageMinesCheck, PSCAN_PAGE_MINES ScanInformation)
 {
@@ -504,6 +502,29 @@ done:
 DECL_EXTERN_API(NTSTATUS, ScanCheckMemoryModificationSelf)
 {
 	return 0;
+}
+
+DECL_EXTERN_API(LANGID, GetSystemDefaultLangID)
+{
+	LCID lcid;
+	if (!HcGlobal.IsWow64)
+	{
+		HcQueryDefaultLocale(FALSE, &lcid);
+	}
+	else
+	{
+		HcQueryDefaultLocaleWow64(FALSE, &lcid);
+	}
+	return LANGIDFROMLCID(lcid);
+}
+
+DECL_EXTERN_API(BOOLEAN, ScanVirtualMachine)
+{
+	INT CPUInfo[4] = { -1 };
+
+	/* Query hypervisor precense using CPUID (EAX=1), BIT 31 in ECX */
+	__cpuid(CPUInfo, 1);
+	return ((CPUInfo[2] >> 31) & 1);
 }
 
 DECL_EXTERN_API(NTSTATUS, ScanCheckDebuggerBasic, BOOLEAN CheckDebuggerMines)

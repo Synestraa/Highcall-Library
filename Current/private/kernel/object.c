@@ -245,7 +245,7 @@ DECL_EXTERN_API(HANDLE, ObjectCreateEventW,
 
 	if (lpName)
 	{
-		RtlInitUnicodeString(&ObjectName, lpName);
+		HcInitUnicodeString(&ObjectName, lpName);
 	}
 
 	ObjectAttributes = HcUtilFormatObjectAttributes(
@@ -317,15 +317,31 @@ DECL_EXTERN_API(HANDLE, ObjectCreateMutexW,
 
 	if (lpName)
 	{
-		RtlInitUnicodeString(&ObjectName, lpName);
+		HcInitUnicodeString(&ObjectName, lpName);
 	}
+	
+	if (!HcGlobal.IsWow64)
+	{
+		ObjectAttributes = HcUtilFormatObjectAttributes(
+			&LocalAttributes,
+			lpMutexAttributes,
+			lpName ? &ObjectName : NULL);
 
-	ObjectAttributes = HcUtilFormatObjectAttributes	(
-		&LocalAttributes,
-		lpMutexAttributes,
-		lpName ? &ObjectName : NULL);
+		Status = HcCreateMutant(&Handle, MUTANT_ALL_ACCESS, ObjectAttributes, bInitialOwner);
+	}
+	else
+	{
+		OBJECT_ATTRIBUTES_WOW64 LocalAttributes64;
+		POBJECT_ATTRIBUTES_WOW64 ObjectAttributes64 = &LocalAttributes64;
 
-	Status = HcCreateMutant(&Handle, MUTANT_ALL_ACCESS, ObjectAttributes, bInitialOwner);
+		ObjectAttributes64 = HcUtilFormatObjectAttributesWow64(
+			&LocalAttributes64,
+			lpMutexAttributes,
+			lpName ? &ObjectName : NULL);
+
+		ULONG64 Handle64 = 0;
+		HcCreateMutantWow64((ULONG64) &Handle64, MUTANT_ALL_ACCESS, (ULONG64) ObjectAttributes64, bInitialOwner);
+	}
 
 	if (NT_SUCCESS(Status))
 	{

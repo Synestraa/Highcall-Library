@@ -14,6 +14,20 @@ HcFree(Directory);
 
 */
 
+DECL_EXTERN_API(VOID, InitUnicodeString, PUNICODE_STRING DestinationString, PCWSTR SourceString)
+{
+	if (!DestinationString || !SourceString)
+		return;
+
+	DWORD len = HcStringLenW(SourceString);
+
+	DestinationString->Buffer = HcStringAllocW(len);
+	HcStringCopyW(DestinationString->Buffer, SourceString, len);
+
+	DestinationString->Length = (USHORT) len * 2;
+	DestinationString->MaximumLength = (USHORT) len * 2 + 2;
+}
+
 DECL_EXTERN_API(LPSTR, StringAllocA, CONST IN DWORD tSize)
 {
 	return (LPSTR) HcAlloc(tSize * sizeof(CHAR) + sizeof(ANSI_NULL));
@@ -640,6 +654,9 @@ DECL_EXTERN_API(LPSTR, StringConvertWtoA, IN LPCWSTR lpStringConvert)
 
 DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
+	if (szOut == NULL || szcIn == NULL)
+		return FALSE;
+
 	DWORD dwActualLength = HcStringLenA(szcIn);
 	DWORD dwLength = dwLen;
 
@@ -661,6 +678,9 @@ DECL_EXTERN_API(BOOLEAN, StringCopyA, OUT LPSTR szOut, IN LPCSTR szcIn, CONST IN
 
 DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST IN DWORD dwLen OPTIONAL)
 {
+	if (szOut == NULL || szcIn == NULL)
+		return FALSE;
+
 	DWORD dwActualLength = HcStringLenW(szcIn);
 	DWORD dwLength = dwLen;
 
@@ -680,8 +700,21 @@ DECL_EXTERN_API(BOOLEAN, StringCopyW, OUT LPWSTR szOut, IN LPCWSTR szcIn, CONST 
 	return TRUE;
 }
 
+DECL_EXTERN_API(BOOLEAN, StringCopyExW, OUT LPWSTR szOut, IN LPCWSTR szcIn)
+{
+	return HcStringCopyW(szOut, szcIn, -1);
+}
+
+DECL_EXTERN_API(BOOLEAN, StringCopyExA, OUT LPSTR szOut, IN LPCSTR szcIn)
+{
+	return HcStringCopyA(szOut, szcIn, -1);
+}
+
 DECL_EXTERN_API(BOOLEAN, StringAppendA, IN LPSTR* szStream, IN LPCSTR szText, CONST IN DWORD dwLength OPTIONAL)
 {
+	if (szStream == NULL || *szStream == NULL || szText == NULL)
+		return FALSE;
+
 	DWORD dwActualLength = dwLength;
 	if (dwActualLength == -1)
 	{
@@ -700,6 +733,9 @@ DECL_EXTERN_API(BOOLEAN, StringAppendA, IN LPSTR* szStream, IN LPCSTR szText, CO
 
 DECL_EXTERN_API(BOOLEAN, StringAppendW, IN LPWSTR* szStream, IN LPCWSTR szText, CONST IN DWORD dwLength OPTIONAL)
 {
+	if (szStream == NULL || *szStream == NULL || szText == NULL)
+		return FALSE;
+
 	DWORD dwActualLength = dwLength;
 	if (dwActualLength == -1)
 	{
@@ -716,10 +752,23 @@ DECL_EXTERN_API(BOOLEAN, StringAppendW, IN LPWSTR* szStream, IN LPCWSTR szText, 
 	return TRUE;
 }
 
+DECL_EXTERN_API(BOOLEAN, StringAppendExW, IN LPWSTR szStream, IN LPCWSTR szText)
+{
+	return HcStringAppendW(&szStream, szText, -1);
+}
+
+DECL_EXTERN_API(BOOLEAN, StringAppendExA, IN LPSTR szStream, IN LPCSTR szText)
+{
+	return HcStringAppendA(&szStream, szText, -1);
+}
+
 DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrA, IN LPSTR lpString)
 {
 	ULONG_PTR res = 0; // Initialize result
 	int sgn = 1;
+
+	if (lpString == NULL)
+		return 0;
 
 	if (*lpString == '-')
 	{
@@ -750,6 +799,9 @@ DECL_EXTERN_API(ULONG_PTR, StringConvertIntPtrW, IN LPWSTR lpString)
 {
 	ULONG_PTR res = 0; // Initialize result
 	int sgn = 1;
+
+	if (lpString == NULL)
+		return 0;
 
 	if (*lpString == L'-')
 	{
@@ -795,6 +847,9 @@ DECL_EXTERN_API(VOID, StringUInt32ToHexStringW, ULONG n, LPWSTR outbuf)
 	int i = 12;
 	int j = 0;
 
+	if (outbuf == NULL)
+		return;
+
 	do
 	{
 		outbuf[i] = L"0123456789ABCDEF"[n % 16];
@@ -832,6 +887,9 @@ DECL_EXTERN_API(VOID, StringUInt32ToHexStringA, ULONG n, LPSTR outbuf)
 
 DECL_EXTERN_API(VOID, StringUInt32ToStringA, ULONG value, LPSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	if (value < 10000)
 	{
 		CONST ULONG d1 = (value / 100) << 1;
@@ -941,6 +999,9 @@ DECL_EXTERN_API(VOID, StringInt32ToStringA, LONG value, LPSTR buffer)
 
 DECL_EXTERN_API(VOID, StringUInt64ToStringA, ULONG64 value, LPSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	if (value < 100000000)
 	{
 		ULONG v = (ULONG) (value);
@@ -1139,6 +1200,9 @@ DECL_EXTERN_API(VOID, StringUInt64ToStringA, ULONG64 value, LPSTR buffer)
 
 DECL_EXTERN_API(VOID, StringInt64ToStringA, LONG64 value, LPSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	ULONG64 u = (ULONG64) (value);
 	if (value < 0)
 	{
@@ -1166,6 +1230,9 @@ CONST WCHAR gDigitsUNICODE[200] =
 
 DECL_EXTERN_API(VOID, StringUInt32ToStringW, ULONG value, LPWSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	if (value < 10000)
 	{
 		CONST ULONG d1 = (value / 100) << 1;
@@ -1263,6 +1330,9 @@ DECL_EXTERN_API(VOID, StringUInt32ToStringW, ULONG value, LPWSTR buffer)
 
 DECL_EXTERN_API(VOID, StringInt32ToStringW, LONG value, LPWSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	ULONG u = (ULONG) value;
 	if (value < 0)
 	{
@@ -1275,6 +1345,9 @@ DECL_EXTERN_API(VOID, StringInt32ToStringW, LONG value, LPWSTR buffer)
 
 DECL_EXTERN_API(VOID, StringUInt64ToStringW, ULONG64 value, LPWSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	if (value < 100000000)
 	{
 		ULONG v = (ULONG) (value);
@@ -1482,6 +1555,9 @@ DECL_EXTERN_API(VOID, StringUInt64ToStringW, ULONG64 value, LPWSTR buffer)
 
 DECL_EXTERN_API(VOID, StringInt64ToStringW, LONG64 value, LPWSTR buffer)
 {
+	if (buffer == NULL)
+		return;
+
 	ULONG64 u = (ULONG64) (value);
 	if (value < 0)
 	{

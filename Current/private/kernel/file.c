@@ -3,7 +3,6 @@
 #include "../sys/syscall.h"
 #include "../../public/imports.h"
 
-
 DECL_EXTERN_API(DWORD, QueryDosDeviceW, LPCWSTR lpDeviceName, LPWSTR lpTargetPath, DWORD ucchMax)
 {
 	POBJECT_DIRECTORY_INFORMATION DirInfo;
@@ -21,7 +20,7 @@ DECL_EXTERN_API(DWORD, QueryDosDeviceW, LPCWSTR lpDeviceName, LPWSTR lpTargetPat
 	PWSTR Ptr;
 
 	/* Open the '\??' directory */
-	RtlInitUnicodeString(&UnicodeString, L"\\??");
+	HcInitUnicodeString(&UnicodeString, L"\\??");
 	InitializeObjectAttributes(&ObjectAttributes,
 		&UnicodeString,
 		OBJ_CASE_INSENSITIVE,
@@ -43,7 +42,7 @@ DECL_EXTERN_API(DWORD, QueryDosDeviceW, LPCWSTR lpDeviceName, LPWSTR lpTargetPat
 	if (lpDeviceName != NULL)
 	{
 		/* Open the lpDeviceName link object */
-		RtlInitUnicodeString(&UnicodeString, (PWSTR) lpDeviceName);
+		HcInitUnicodeString(&UnicodeString, (PWSTR) lpDeviceName);
 		InitializeObjectAttributes(&ObjectAttributes,
 			&UnicodeString,
 			OBJ_CASE_INSENSITIVE,
@@ -427,9 +426,6 @@ DECL_EXTERN_API(DWORD, FileSetCurrent, CONST IN HANDLE hFile, CONST IN LONG lDis
 	return FilePosition.CurrentByteOffset.u.LowPart;
 }
 
-#include <stdio.h>
-#include <windows.h>
-
 DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDisposition, IN DWORD dwDesiredAccess)
 {
 	OBJECT_ATTRIBUTES ObjectAttributes;
@@ -483,7 +479,7 @@ DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDis
 	dwDesiredAccess |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
 
 	/* validate & translate the filename */
-	if (!RtlDosPathNameToNtPathName_U(lpFileName,
+	if (!HcDosPathNameToNtPathName_U(lpFileName,
 		&NtPathU,
 		NULL,
 		NULL))
@@ -554,7 +550,7 @@ DECL_EXTERN_API(HANDLE, FileOpenW, IN LPCWSTR lpFileName, IN DWORD dwCreationDis
 	}
 
 	/* Don't free with HcFree due to RtlDosPathNameToNtPathName_U allocation type. */
-	RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
+	//RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathU.Buffer);
 
 	/* error */
 	if (!NT_SUCCESS(Status))
@@ -985,8 +981,6 @@ DECL_EXTERN_API(DWORD, FileCurrentDirectoryW, IN LPWSTR lpBuffer)
 	PUNICODE_STRING UsCurDir;
 	ULONG ULen;
 
-	RtlAcquirePebLock();
-
 	UsCurDir = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
 	ULen = UsCurDir->Length / sizeof(WCHAR);
 
@@ -997,7 +991,6 @@ DECL_EXTERN_API(DWORD, FileCurrentDirectoryW, IN LPWSTR lpBuffer)
 
 	HcStringCopyW(lpBuffer, UsCurDir->Buffer, ULen);
 
-	RtlReleasePebLock();
 	return ULen;
 }
 

@@ -85,8 +85,11 @@
     <ClCompile Include="private\sys\table.c" />
     <ClCompile Include="private\kernel\scan.c" />
     <ClCompile Include="private\kernel\hash.c" />
-    <ClCompile Include="private\kernel\unique_id.cpp" />
     <ClCompile Include="private\user\input.c" />
+    <ClCompile Include="private\kernel\unique_id.c" />
+    <ClCompile Include="private\user\class.c" />
+    <ClCompile Include="private\user\window.c" />
+    <ClCompile Include="private\user\draw.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="private\distorm\src\config.h">
@@ -1670,6 +1673,14 @@
     <MASM Include="private\sys\asm\UserMessageCall.asm" />
     <MASM Include="private\sys\asm\UserPostThreadMessage.asm" />
     <MASM Include="private\sys\asm\UserGetAsyncKeyState.asm" />
+    <MASM Include="private\sys\asm\UserQueryWindow.asm" />
+    <MASM Include="private\sys\asm\UserBuildHwndList.asm" />
+    <MASM Include="private\sys\asm\UserGetClassName.asm" />
+    <MASM Include="private\sys\asm\UserFlashWindowEx.asm" />
+    <MASM Include="private\sys\asm\UserCallOneParam.asm" />
+    <MASM Include="private\sys\asm\UserGetThreadState.asm" />
+    <MASM Include="private\sys\asm\UserProcessConnect.asm" />
+    <MASM Include="private\sys\asm\SwitchMode.ASM" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="private">

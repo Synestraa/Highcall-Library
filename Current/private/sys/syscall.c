@@ -644,6 +644,14 @@ HcCreateDebugObject(
 
 #endif
 
+
+NTSTATUS SYSCALLAPI HcTerminateProcessWow64(
+	IN PTR_64(HANDLE) ProcessHandle OPTIONAL,
+	IN NTSTATUS ExitStatus)
+{
+	return (NTSTATUS) HcWow64Syscall(sciTerminateProcess, 2, ProcessHandle, (ULONG64) ExitStatus);
+}
+
 NTSTATUS SYSCALLAPI HcResumeProcessWow64(CONST IN PTR_64(HANDLE) ProcessHandle)
 {
 	return (NTSTATUS) HcWow64Syscall(sciResumeProcess, 1, ProcessHandle);
@@ -797,6 +805,15 @@ HcCreateThreadExWow64(OUT PTR_64(PHANDLE) PtrThreadHandle,
 		AttributeList OPTIONAL);
 }
 
+NTSTATUS SYSCALLAPI HcCreateMutantWow64(
+	OUT PTR_64(PHANDLE)            MutantHandle,
+	IN  ACCESS_MASK        DesiredAccess,
+	IN	PTR_64(POBJECT_ATTRIBUTES) ObjectAttributes,
+	IN  BOOLEAN            InitialOwner)
+{
+	return (NTSTATUS) HcWow64Syscall(sciCreateMutant, 4, MutantHandle, (DWORD64) DesiredAccess, ObjectAttributes, (DWORD64) InitialOwner);
+}
+
 NTSTATUS SYSCALLAPI HcQuerySystemInformationWow64(IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	OUT PTR_64(LPVOID) SystemInformation,
 	IN ULONG SystemInformationLength,
@@ -882,15 +899,23 @@ NTSTATUS SYSCALLAPI HcAllocateVirtualMemoryWow64(CONST IN PTR_64(HANDLE) hProces
 	return (NTSTATUS) HcWow64Syscall(sciAllocateVirtualMemory, 6, hProcess, UBaseAddress, ZeroBits, URegionSize, (DWORD64) AllocationType, (DWORD64) Protect);
 }
 
+NTSTATUS SYSCALLAPI HcQueryDefaultLocaleWow64(IN BOOLEAN UserProfile,
+	OUT PLCID DefaultLocaleId)
+{
+	return (NTSTATUS) HcWow64Syscall(sciQueryDefaultLocale, 2, (DWORD64) UserProfile, (DWORD64) DefaultLocaleId);
+}
+
 #ifndef _WIN64
-#include <windows.h> /* this shouldn't include any libraries. */
 
 union reg64 {
 	unsigned long dw[2];
 	unsigned long long v;
 };
 
+#define REX_W e(0x48) __asm
+
 // warning C4409: illegal instruction size
+#pragma warning(push)
 #pragma warning(disable : 4409)
 DWORD64 X64SyscallV(int idx, int argC, va_list args)
 {
@@ -908,11 +933,17 @@ DWORD64 X64SyscallV(int idx, int argC, va_list args)
 	/* easier use in inline assembly. */
 	DWORD64 _argC = argC;
 	DWORD back_esp = 0;
+	WORD back_fs = 0;
 
 	__asm
 	{
 		/* save the esp. */
 		mov    back_esp, esp
+
+		;// reset FS segment, to properly handle RFG
+		mov    back_fs, fs
+		mov    eax, 0x2B
+		mov    fs, ax
 
 		/* align esp to prepare for the 64bit rsp conversion. */
 		and esp, 0xFFFFFFF8
@@ -970,11 +1001,18 @@ DWORD64 X64SyscallV(int idx, int argC, va_list args)
 		pop _rax.dw[0]
 		X64_End();
 
+		mov    ax, ds
+		mov    ss, ax
 		mov    esp, back_esp
+			
+		;// restore FS segment
+		mov    ax, back_fs
+		mov    fs, ax
 	}
 
 	return _rax.v;
 }
+#pragma warning(pop)
 
 DWORD64
 SYSCALLAPI

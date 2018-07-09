@@ -329,3 +329,9 @@ Current/vs/*
 *.tlog
 *.tlog
 *.exp
+Current/private/sys/version_table_86_64 - Copy.h
+Current/private/sys/version_table_ntuser_86 - Copy.h
+Current/private/sys/version_table_wow64 - Copy.h
+Current/private/sys/version_table_ntuser_86_64 - Copy.h
+Current/private/sys/version_table_86 - Copy.h
+Current/Build/Win32/DYNAMIC_RELEASE/highcall32.exp

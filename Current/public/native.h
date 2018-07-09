@@ -75,6 +75,65 @@
 #define NtCurrentProcess() ((HANDLE)(LONG_PTR)-1)
 #define NtCurrentThread() ((HANDLE)(LONG_PTR)-2)
 
+typedef struct _CLIENTTHREADINFO
+{
+	DWORD CTI_flags;
+	WORD fsChangeBits;
+	WORD fsWakeBits;
+	WORD fsWakeBitsJournal;
+	WORD fsWakeMask;
+	ULONG tickLastMsgChecked;
+	DWORD dwcPumpHook;
+} CLIENTTHREADINFO, *PCLIENTTHREADINFO;
+
+typedef struct _CALLBACKWND {
+	HWND hWnd;
+	struct _WND *pWnd;
+	PVOID pActCtx;
+} CALLBACKWND, *PCALLBACKWND;
+
+typedef struct _CLIENTINFO
+{
+	ULONG_PTR CI_flags;
+	ULONG_PTR cSpins;
+	DWORD dwExpWinVer;
+	DWORD dwCompatFlags;
+	DWORD dwCompatFlags2;
+	DWORD dwTIFlags; /* ThreadInfo TIF_Xxx flags for User space. */
+	VOID* pDeskInfo;
+	ULONG_PTR ulClientDelta;
+	VOID* phkCurrent;
+	ULONG fsHooks;
+	PCALLBACKWND CallbackWnd;
+	DWORD dwHookCurrent;
+	INT cInDDEMLCallback;
+	PCLIENTTHREADINFO pClientThreadInfo;
+	ULONG_PTR dwHookData;
+	DWORD dwKeyCache;
+	BYTE afKeyState[8];
+	DWORD dwAsyncKeyCache;
+	BYTE afAsyncKeyState[8];
+	BYTE afAsyncKeyStateRecentDow[8];
+	HKL hKL;
+	USHORT CodePage;
+	UCHAR achDbcsCF[2];
+	MSG msgDbcsCB;
+	LPDWORD lpdwRegisteredClasses;
+	ULONG Win32ClientInfo3[26];
+	/* It's just a pointer reference not to be used w the structure in user space. */
+	struct _PROCESSINFO *ppi;
+} CLIENTINFO, *PCLIENTINFO;
+
+#define GetWin32ClientInfo() ((PCLIENTINFO)(NtCurrentTeb()->Win32ClientInfo))
+
+#define QUERY_WINDOW_UNIQUE_PROCESS_ID 0x00
+#define QUERY_WINDOW_UNIQUE_THREAD_ID  0x01
+#define QUERY_WINDOW_ACTIVE            0x02
+#define QUERY_WINDOW_FOCUS             0x03
+#define QUERY_WINDOW_ISHUNG            0x04
+#define QUERY_WINDOW_REAL_ID           0x05
+#define QUERY_WINDOW_FOREGROUND        0x06
+
 #define ASSERT(x) ((void)sizeof(x))
 
 #define InitializeObjectAttributes( p, n, a, r, s ) { \
@@ -830,8 +889,8 @@ typedef struct _SYSTEM_BASIC_INFORMATION {
 	ULONG LowestPhysicalPageNumber;
 	ULONG HighestPhysicalPageNumber;
 	ULONG AllocationGranularity;
-	ULONG MinimumUserModeAddress;
-	ULONG MaximumUserModeAddress;
+	ULONG_PTR MinimumUserModeAddress;
+	ULONG_PTR MaximumUserModeAddress;
 	KAFFINITY ActiveProcessorsAffinityMask;
 	CCHAR NumberOfProcessors;
 } SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
@@ -2804,4 +2863,556 @@ typedef struct __declspec(align(16))_PROCESS_DEVICEMAP_INFORMATION_WOW64 {
 HcInternalCopy((o)->Query.DriveType, (o64)->Query.DriveType, sizeof((o64)->Query.DriveType));\
 }\
 
+//
+// Process priority classes
+//
+#define PROCESS_PRIORITY_CLASS_INVALID          0
+#define PROCESS_PRIORITY_CLASS_IDLE             1
+#define PROCESS_PRIORITY_CLASS_NORMAL           2
+#define PROCESS_PRIORITY_CLASS_HIGH             3
+#define PROCESS_PRIORITY_CLASS_REALTIME         4
+#define PROCESS_PRIORITY_CLASS_BELOW_NORMAL     5
+#define PROCESS_PRIORITY_CLASS_ABOVE_NORMAL     6
+
+typedef struct _PROCESS_PRIORITY_CLASS
+{
+	BOOLEAN Foreground;
+	UCHAR PriorityClass;
+} PROCESS_PRIORITY_CLASS, *PPROCESS_PRIORITY_CLASS;
+
+//
+// Flags for NtCreateProcessEx
+//
+#define PROCESS_CREATE_FLAGS_BREAKAWAY              0x00000001
+#define PROCESS_CREATE_FLAGS_NO_DEBUG_INHERIT       0x00000002
+#define PROCESS_CREATE_FLAGS_INHERIT_HANDLES        0x00000004
+#define PROCESS_CREATE_FLAGS_OVERRIDE_ADDRESS_SPACE 0x00000008
+#define PROCESS_CREATE_FLAGS_LARGE_PAGES            0x00000010
+#define PROCESS_CREATE_FLAGS_ALL_LARGE_PAGE_FLAGS   PROCESS_CREATE_FLAGS_LARGE_PAGES
+#define PROCESS_CREATE_FLAGS_LEGAL_MASKPROCESS_CREATE_FLAGS_BREAKAWAY | \
+  PROCESS_CREATE_FLAGS_NO_DEBUG_INHERIT | \
+  PROCESS_CREATE_FLAGS_INHERIT_HANDLES | \
+  PROCESS_CREATE_FLAGS_OVERRIDE_ADDRESS_SPACE | \
+  PROCESS_CREATE_FLAGS_ALL_LARGE_PAGE_FLAGS)
+
+/* If the first isn't defined, assume none is */
+#ifndef SE_MIN_WELL_KNOWN_PRIVILEGE
+#define SE_MIN_WELL_KNOWN_PRIVILEGE       2L
+#define SE_CREATE_TOKEN_PRIVILEGE         2L
+#define SE_ASSIGNPRIMARYTOKEN_PRIVILEGE   3L
+#define SE_LOCK_MEMORY_PRIVILEGE          4L
+#define SE_INCREASE_QUOTA_PRIVILEGE       5L
+#define SE_MACHINE_ACCOUNT_PRIVILEGE      6L
+#define SE_TCB_PRIVILEGE                  7L
+#define SE_SECURITY_PRIVILEGE             8L
+#define SE_TAKE_OWNERSHIP_PRIVILEGE       9L
+#define SE_LOAD_DRIVER_PRIVILEGE         10L
+#define SE_SYSTEM_PROFILE_PRIVILEGE      11L
+#define SE_SYSTEMTIME_PRIVILEGE          12L
+#define SE_PROF_SINGLE_PROCESS_PRIVILEGE 13L
+#define SE_INC_BASE_PRIORITY_PRIVILEGE   14L
+#define SE_CREATE_PAGEFILE_PRIVILEGE     15L
+#define SE_CREATE_PERMANENT_PRIVILEGE    16L
+#define SE_BACKUP_PRIVILEGE              17L
+#define SE_RESTORE_PRIVILEGE             18L
+#define SE_SHUTDOWN_PRIVILEGE            19L
+#define SE_DEBUG_PRIVILEGE               20L
+#define SE_AUDIT_PRIVILEGE               21L
+#define SE_SYSTEM_ENVIRONMENT_PRIVILEGE  22L
+#define SE_CHANGE_NOTIFY_PRIVILEGE       23L
+#define SE_REMOTE_SHUTDOWN_PRIVILEGE     24L
+#define SE_UNDOCK_PRIVILEGE              25L
+#define SE_SYNC_AGENT_PRIVILEGE          26L
+#define SE_ENABLE_DELEGATION_PRIVILEGE   27L
+#define SE_MANAGE_VOLUME_PRIVILEGE       28L
+#define SE_IMPERSONATE_PRIVILEGE         29L
+#define SE_CREATE_GLOBAL_PRIVILEGE       30L
+#define SE_MAX_WELL_KNOWN_PRIVILEGE      SE_CREATE_GLOBAL_PRIVILEGE
+#endif /* ndef SE_MIN_WELL_KNOWN_PRIVILEGE */
+
+// KPCR Access for non-IA64 builds
+//
+#define K0IPCR                  ((ULONG_PTR)(KIP0PCRADDRESS))
+#define PCR                     ((KPCR *)K0IPCR)
+#if defined(CONFIG_SMP) || defined(NT_BUILD)
+#undef  KeGetPcr
+#define KeGetPcr()              ((KPCR *)__readfsdword(FIELD_OFFSET(KPCR, SelfPcr)))
 #endif
+
+//
+// CPU Vendors
+//
+typedef enum {
+	CPU_NONE = 0,
+	CPU_INTEL = 1,
+	CPU_AMD = 2,
+	CPU_CYRIX = 3,
+	CPU_TRANSMETA = 4,
+	CPU_VIA = 5,
+	CPU_CENTAUR = CPU_VIA,
+	CPU_RISE = 6,
+	CPU_UNKNOWN = 7
+} CPU_VENDORS;
+
+//
+// Machine Types
+//
+#define MACHINE_TYPE_ISA        0x0000
+#define MACHINE_TYPE_EISA       0x0001
+#define MACHINE_TYPE_MCA        0x0002
+
+//
+// X86 80386 Segment Types
+//
+#define I386_TASK_GATE          0x5
+#define I386_TSS                0x9
+#define I386_ACTIVE_TSS         0xB
+#define I386_CALL_GATE          0xC
+#define I386_INTERRUPT_GATE     0xE
+#define I386_TRAP_GATE          0xF
+
+//
+// Selector Names
+//
+#define RPL_MASK                0x0003
+#define MODE_MASK               0x0001
+#define KGDT_R0_CODE            0x8
+#define KGDT_R0_DATA            0x10
+#define KGDT_R3_CODE            0x18
+#define KGDT_R3_DATA            0x20
+#define KGDT_TSS                0x28
+#define KGDT_R0_PCR             0x30
+#define KGDT_R3_TEB             0x38
+#define KGDT_LDT                0x48
+#define KGDT_DF_TSS             0x50
+#define KGDT_NMI_TSS            0x58
+
+//
+// Selector Names
+//
+#define KGDT64_NULL             0x0000
+#define KGDT64_R0_CODE          0x0010
+#define KGDT64_R0_DATA          0x0018
+#define KGDT64_R3_CMCODE        0x0020
+#define KGDT64_R3_DATA          0x0028
+#define KGDT64_R3_CODE          0x0030
+#define KGDT64_SYS_TSS          0x0040
+#define KGDT64_R3_CMTEB         0x0050
+#define KGDT64_R0_LDT           0x0060
+
+//
+// Define the number of GDTs that can be queried by user mode
+//
+#define KGDT_NUMBER             10
+
+//
+// CR4
+//
+#define CR4_VME                 0x1
+#define CR4_PVI                 0x2
+#define CR4_TSD                 0x4
+#define CR4_DE                  0x8
+#define CR4_PSE                 0x10
+#define CR4_PAE                 0x20
+#define CR4_MCE                 0x40
+#define CR4_PGE                 0x80
+#define CR4_FXSR                0x200
+#define CR4_XMMEXCPT            0x400
+
+//
+// EFlags
+//
+#define EFLAGS_CF               0x01L
+#define EFLAGS_ZF               0x40L
+#define EFLAGS_TF               0x100L
+#define EFLAGS_INTERRUPT_MASK   0x200L
+#define EFLAGS_DF               0x400L
+#define EFLAGS_IOPL             0x3000L
+#define EFLAGS_NESTED_TASK      0x4000L
+#define EFLAGS_RF               0x10000
+#define EFLAGS_V86_MASK         0x20000
+#define EFLAGS_ALIGN_CHECK      0x40000
+#define EFLAGS_VIF              0x80000
+#define EFLAGS_VIP              0x100000
+#define EFLAGS_ID               0x200000
+#define EFLAGS_USER_SANITIZE    0x3F4DD7
+#define EFLAG_SIGN              0x8000
+#define EFLAG_ZERO              0x4000
+
+//
+// Legacy floating status word bit masks.
+//
+#define FSW_INVALID_OPERATION   0x1
+#define FSW_DENORMAL            0x2
+#define FSW_ZERO_DIVIDE         0x4
+#define FSW_OVERFLOW            0x8
+#define FSW_UNDERFLOW           0x10
+#define FSW_PRECISION           0x20
+#define FSW_STACK_FAULT         0x40
+
+//
+// Machine Specific Registers
+//
+#define MSR_AMD_ACCESS          0x9C5A203A
+#define MSR_IA32_MISC_ENABLE    0x01A0
+#define MSR_EFER                0xC0000080
+
+//
+// MSR internal Values
+//
+#define MSR_NXE                 0x0800
+#define XHF_NOEXECUTE           0x100000
+#define MSR_XD_ENABLE_MASK      0xFFFFFFFB
+
+//
+// IPI Types
+//
+#define IPI_APC                 1
+#define IPI_DPC                 2
+#define IPI_FREEZE              4
+#define IPI_PACKET_READY        8
+#define IPI_SYNCH_REQUEST       16
+
+//
+// PRCB Flags
+//
+#define PRCB_MAJOR_VERSION      1
+#define PRCB_BUILD_DEBUG        1
+#define PRCB_BUILD_UNIPROCESSOR 2
+
+//
+// HAL Variables
+//
+#define INITIAL_STALL_COUNT     100
+#define MM_HAL_VA_START         0xFFC00000
+#define MM_HAL_VA_END           0xFFFFFFFF
+#define APIC_BASE               0xFFFE0000
+
+//
+// IOPM Definitions
+//
+#define IOPM_COUNT              1
+#define IOPM_SIZE               8192
+#define IOPM_FULL_SIZE          8196
+#define IO_ACCESS_MAP_NONE      0
+#define IOPM_DIRECTION_MAP_SIZE 32
+#define IOPM_OFFSET             FIELD_OFFSET(KTSS, IoMaps[0].IoMap)
+#define KiComputeIopmOffset(MapNumber)              \
+    (MapNumber == IO_ACCESS_MAP_NONE) ?             \
+        (USHORT)(sizeof(KTSS)) :                    \
+        (USHORT)(FIELD_OFFSET(KTSS, IoMaps[MapNumber-1].IoMap))
+
+typedef UCHAR KIO_ACCESS_MAP[IOPM_SIZE];
+
+typedef KIO_ACCESS_MAP *PKIO_ACCESS_MAP;
+
+//
+// Size of the XMM register save area in the FXSAVE format
+//
+#define SIZE_OF_FX_REGISTERS    128
+
+//
+// Static Kernel-Mode Address start (use MM_KSEG0_BASE for actual)
+//
+#define KSEG0_BASE              0x80000000
+
+//
+// Synchronization-level IRQL
+//
+#ifndef CONFIG_SMP
+#define SYNCH_LEVEL             DISPATCH_LEVEL
+#else
+#if (NTDDI_VERSION < NTDDI_WS03)
+#define SYNCH_LEVEL             (IPI_LEVEL - 1)
+#else
+#define SYNCH_LEVEL             (IPI_LEVEL - 2)
+#endif
+#endif
+
+//
+// Number of pool lookaside lists per pool in the PRCB
+//
+#define NUMBER_POOL_LOOKASIDE_LISTS 32
+
+//
+// Structure for CPUID
+//
+typedef union _CPU_INFO {
+	UINT32 AsUINT32[4];
+	struct {
+		ULONG Eax;
+		ULONG Ebx;
+		ULONG Ecx;
+		ULONG Edx;
+	};
+} CPU_INFO, *PCPU_INFO;
+
+//
+// Trap Frame Definition
+//
+typedef struct _KTRAP_FRAME {
+	ULONG DbgEbp;
+	ULONG DbgEip;
+	ULONG DbgArgMark;
+	ULONG DbgArgPointer;
+	ULONG TempSegCs;
+	ULONG TempEsp;
+	ULONG Dr0;
+	ULONG Dr1;
+	ULONG Dr2;
+	ULONG Dr3;
+	ULONG Dr6;
+	ULONG Dr7;
+	ULONG SegGs;
+	ULONG SegEs;
+	ULONG SegDs;
+	ULONG Edx;
+	ULONG Ecx;
+	ULONG Eax;
+	ULONG PreviousPreviousMode;
+	struct _EXCEPTION_REGISTRATION_RECORD FAR *ExceptionList;
+	ULONG SegFs;
+	ULONG Edi;
+	ULONG Esi;
+	ULONG Ebx;
+	ULONG Ebp;
+	ULONG ErrCode;
+	ULONG Eip;
+	ULONG SegCs;
+	ULONG EFlags;
+	ULONG HardwareEsp;
+	ULONG HardwareSegSs;
+	ULONG V86Es;
+	ULONG V86Ds;
+	ULONG V86Fs;
+	ULONG V86Gs;
+} KTRAP_FRAME, *PKTRAP_FRAME;
+
+//
+// Defines the Callback Stack Layout for User Mode Callbacks
+//
+typedef struct _KCALLOUT_FRAME {
+	ULONG InitialStack;
+	ULONG TrapFrame;
+	ULONG CallbackStack;
+	ULONG Edi;
+	ULONG Esi;
+	ULONG Ebx;
+	ULONG Ebp;
+	ULONG ReturnAddress;
+	ULONG Result;
+	ULONG ResultLength;
+} KCALLOUT_FRAME, *PKCALLOUT_FRAME;
+
+//
+// LDT Entry Definition
+//
+#ifndef _LDT_ENTRY_DEFINED
+#define _LDT_ENTRY_DEFINED
+typedef struct _LDT_ENTRY {
+	USHORT LimitLow;
+	USHORT BaseLow;
+	union {
+		struct {
+			UCHAR BaseMid;
+			UCHAR Flags1;
+			UCHAR Flags2;
+			UCHAR BaseHi;
+		} Bytes;
+		struct {
+			ULONG BaseMid : 8;
+			ULONG Type : 5;
+			ULONG Dpl : 2;
+			ULONG Pres : 1;
+			ULONG LimitHi : 4;
+			ULONG Sys : 1;
+			ULONG Reserved_0 : 1;
+			ULONG Default_Big : 1;
+			ULONG Granularity : 1;
+			ULONG BaseHi : 8;
+		} Bits;
+	} HighWord;
+} LDT_ENTRY, *PLDT_ENTRY, *LPLDT_ENTRY;
+#endif
+
+//
+// GDT Entry Definition
+//
+typedef struct _KGDTENTRY {
+	USHORT LimitLow;
+	USHORT BaseLow;
+	union {
+		struct {
+			UCHAR BaseMid;
+			UCHAR Flags1;
+			UCHAR Flags2;
+			UCHAR BaseHi;
+		} Bytes;
+		struct {
+			ULONG BaseMid : 8;
+			ULONG Type : 5;
+			ULONG Dpl : 2;
+			ULONG Pres : 1;
+			ULONG LimitHi : 4;
+			ULONG Sys : 1;
+			ULONG Reserved_0 : 1;
+			ULONG Default_Big : 1;
+			ULONG Granularity : 1;
+			ULONG BaseHi : 8;
+		} Bits;
+	} HighWord;
+} KGDTENTRY, *PKGDTENTRY;
+
+//
+// IDT Entry Access Definition
+//
+typedef struct _KIDT_ACCESS {
+	union {
+		struct {
+			UCHAR Reserved;
+			UCHAR SegmentType : 4;
+			UCHAR SystemSegmentFlag : 1;
+			UCHAR Dpl : 2;
+			UCHAR Present : 1;
+		};
+		USHORT Value;
+	};
+} KIDT_ACCESS, *PKIDT_ACCESS;
+
+//
+// IDT Entry Definition
+//
+typedef struct _KIDTENTRY {
+	USHORT Offset;
+	USHORT Selector;
+	USHORT Access;
+	USHORT ExtendedOffset;
+} KIDTENTRY, *PKIDTENTRY;
+
+typedef struct _DESCRIPTOR {
+	USHORT Pad;
+	USHORT Limit;
+	ULONG Base;
+} KDESCRIPTOR, *PKDESCRIPTOR;
+
+//
+// FN/FX (FPU) Save Area Structures
+//
+typedef struct _FNSAVE_FORMAT {
+	ULONG ControlWord;
+	ULONG StatusWord;
+	ULONG TagWord;
+	ULONG ErrorOffset;
+	ULONG ErrorSelector;
+	ULONG DataOffset;
+	ULONG DataSelector;
+	UCHAR RegisterArea[80];
+} FNSAVE_FORMAT, *PFNSAVE_FORMAT;
+
+typedef struct _FXSAVE_FORMAT {
+	USHORT ControlWord;
+	USHORT StatusWord;
+	USHORT TagWord;
+	USHORT ErrorOpcode;
+	ULONG ErrorOffset;
+	ULONG ErrorSelector;
+	ULONG DataOffset;
+	ULONG DataSelector;
+	ULONG MXCsr;
+	ULONG MXCsrMask;
+	UCHAR RegisterArea[SIZE_OF_FX_REGISTERS];
+	UCHAR Reserved3[128];
+	UCHAR Reserved4[224];
+	UCHAR Align16Byte[8];
+} FXSAVE_FORMAT, *PFXSAVE_FORMAT;
+
+typedef struct _FX_SAVE_AREA {
+	union {
+		FNSAVE_FORMAT FnArea;
+		FXSAVE_FORMAT FxArea;
+	} U;
+	ULONG NpxSavedCpu;
+	ULONG Cr0NpxState;
+} FX_SAVE_AREA, *PFX_SAVE_AREA;
+
+//
+// Special Registers Structure (outside of CONTEXT)
+//
+typedef struct _KSPECIAL_REGISTERS {
+	ULONG Cr0;
+	ULONG Cr2;
+	ULONG Cr3;
+	ULONG Cr4;
+	ULONG KernelDr0;
+	ULONG KernelDr1;
+	ULONG KernelDr2;
+	ULONG KernelDr3;
+	ULONG KernelDr6;
+	ULONG KernelDr7;
+	KDESCRIPTOR Gdtr;
+	KDESCRIPTOR Idtr;
+	USHORT Tr;
+	USHORT Ldtr;
+	ULONG Reserved[6];
+} KSPECIAL_REGISTERS, *PKSPECIAL_REGISTERS;
+
+//
+// Processor State Data
+//
+typedef struct _KPROCESSOR_STATE {
+	CONTEXT ContextFrame;
+	KSPECIAL_REGISTERS SpecialRegisters;
+} KPROCESSOR_STATE, *PKPROCESSOR_STATE;
+
+//
+// TSS Definition
+//
+typedef struct _KiIoAccessMap {
+	UCHAR DirectionMap[IOPM_DIRECTION_MAP_SIZE];
+	UCHAR IoMap[IOPM_FULL_SIZE];
+} KIIO_ACCESS_MAP;
+
+typedef struct _KTSS {
+	USHORT Backlink;
+	USHORT Reserved0;
+	ULONG Esp0;
+	USHORT Ss0;
+	USHORT Reserved1;
+	ULONG NotUsed1[4];
+	ULONG CR3;
+	ULONG Eip;
+	ULONG EFlags;
+	ULONG Eax;
+	ULONG Ecx;
+	ULONG Edx;
+	ULONG Ebx;
+	ULONG Esp;
+	ULONG Ebp;
+	ULONG Esi;
+	ULONG Edi;
+	USHORT Es;
+	USHORT Reserved2;
+	USHORT Cs;
+	USHORT Reserved3;
+	USHORT Ss;
+	USHORT Reserved4;
+	USHORT Ds;
+	USHORT Reserved5;
+	USHORT Fs;
+	USHORT Reserved6;
+	USHORT Gs;
+	USHORT Reserved7;
+	USHORT LDT;
+	USHORT Reserved8;
+	USHORT Flags;
+	USHORT IoMapBase;
+	KIIO_ACCESS_MAP IoMaps[IOPM_COUNT];
+	UCHAR IntDirectionMap[IOPM_DIRECTION_MAP_SIZE];
+} KTSS, *PKTSS;
+
+//
+// i386 CPUs don't have exception frames
+//
+typedef struct _KEXCEPTION_FRAME KEXCEPTION_FRAME, *PKEXCEPTION_FRAME;
+
+#endif /* NTOS_MODE_USER */

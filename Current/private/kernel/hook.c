@@ -539,7 +539,7 @@ DECL_EXTERN_API(HStatus, HookDetour, CONST IN PDetourContext Context)
 
 	if (!Context->lpDestination)
 	{
-		return HOOK_INVALID_SOURCE;
+		return HOOK_INVALID_DESTINATION;
 	}
 
 	if (Context->Flags == 0)
@@ -734,4 +734,337 @@ DECL_EXTERN_API(HStatus, HookDetourContextRestore, CONST IN PDetourContext Conte
 		&dwProtection);
 
 	return HOOK_NO_ERR;
+}
+
+#define THREAD_COUNT 200
+
+#ifndef _WIN64
+#define XIP Eip
+#else
+#define XIP Rip
+#endif
+
+typedef struct _HWBPHook {
+	LPVOID Class;
+	LPVOID Callback;
+	DWORD Index;
+	DWORD Threads[THREAD_COUNT];
+} HWBPHOOK;
+
+HWBPHOOK* HWBPHooks = NULL;
+LPVOID ExceptionHandler = NULL;
+
+inline int HookHWBPGetFreeIndex(DWORD regval)
+{
+	if (!(regval & 1))
+		return 0;
+	else if (!(regval & 4))
+		return 1;
+	else if (!(regval & 16))
+		return 2;
+
+	return -1;
+}
+
+HWBPHOOK* HookHWBPGetFreeHook()
+{
+	if (HWBPHooks == NULL)
+	{
+		HWBPHooks = (HWBPHOOK*) HcAlloc(sizeof(HWBPHOOK) * 4);
+		return &HWBPHooks[0];
+	}
+	else
+	{
+		for (DWORD i = 0; i < 4; i++)
+		{
+			if (HWBPHooks[i].Callback == NULL)
+			{
+				return &HWBPHooks[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+HWBPHOOK* HookHWBPGetHook(DWORD threadId)
+{
+	for (DWORD i = 0; i < 4; i++)
+	{
+		for (DWORD y = 0; y < THREAD_COUNT; y++)
+		{
+			if (HWBPHooks[i].Threads[y] == threadId)
+			{
+				return &HWBPHooks[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+HWBPHOOK* HookHWBPGetHookByDestination(LPVOID lpDestination)
+{
+	for (DWORD i = 0; i < 4; i++)
+	{
+		if (HWBPHooks[i].Callback == lpDestination)
+		{
+			return &HWBPHooks[i];
+		}
+	}
+
+	return NULL;
+}
+
+void HookHWBPFreeHook(HWBPHOOK* hook)
+{
+	hook->Class = NULL;
+	hook->Callback = NULL;
+	hook->Index = 0;
+
+	HcInternalSet(hook->Threads, 0, sizeof(hook->Threads));
+}
+LONG CALLBACK HWBPHookHandler(PEXCEPTION_POINTERS ExceptionInfo)
+{
+	// check, that it was our debug exception
+	if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP)
+	{
+		ExceptionInfo->ContextRecord->Dr6 = 0;
+
+		HWBPHOOK* hwbp = HookHWBPGetHook(HcThreadCurrentId());
+		if (hwbp == NULL)
+		{
+			// we're fucked or
+			return EXCEPTION_CONTINUE_EXECUTION;
+		}
+
+		ExceptionInfo->ContextRecord->Dr6 = 0;							// clear info
+		ExceptionInfo->ContextRecord->Dr3 = (ULONG_PTR) hwbp->Class;	// dr3 holds hook class pointer
+		ExceptionInfo->ContextRecord->XIP = (ULONG_PTR) hwbp->Callback; // execute the hook
+
+		// continue execution of thread  
+		return EXCEPTION_CONTINUE_EXECUTION;
+	}
+
+	// unknown exception, search next handler
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+DECL_EXTERN_API(BOOLEAN, HookHWBPToggle, CONST IN PDetourContext Context, BOOL State)
+{
+	if (Context == NULL)
+	{
+		return FALSE;
+	}
+
+	HWBPHOOK* HookEntry = HookHWBPGetHookByDestination(Context->lpDestination);
+	if (HookEntry == NULL)
+	{
+		return FALSE;
+	}
+	
+	CONTEXT context = { 0 };
+	context.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+
+	if (HcThreadGetContext(NtCurrentThread(), &context) != TRUE)
+		return FALSE;
+
+	if (State)
+	{
+		BitTestAndSetT((LONG_PTR*) &context.Dr7, 2 * HookEntry->Index);
+	}
+	else
+	{
+		BitTestAndResetT((LONG_PTR*) &context.Dr7, 2 * HookEntry->Index);
+	}
+
+	return HcThreadSetContext(NtCurrentThread(), &context);
+}
+
+DECL_EXTERN_API(HStatus, HookHWBPRestore, CONST IN PDetourContext Context)
+{
+	HStatus Status = HOOK_NO_ERR;
+	DWORD Threads[THREAD_COUNT];
+	DWORD dwThreadCount = THREAD_COUNT;
+
+	if (!Context->lpSource)
+	{
+		return HOOK_INVALID_SOURCE;
+	}
+
+	if (!Context->lpDestination)
+	{
+		return HOOK_INVALID_DESTINATION;
+	}
+
+	if (Context->Flags == 0)
+	{
+		Context->Flags = Default;
+	}
+
+	if (!HcThreadGetAllThreadIds(HcProcessGetCurrentId(), Threads, &dwThreadCount))
+	{
+		return HOOK_INVALID_SOURCE;
+	}
+
+	HWBPHOOK* HookEntry = HookHWBPGetHookByDestination(Context->lpDestination);
+	if (HookEntry == NULL)
+	{
+		return HOOK_INVALID_SIZE;
+	}
+
+	for (DWORD i = 0; i < dwThreadCount; i++)
+	{
+		DWORD threadId = Threads[i];
+		HANDLE hThread = (threadId != HcThreadCurrentId()) ?
+			HcThreadOpen(threadId, THREAD_ALL_ACCESS) :
+			NtCurrentThread();
+
+		if (hThread != NULL)
+		{
+			CONTEXT debugContext;
+			HcInternalSet(&debugContext, 0, sizeof(debugContext));
+
+			debugContext.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+
+			if (!HcThreadGetContext(hThread, &debugContext))
+			{
+				HcObjectClose(&hThread);
+				Status = HcErrorGetLastStatus();
+				break;
+			}
+
+			// Remove BP presence flag
+			_bittestandreset((long*) &debugContext.Dr7, 2 * HookEntry->Index);
+
+			// Reset hook address
+			*((DWORD*) &debugContext.Dr0 + HookEntry->Index) = 0;
+
+			if (!HcThreadSetContext(hThread, &debugContext))
+			{
+				HcObjectClose(&hThread);
+				Status = HcErrorGetLastStatus();
+				break;
+			}
+
+			HcObjectClose(&hThread);
+		}
+	}
+
+	HookHWBPFreeHook(HookEntry);
+	return Status;
+}
+
+DECL_EXTERN_API(HStatus, HookHWBPRedirect, CONST IN PDetourContext Context)
+{
+	HStatus Status = HOOK_NO_ERR;
+	DWORD Threads[THREAD_COUNT];
+	DWORD dwThreadCount = THREAD_COUNT;
+
+	if (!Context->lpSource)
+	{
+		return HOOK_INVALID_SOURCE;
+	}
+
+	if (!Context->lpDestination)
+	{
+		return HOOK_INVALID_DESTINATION;
+	}
+
+	if (Context->Flags == 0)
+	{
+		Context->Flags = Default;
+	}
+
+	if (!HcThreadGetAllThreadIds(HcProcessGetCurrentId(), Threads, &dwThreadCount))
+	{
+		return HOOK_INVALID_SOURCE;
+	}
+
+	HWBPHOOK* HookEntry = HookHWBPGetFreeHook();
+	if (HookEntry == NULL)
+	{
+		return HOOK_INVALID_SIZE;
+	}
+
+	if ((Context->Flags & THISCALL) > 0 && Context->lpClass == NULL)
+	{
+		return HOOK_INVALID_CLASS;
+	}
+
+	HookEntry->Callback = Context->lpDestination;
+	HookEntry->Class = Context->lpClass;
+
+	for (DWORD i = 0; i < dwThreadCount; i++)
+	{
+		DWORD threadId = Threads[i];
+		HANDLE hThread = (threadId != HcThreadCurrentId()) ?
+			HcThreadOpen(threadId, THREAD_ALL_ACCESS) :
+			NtCurrentThread();
+
+		if (hThread != NULL)
+		{
+			CONTEXT debugContext;
+			HcInternalSet(&debugContext, 0, sizeof(debugContext));
+
+			debugContext.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+
+			if (!HcThreadGetContext(hThread, &debugContext))
+			{
+				HcObjectClose(&hThread);
+				Status = HcErrorGetLastStatus();
+				goto done;
+			}
+
+			DWORD Index = HookHWBPGetFreeIndex(debugContext.Dr7);
+			if (Index < 0)
+			{
+				HcObjectClose(&hThread);
+				Status = STATUS_INSUFFICIENT_RESOURCES;
+				goto done;
+			}
+
+			debugContext.Dr7 |= 1 << (2 * Index) | 0x100;	// enable corresponding HWBP and local BP flag
+			debugContext.Dr7 &= ~0x80000;					// disable ICE (just to be sure...)
+
+			switch (Index)
+			{
+			case 0:
+				debugContext.Dr0 = (DWORD_PTR) Context->lpSource;
+				break;
+			case 1:
+				debugContext.Dr1 = (DWORD_PTR) Context->lpSource;
+				break;
+			case 2:
+				debugContext.Dr2 = (DWORD_PTR) Context->lpSource;
+				break;
+			case 3:
+				debugContext.Dr3 = (DWORD_PTR) Context->lpSource;
+				break;
+			}
+
+			HookEntry->Threads[i] = threadId;
+
+			if (!HcThreadSetContext(hThread, &debugContext))
+			{
+				HcObjectClose(&hThread);
+				Status = HcErrorGetLastStatus();
+				goto done;
+			}
+
+			if (ExceptionHandler == NULL)
+				ExceptionHandler = AddVectoredExceptionHandler(1, HWBPHookHandler);
+
+			HcObjectClose(&hThread);
+		}
+	}
+
+done:
+	if (Status != HOOK_NO_ERR)
+	{
+		HookHWBPFreeHook(HookEntry);
+	}
+
+	Context->pbReconstructed = Context->lpSource;
+	return Status;
 }
